@@ -23,7 +23,7 @@ pip install -e .
 
 ### Run the test 
 
-There's one half-written test runner for python-tuf ngclient.
+There's one half-written test wrapper for python-tuf ngclient.
 The test suite contains one half implemented test.
 
 Run that test:
