@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "tuf-conformance"
 dependencies = [
@@ -5,3 +9,9 @@ dependencies = [
     "tuf",
 ]
 dynamic = ["version"]
+
+[project.scripts]
+tuf-conformance = "tuf_conformance.run_tests:main"
+
+[tool.hatch.version]
+path = "tuf_conformance/__init__.py"

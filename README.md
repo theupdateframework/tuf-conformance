@@ -28,5 +28,5 @@ The test suite contains one half implemented test.
 
 Run that test:
 ```
-python tuf_conformance/run_tests.py "python clients/python_tuf.py"
+tuf-conformance "python clients/python_tuf.py"
 ```

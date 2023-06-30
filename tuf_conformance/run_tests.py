@@ -54,7 +54,7 @@ def test_init(client: ClientRunner, server: SimulatorServer) -> None:
     # * contents of clients metadata cache (in this case root v1 only)
 
 
-def main(argv: List[str]) -> None:
+def main() -> None:
     """Conformance test runner"""
 
     parser = argparse.ArgumentParser()
@@ -69,8 +69,3 @@ def main(argv: List[str]) -> None:
 
     # loop through tests here, maybe by using unittest or something?
     test_init(client, server)
-
-
-if __name__ == "__main__":
-    sys.exit(main(sys.argv))
-
