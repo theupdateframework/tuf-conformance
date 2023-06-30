@@ -15,6 +15,7 @@ Rough design:
 * the idea is that the test can verify that the client success/failure, it's internal  metadata state
   and the requests it made are correct -- this is mostly unimplemented 
 
+[Original ideas document](https://docs.google.com/document/d/11bKcRoC0G8b_YnLfK0tj1RfJjrMfXGhO8Li2LA1FUUk/edit?usp=sharing)
 
 ### Install
 
