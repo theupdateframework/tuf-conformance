@@ -42,7 +42,6 @@ import securesystemslib.hash as sslib_hash
 from securesystemslib.keys import generate_ed25519_key
 from securesystemslib.signer import SSlibKey, SSlibSigner
 
-from tuf.api.exceptions import DownloadHTTPError
 from tuf.api.metadata import (
     SPECIFICATION_VERSION,
     TOP_LEVEL_ROLE_NAMES,
@@ -63,7 +62,6 @@ from tuf.api.serialization.json import JSONSerializer
 logger = logging.getLogger(__name__)
 
 SPEC_VER = ".".join(SPECIFICATION_VERSION)
-
 
 @dataclass
 class Artifact:
@@ -194,7 +192,7 @@ class RepositorySimulator():
                 role = ver_and_name
                 version = None
 
-            yield self.fetch_metadata(role, version)
+            return self.fetch_metadata(role, version)
         elif path.startswith("targets/"):
             # figure out target path and hash prefix
             target_path = path[len("targets/") :]
@@ -206,9 +204,8 @@ class RepositorySimulator():
                 prefix, _, filename = prefixed_filename.partition(".")
             target_path = f"{dir_parts}{sep}{filename}"
 
-            yield self.fetch_target(target_path, prefix)
-        else:
-            raise DownloadHTTPError(f"Unknown path '{path}'", 404)
+            return self.fetch_target(target_path, prefix)
+        raise ValueError(f"Unknown path '{path}'")
 
     def fetch_target(
         self, target_path: str, target_hash: Optional[str]
@@ -221,12 +218,12 @@ class RepositorySimulator():
 
         repo_target = self.artifacts.get(target_path)
         if repo_target is None:
-            raise DownloadHTTPError(f"No target {target_path}", 404)
+            raise ValueError(f"No target {target_path}")
         if (
             target_hash
             and target_hash not in repo_target.target_file.hashes.values()
         ):
-            raise DownloadHTTPError(f"hash mismatch for {target_path}", 404)
+            raise ValueError(f"hash mismatch for {target_path}")
 
         logger.debug("fetched target %s", target_path)
         return repo_target.data
@@ -243,7 +240,7 @@ class RepositorySimulator():
         if role == Root.type:
             # return a version previously serialized in publish_root()
             if version is None or version > len(self.signed_roots):
-                raise DownloadHTTPError(f"Unknown root version {version}", 404)
+                raise ValueError(f"Unknown root version {version}")
             logger.debug("fetched root version %d", version)
             return self.signed_roots[version - 1]
 
@@ -259,7 +256,7 @@ class RepositorySimulator():
             md = self.md_delegates.get(role)
 
         if md is None:
-            raise DownloadHTTPError(f"Unknown role {role}", 404)
+            raise ValueError(f"Unknown role {role}")
 
         md.signatures.clear()
         for signer in self.signers[role].values():

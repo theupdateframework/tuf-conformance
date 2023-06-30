@@ -18,14 +18,19 @@ class _ReqHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         """Handle GET: metadata and target files"""
 
-        test, _, path = self.path.partition("/")
+        test, _, path = self.path.lstrip("/").partition("/")
 
-        repo:RepositorySimulator = self.server.repos[test]
-        if repo is None:
+        try:
+            repo:RepositorySimulator = self.server.repos[test]
+        except KeyError:
             self.send_error(404, f"Did not find repository for {test}")
             return
 
-        data = repo.fetch(path)
+        try:
+            data = repo.fetch(path)
+        except ValueError as e:
+            self.send_error(404, str(e))
+            return
         self.send_response(200)
         self.send_header("Content-length", len(data))
         self.end_headers()
@@ -36,7 +41,7 @@ class SimulatorServer(ThreadingHTTPServer):
     """Web server to serve a number of repositories"""
     def __init__(self, port: int):
         super().__init__(("127.0.0.1", port), _ReqHandler)
-        self.timeout = 1
+        self.timeout = 0
 
         # key is test name, value is the repository sim for that test
         self.repos: Dict[str, RepositorySimulator] = {}
