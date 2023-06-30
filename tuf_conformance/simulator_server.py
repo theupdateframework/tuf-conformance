@@ -36,6 +36,12 @@ class _ReqHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def log_message(self, format, *args):
+        """Log an arbitrary message.
+
+        Avoid output for now. TODO We may want to log in some situations?
+        """
+        pass
 
 class SimulatorServer(ThreadingHTTPServer):
     """Web server to serve a number of repositories"""
