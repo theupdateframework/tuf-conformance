@@ -1,0 +1,7 @@
+[project]
+name = "tuf-conformance"
+dependencies = [
+    "securesystemslib[crypto, pynacl]",
+    "tuf",
+]
+dynamic = ["version"]
