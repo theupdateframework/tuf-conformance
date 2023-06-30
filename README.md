@@ -10,6 +10,8 @@ Rough design:
 * test runner runs a single web server that individual tests can attach a simulated TUF repository to
 * each test sets up a simulated repository, attaches it to the server, runs the client-under-test
   against that repository. It can then modify the repository state and run the client-under-test again
+* the testrunner and web server run in the same thread: when a client-under-test process is started
+  the web server request handler is manually pumped until the client-under-test finishes
 * the idea is that the test can verify that the client success/failure, it's internal  metadata state
   and the requests it made are correct -- this is mostly unimplemented 
 
