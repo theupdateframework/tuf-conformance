@@ -4,38 +4,11 @@
 # system to build this eventually 
 
 import argparse
-import logging
-import os
-import subprocess
-import sys
 from typing import Dict, List
-from tempfile import TemporaryDirectory
 
 from tuf_conformance.repository_simulator import RepositorySimulator
-from tuf_conformance.simulator_server import SimulatorServer, ClientInitData
-
-class ClientRunner:
-    """Wrapper that executes the client under test
-    
-    The constructor arg 'client_cmd' is a path to an executable that
-    conforms to the test script definition.
-    
-    ClientRunner manages client resources (like the cache paths etc)"""
-    def __init__(self, client_cmd: str) -> None:
-        self._cmd = client_cmd
-        self._tempdir = TemporaryDirectory()
-        # TODO: cleanup tempdir
-        self.metadata_dir = os.path.join(self._tempdir.name, "metadata")
-        os.mkdir(self.metadata_dir)
-
-    def init_client(self, data: ClientInitData):
-        trusted = os.path.join(self._tempdir.name, "initial_root.json")
-        with open(trusted, "bw") as f:
-            f.write(data.trusted_root)
-        
-        cmd = self._cmd.split(" ") + ["init", "--metadata-url", data.metadata_url, "--metadata-dir", self.metadata_dir, "--trusted", trusted]
-        subprocess.run(cmd)
-
+from tuf_conformance.simulator_server import SimulatorServer
+from tuf_conformance.client_runner import ClientRunner
 
 def test_init(client: ClientRunner, server: SimulatorServer) -> None:
     """This is an example of a test method: it should likely be a e.g. a unittest.TestCase"""
