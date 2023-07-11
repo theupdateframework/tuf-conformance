@@ -3,6 +3,7 @@
 This is **very** early: there's barely anything here.
 
 Rough design:
+
 * test runner is given a specific client wrapper as argument
 * The client wrapper is an executable that implements a client-under-test CLI (to be defined)
   -- each tested client will need a wrapper. That wrapper is responsible for doing the requested TUF client
@@ -18,19 +19,35 @@ Rough design:
 
 [Original ideas document](https://docs.google.com/document/d/11bKcRoC0G8b_YnLfK0tj1RfJjrMfXGhO8Li2LA1FUUk/edit?usp=sharing)
 
-### Install
+## Install
 
 I suggest using a venv but anywhere works:
-```
+
+```bash
 pip install -e .
 ```
 
-### Run the test 
+## Run the tests
+
+The following examples demonstrate how to run the test rig against each client
+
+### python-tuf
 
 There's one half-written test wrapper for python-tuf ngclient.
 The test suite contains one half implemented test.
 
 Run that test:
+
+```bash
+tuf-conformance "python ./clients/python-tuf/python_tuf.py"
 ```
-tuf-conformance "python clients/python_tuf.py"
+
+### go-tuf-metadata
+
+Initial client based on rdimitrov/go-tuf-metadata.
+
+To run the test:
+
+```bash
+tuf-conformance "./clients/go-tuf-metadata/go-tuf-metadata"
 ```
