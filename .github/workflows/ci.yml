@@ -29,5 +29,7 @@ jobs:
           go-version: "1.20"
       - name: Install TUF conformance tool
         run: make install
-      - name: Test clients
-        run: make test-clients
+      - name: Test python-tuf
+        run: make test-python-tuf
+      - name: Test go-tuf-metadata
+        run: make test-go-tuf-metadata
