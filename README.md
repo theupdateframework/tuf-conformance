@@ -13,7 +13,8 @@ Rough design:
   against that repository. It can then modify the repository state and run the client-under-test again
 * the testrunner and web server run in the same thread: when a client-under-test process is started
   the web server request handler is manually pumped until the client-under-test finishes
-* the idea is that the test can verify 
+* the idea is that a test can run the client multiple times while modifying the repository state. After each client
+  execution the test can verify 
   1. client success/failure
   2. clients internal  metadata state (what it considers currently valid metadata) and
   3. that the requests client made were the expected ones
