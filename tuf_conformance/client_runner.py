@@ -20,19 +20,20 @@ class ClientRunner:
         self.metadata_dir = os.path.join(self._tempdir.name, "metadata")
         os.mkdir(self.metadata_dir)
 
-    def _run(self, cmd: list[str]):
+    def _run(self, cmd: list[str]) -> int:
         popen = subprocess.Popen(cmd)
         while popen.poll() is None:
             self._server.handle_request()
+        return popen.returncode
 
-    def init_client(self, data: ClientInitData):
+    def init_client(self, data: ClientInitData) -> int:
         trusted = os.path.join(self._tempdir.name, "initial_root.json")
         with open(trusted, "bw") as f:
             f.write(data.trusted_root)
         
         cmd = self._cmd.split(" ") + ["--metadata-url", data.metadata_url, "--metadata-dir", self.metadata_dir, "init", trusted]
-        self._run(cmd)
+        return self._run(cmd)
 
-    def refresh(self, data: ClientInitData):
+    def refresh(self, data: ClientInitData) -> int:
         cmd = self._cmd.split(" ") + ["--metadata-url", data.metadata_url, "--metadata-dir", self.metadata_dir, "refresh"]
-        self._run(cmd)
+        return self._run(cmd)

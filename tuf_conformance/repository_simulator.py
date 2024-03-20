@@ -39,7 +39,7 @@ from typing import Dict, Iterator, List, Optional, Tuple
 from urllib import parse
 
 import securesystemslib.hash as sslib_hash
-from securesystemslib.keys import generate_ed25519_key
+from securesystemslib.keys import generate_ecdsa_key
 from securesystemslib.signer import SSlibKey, SSlibSigner
 
 from tuf.api.metadata import (
@@ -132,7 +132,7 @@ class RepositorySimulator():
 
     @staticmethod
     def create_key() -> Tuple[Key, SSlibSigner]:
-        key = generate_ed25519_key()
+        key = generate_ecdsa_key()
         return SSlibKey.from_securesystemslib_key(key), SSlibSigner(key)
 
     def add_signer(self, role: str, signer: SSlibSigner) -> None:
