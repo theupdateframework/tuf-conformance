@@ -22,14 +22,14 @@ def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -
 
     # Run the test: step 1:  initialize client
     # TODO verify success?
-    client.init_client(init_data)
+    assert client.init_client(init_data) == 0
 
     # TODO verify that results are correct, see e.g. 
     # * repo.metadata_statistics: no requests expected
     # * client metadat cache should contain root v1
 
     # Run the test: step 1: Refresh
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
 
     # Verify that expected requests were made
     assert repo.metadata_statistics == [('root', 1), ('root', 2), ('timestamp', None), ('snapshot', 1), ('targets', 1)]

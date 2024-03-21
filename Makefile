@@ -13,9 +13,13 @@
 # tuf-conformance section
 #########################
 
-.PHONY: install
-install:
-	pip install -e .
+env/pyvenv.cfg: pyproject.toml
+	python3 -m venv env
+	./env/bin/python -m pip install --upgrade pip
+	./env/bin/python -m pip install -e .
+
+.PHONY: dev
+dev: env/pyvenv.cfg
 
 .PHONY: test-all
 test-all: test-python-tuf test-go-tuf-metadata
@@ -25,16 +29,16 @@ test-all: test-python-tuf test-go-tuf-metadata
 #########################
 
 PHONY: test-python-tuf
-test-python-tuf:
-	tuf-conformance "python ./clients/python-tuf/python_tuf.py"
+test-python-tuf: dev
+	./env/bin/tuf-conformance "./env/bin/python ./clients/python-tuf/python_tuf.py"
 
 #########################
 # go-tuf-metadata section
 #########################
 
 PHONY: test-go-tuf-metadata
-test-go-tuf-metadata: build-go-tuf-metadata
-	tuf-conformance "./clients/go-tuf-metadata/go-tuf-metadata"
+test-go-tuf-metadata: dev build-go-tuf-metadata
+	./env/bin/tuf-conformance "./clients/go-tuf-metadata/go-tuf-metadata"
 
 PHONY: build-go-tuf-metadata
 build-go-tuf-metadata:

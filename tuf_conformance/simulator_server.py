@@ -55,7 +55,7 @@ class SimulatorServer(ThreadingHTTPServer):
 
     def get_client_init_data(self, repo: str) -> ClientInitData:
         return ClientInitData(
-            f"http://{self.server_name}:{self.server_port}/{repo}/metadata/",
+            f"http://{self.server_address[0]}:{self.server_address[1]}/{repo}/metadata/",
             self.repos[repo].fetch_metadata("root", 1)
         )
         
