@@ -4,10 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tuf-conformance"
-dependencies = [
-    "securesystemslib[crypto, pynacl]",
-    "tuf",
-]
+dependencies = ["securesystemslib[crypto, pynacl]", "tuf", "pytest"]
 dynamic = ["version"]
 
 [project.scripts]
