@@ -1,13 +1,7 @@
 # Test runner
 
-# This is just a very quick hack: we may want to use an actual unit test
-# system to build this eventually 
-
-import argparse
 import json
 import os
-
-import pytest  # type: ignore
 
 from tuf_conformance.repository_simulator import RepositorySimulator
 from tuf_conformance.simulator_server import SimulatorServer

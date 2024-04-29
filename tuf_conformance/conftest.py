@@ -5,7 +5,7 @@ from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import SimulatorServer
 
 def pytest_addoption(parser) -> None:
-    """Add `--entrypoint` and `--skip-signing` flags to CLI."""
+    """Add `--entrypoint` flag to CLI."""
     parser.addoption(
         "--entrypoint",
         action="store",
@@ -19,7 +19,9 @@ def server():
     """
     Parametrize each test with the server under test.
     """
-    return SimulatorServer(9001)
+    server = SimulatorServer()
+    yield server
+    server.server_close()
 
 @pytest.fixture
 def client(pytestconfig, server):
