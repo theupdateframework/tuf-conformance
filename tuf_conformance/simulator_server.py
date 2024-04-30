@@ -1,3 +1,4 @@
+from logging import warn, warning
 from typing import Dict, List
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -45,8 +46,8 @@ class _ReqHandler(BaseHTTPRequestHandler):
 
 class SimulatorServer(ThreadingHTTPServer):
     """Web server to serve a number of repositories"""
-    def __init__(self, port: int):
-        super().__init__(("127.0.0.1", port), _ReqHandler)
+    def __init__(self):
+        super().__init__(("127.0.0.1", 0), _ReqHandler)
         self.timeout = 0
 
         # key is test name, value is the repository sim for that test

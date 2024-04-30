@@ -30,7 +30,7 @@ test-all: test-python-tuf test-go-tuf-metadata
 
 PHONY: test-python-tuf
 test-python-tuf: dev
-	./env/bin/tuf-conformance "./env/bin/python ./clients/python-tuf/python_tuf.py"
+	./env/bin/pytest tuf_conformance --entrypoint "./env/bin/python ./clients/python-tuf/python_tuf.py" -vv
 
 #########################
 # go-tuf-metadata section
@@ -38,7 +38,7 @@ test-python-tuf: dev
 
 PHONY: test-go-tuf-metadata
 test-go-tuf-metadata: dev build-go-tuf-metadata
-	./env/bin/tuf-conformance "./clients/go-tuf-metadata/go-tuf-metadata"
+	./env/bin/pytest tuf_conformance --entrypoint "./clients/go-tuf-metadata/go-tuf-metadata"
 
 PHONY: build-go-tuf-metadata
 build-go-tuf-metadata:
