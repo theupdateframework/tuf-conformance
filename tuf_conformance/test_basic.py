@@ -375,13 +375,11 @@ def test_downloaded_file_is_correct2(client: ClientRunner, server: SimulatorServ
     repo = RepositorySimulator()
     server.repos[name] = repo
     init_data = server.get_client_init_data(name)
-
     assert client.init_client(init_data) == 0
-
     server_process_handler = utils.TestServerProcess(log=utils.logger)
 
-    file_contents = b"junk data"
-    file_contents_str = "junk data"
+    file_contents = b"legitimate data"
+    file_contents_str = "legitimate data"
     file_length = len(file_contents)
     with tempfile.TemporaryDirectory(dir=os.getcwd()) as temp_dir:
         target_base_name = "target_file.txt"
@@ -400,30 +398,23 @@ def test_downloaded_file_is_correct2(client: ClientRunner, server: SimulatorServ
         repo.targets.version += 1
         repo.add_target_with_length("targets", target.content,
                                     target.path, len(target.content))
-
         repo.update_snapshot()
 
-        print("temp_dir: ", temp_dir)
-
-        if os.path.isfile(target_file_path):
-            print("FILE EXISTS: ", target_file_path)
-        else:
-            print("FILE DOES NOT EXIST")
+        # Sanity check
+        assert os.path.isfile(target_file_path)
 
         url_prefix = (
             f"http://{utils.TEST_HOST_ADDRESS}:"
             f"{server_process_handler.port!s}/{os.path.basename(temp_dir)}"
         )
-        url = f"{url_prefix}/{os.path.basename(temp_dir)}/{target_base_name}"
-        print("url_prefix::::::::::::", url_prefix)
+        #url = f"{url_prefix}/{os.path.basename(temp_dir)}/{target_base_name}"
 
         target_file2 = client.download_target(init_data,
                                               target_base_name,
                                               target_base_url=url_prefix)
     with open(client.get_last_downloaded_target(), "r") as last_download_file:
         data_of_last_downloaded_file = last_download_file.read()
-        print(data_of_last_downloaded_file)
-        assert data_of_last_downloaded_file == "junk data"
+        assert data_of_last_downloaded_file == file_contents_str
 
 
     ## Now do the following:
@@ -433,39 +424,33 @@ def test_downloaded_file_is_correct2(client: ClientRunner, server: SimulatorServ
     ## 4: Verify that the client has not downloaded the new file.
     ## The repo is not adding the file, so this imitates an attacher
     ## that attempts to circumvent the repository.
-    file_contents = b"junk data2"
-    file_contents_str = "junk data2"
+    malicious_file_contents = b"junk data2"
+    malicious_file_contents_str = "junk data2"
     file_length = len(file_contents)
     with tempfile.TemporaryDirectory(dir=os.getcwd()) as temp_dir:
         target_base_name = "target_file.txt"
-        print("created dir: ", os.path.basename(temp_dir))
         target_file_path = os.path.join(temp_dir, target_base_name)
         target_file = open(target_file_path, 'w')
-        target_file.write(file_contents_str)
+        target_file.write(malicious_file_contents_str)
         target_file.close()
 
         target = TestTarget()
         target.path = target_base_name
-        target.content = file_contents
+        target.content = malicious_file_contents
         target.encoded_path = target_base_name
 
         # Update target version target to repository
         repo.targets.version += 1
         repo.update_snapshot()
 
-        print("temp_dir: ", temp_dir)
-
-        if os.path.isfile(target_file_path):
-            print("FILE EXISTS: ", target_file_path)
-        else:
-            print("FILE DOES NOT EXIST")
+        # Sanity check
+        assert os.path.isfile(target_file_path)
 
         url_prefix = (
             f"http://{utils.TEST_HOST_ADDRESS}:"
             f"{server_process_handler.port!s}/{os.path.basename(temp_dir)}"
         )
-        url = f"{url_prefix}/{os.path.basename(temp_dir)}/{target_base_name}"
-        print("url_prefix::::::::::::", url_prefix)
+        #url = f"{url_prefix}/{os.path.basename(temp_dir)}/{target_base_name}"
 
         target_file2 = client.download_target(init_data,
                                               target_base_name,
@@ -473,5 +458,5 @@ def test_downloaded_file_is_correct2(client: ClientRunner, server: SimulatorServ
     with open(client.get_last_downloaded_target(), "r") as last_download_file:
         data_of_last_downloaded_file = last_download_file.read()
         print(data_of_last_downloaded_file)
-        assert data_of_last_downloaded_file == "junk data"
+        assert data_of_last_downloaded_file == file_contents_str
     
