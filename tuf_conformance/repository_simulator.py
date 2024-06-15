@@ -290,6 +290,22 @@ class RepositorySimulator():
 
         self.timestamp.version += 1
 
+    def downgrade_timestamp(self) -> None:
+        """Update timestamp and assign snapshot version to snapshot_meta
+        version.
+        """
+
+        hashes = None
+        length = None
+        if self.compute_metafile_hashes_length:
+            hashes, length = self._compute_hashes_and_length(Snapshot.type)
+
+        self.timestamp.snapshot_meta = MetaFile(
+            self.snapshot.version, length, hashes
+        )
+
+        self.timestamp.version -= 1
+
     def update_snapshot(self) -> None:
         """Update snapshot, assign targets versions and update timestamp."""
         for role, delegate in self.all_targets():
@@ -303,6 +319,22 @@ class RepositorySimulator():
             )
 
         self.snapshot.version += 1
+        self.update_timestamp()
+
+    def downgrade_snapshot(self) -> None:
+        """Update snapshot, assign targets versions and update timestamp.
+           This is malicious behavior"""
+        for role, delegate in self.all_targets():
+            hashes = None
+            length = None
+            if self.compute_metafile_hashes_length:
+                hashes, length = self._compute_hashes_and_length(role)
+
+            self.snapshot.meta[f"{role}.json"] = MetaFile(
+                delegate.version, length, hashes
+            )
+
+        self.snapshot.version -= 1
         self.update_timestamp()
 
     def _get_delegator(self, delegator_name: str) -> Targets:
@@ -319,6 +351,18 @@ class RepositorySimulator():
         target = TargetFile.from_data(path, data, ["sha256"])
         targets.targets[path] = target
         self.artifacts[path] = Artifact(data, target)
+        print(targets.to_dict())
+
+    def add_target_with_length(self, role: str, data: bytes, path: str, length: int) -> None:
+        """Create a target from data and add it to the target_files.
+           The hash value can be invalid compared to the length"""
+        targets = self._get_delegator(role)
+
+        target = TargetFile.from_data(path, data, ["sha256"])
+        target.length = length
+        targets.targets[path] = target
+        self.artifacts[path] = Artifact(data, target)
+        print(targets.to_dict())
 
     def add_delegation(
         self, delegator_name: str, role: DelegatedRole, targets: Targets
