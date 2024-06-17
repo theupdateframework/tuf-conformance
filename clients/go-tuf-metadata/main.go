@@ -12,9 +12,12 @@
 package main
 
 import (
+	"os"
+	"fmt"
 	tufclient "github.com/jku/tuf-conformance/clients/go-tuf-metadata/cmd"
 )
 
 func main() {
+	fmt.Println(len(os.Args), os.Args)
 	tufclient.Execute()
 }

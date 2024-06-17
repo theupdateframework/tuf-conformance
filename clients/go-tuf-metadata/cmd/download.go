@@ -25,15 +25,27 @@ import (
 var downloadCmd = &cobra.Command{
 	Use:   "download",
 	Short: "Downloads a target file",
-	Args:  cobra.ExactArgs(1),
+	//Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if FlagMetadataURL == "" || FlagMetadataDir == "" {
+		if FlagMetadataURL == "" || FlagMetadataDir == "" || FlagTargetUrl == "" {
 			fmt.Println("Error: required flag(s): \"metadata-url\" or \"metadata-dir\" not set")
+			os.Exit(1)
+		}
+		targetInfoName, err := cmd.Flags().GetString("target-url")
+		if err != nil {
+			os.Exit(1)
+		}
+		targetBaseUrl, err := cmd.Flags().GetString("target-base-url")
+		if err != nil {
+			os.Exit(1)
+		}
+		targetDownloadDir, err := cmd.Flags().GetString("target-dir")
+		if err != nil {
 			os.Exit(1)
 		}
 		// refresh metadata and try to download the desired target
 		// first arg means the name of the target file to download
-		return RefreshAndDownloadCmd(args[0], false)
+		return RefreshAndDownloadCmd(targetInfoName, targetBaseUrl, targetDownloadDir, false)
 	},
 }
 
@@ -41,7 +53,7 @@ func init() {
 	rootCmd.AddCommand(downloadCmd)
 }
 
-func RefreshAndDownloadCmd(targetName string, refreshOnly bool) error {
+func RefreshAndDownloadCmd(targetName, targetBaseUrl, targetDownloadDir string, refreshOnly bool) error {
 	// handle verbosity level
 	if FlagVerbosity {
 		log.SetLevel(log.DebugLevel)
@@ -60,7 +72,7 @@ func RefreshAndDownloadCmd(targetName string, refreshOnly bool) error {
 	}
 	cfg.LocalMetadataDir = FlagMetadataDir
 	cfg.LocalTargetsDir = FlagMetadataDir // TODO: perhaps fix that once we progress
-	cfg.RemoteTargetsURL = FlagMetadataURL
+	cfg.RemoteTargetsURL = targetBaseUrl
 	cfg.PrefixTargetsWithHash = false // change if needed to be compliant with python-tuf
 
 	// create an Updater instance
@@ -99,7 +111,7 @@ func RefreshAndDownloadCmd(targetName string, refreshOnly bool) error {
 	}
 
 	// target is not present locally, so let's try to download it
-	path, _, err = up.DownloadTarget(targetInfo, "", "")
+	path, _, err = up.DownloadTarget(targetInfo, filepath.Join(targetDownloadDir, targetName), targetBaseUrl)
 	if err != nil {
 		return fmt.Errorf("failed to download target file %s - %w", targetName, err)
 	}

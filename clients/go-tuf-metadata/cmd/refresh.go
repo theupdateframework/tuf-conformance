@@ -28,7 +28,7 @@ var refreshCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		// do a refresh only
-		return RefreshAndDownloadCmd("", true)
+		return RefreshAndDownloadCmd("", "", "", true)
 	},
 }
 

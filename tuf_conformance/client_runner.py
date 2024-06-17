@@ -22,6 +22,7 @@ class ClientRunner:
         self._cmd = client_cmd
         self._tempdir = TemporaryDirectory()
         self._target_dir = TemporaryDirectory()
+        self._remote_target_dir = TemporaryDirectory(dir=os.getcwd())
         # TODO: cleanup tempdir
         self.metadata_dir = os.path.join(self._tempdir.name, "metadata")
         os.mkdir(self.metadata_dir)
@@ -32,6 +33,8 @@ class ClientRunner:
         onlyfiles = [f for f in listdir(self._target_dir.name) if isfile(join(self._target_dir.name, f))]
         print("OF: ", onlyfiles)
         list_of_files = glob.glob(self._target_dir.name+"/*")
+        if len(list_of_files) == 0:
+            return ""
         latest_file = max(list_of_files, key=os.path.getctime)
         print("latest_file: ", latest_file)
         return latest_file
@@ -59,7 +62,7 @@ class ClientRunner:
                                       "--metadata-dir", self.metadata_dir,
                                       "--target-url",target_url,
                                       "--target-dir", self._target_dir.name, 
-                                      "--target_base_url", target_base_url,
+                                      "--target-base-url", target_base_url,
                                       "download"]
         return self._run(cmd)
 

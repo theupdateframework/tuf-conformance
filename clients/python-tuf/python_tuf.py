@@ -65,7 +65,7 @@ def main() -> None:
     parser.add_argument("--metadata-dir", required=True)
     parser.add_argument("--target-url", required=False)
     parser.add_argument("--target-dir", required=False)
-    parser.add_argument("--target_base_url", required=False)
+    parser.add_argument("--target-base-url", required=False)
 
     sub_command = parser.add_subparsers(dest="sub_command")
     init_parser = sub_command.add_parser(
