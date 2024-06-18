@@ -27,6 +27,35 @@ class TestTarget:
     content: bytes
     encoded_path: str
 
+def test_new_targets_hash_mismatch(client: ClientRunner, server: SimulatorServer) -> None:
+    # Check against snapshot role's targets version
+    name = "test_new_targets_hash_mismatch"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+
+    repo.compute_metafile_hashes_length = True
+    repo.update_snapshot()
+    client.refresh(init_data)
+
+    # Modify targets contents without updating
+    # snapshot's targets hashes
+    repo.targets.version += 1
+    repo.snapshot.meta[
+        "targets.json"
+    ].version = repo.targets.version
+    repo.snapshot.version += 1
+    repo.update_timestamp()
+
+    client.refresh(init_data)
+    client._assert_version_equals(Snapshot.type, 3)
+    client._assert_version_equals(Targets.type, 1)
+
 def test_new_targets_version_mismatch(client: ClientRunner, server: SimulatorServer) -> None:
     # Check against snapshot role's targets version
     name = "test_new_targets_version_mismatch"
