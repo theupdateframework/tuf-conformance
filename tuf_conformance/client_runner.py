@@ -53,8 +53,11 @@ class ClientRunner:
         cmd = self._cmd.split(" ") + ["--metadata-url", data.metadata_url, "--metadata-dir", self.metadata_dir, "init", trusted]
         return self._run(cmd)
 
-    def refresh(self, data: ClientInitData) -> int:
-        cmd = self._cmd.split(" ") + ["--metadata-url", data.metadata_url, "--metadata-dir", self.metadata_dir, "refresh"]
+    def refresh(self, data: ClientInitData, days_in_future="0") -> int:
+        cmd = self._cmd.split(" ") + ["--metadata-url", data.metadata_url,
+                                      "--metadata-dir", self.metadata_dir,
+                                      "--days-in-future", days_in_future,
+                                      "refresh"]
         return self._run(cmd)
 
     def download_target(self, data: ClientInitData, target_url: str, target_base_url: str) -> int:

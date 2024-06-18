@@ -12,7 +12,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -44,9 +43,9 @@ func Execute() {
 	rootCmd.PersistentFlags().StringVar(&FlagTargetDir, "target-dir", "", "directory to save target files")
 	rootCmd.PersistentFlags().StringVar(&FlagTargetUrl, "target-url", "", "url for target file")
 	rootCmd.PersistentFlags().StringVar(&FlagTargetBaseUrl, "target-base-url", "", "base url for target file")
+	rootCmd.PersistentFlags().StringVar(&FlagDaysInFuture, "days-in-future", "0", "for refresh only. For setting the time.Now() at a time in the future")
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println("HEEERE")
 		os.Exit(1)
 	}
 }

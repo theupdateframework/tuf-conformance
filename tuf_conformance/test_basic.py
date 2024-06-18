@@ -27,6 +27,52 @@ class TestTarget:
     content: bytes
     encoded_path: str
 
+def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None:
+    """Verifies that expired local timestamp/snapshot can be used for
+    updating from remote.
+
+    The updates and verifications are performed with the following timing:
+     - Timestamp v1 expiry set to day 7
+     - First updater refresh performed on day 0
+     - Repository bumps snapshot and targets to v2 on day 0
+     - Timestamp v2 expiry set to day 21
+     - Second updater refresh performed on day 18,
+       it is successful and timestamp/snaphot final versions are v2"""
+    name = "test_expired_metadata"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+
+    now = datetime.datetime.now(timezone.utc)
+    repo.timestamp.expires = now + datetime.timedelta(days=7)
+
+    client.refresh(init_data)
+
+    repo.targets.version += 1
+    repo.update_snapshot()
+    repo.timestamp.expires = now + datetime.timedelta(days=21)
+
+    # Mocking time so that local timestamp has expired
+    # but the new timestamp has not
+    #mock_time.now.return_value = datetime.datetime.now(
+    #    timezone.utc
+    #) + datetime.timedelta(days=18)
+    #with patch("datetime.datetime", mock_time):
+    client.refresh(init_data, days_in_future="18")
+
+    # Assert that the final version of timestamp/snapshot is version 2
+    # which means a successful refresh is performed
+    # with expired local metadata
+    
+    for role in ["timestamp", "snapshot", "targets"]:
+        md = Metadata.from_file(
+            os.path.join(client.metadata_dir, f"{role}.json")
+        )
+        assert md.signed.version == 2
+
 def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -> None:
     """This is an example of a test method: it should likely be a e.g. a unittest.TestCase"""
 

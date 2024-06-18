@@ -9,6 +9,7 @@ import shutil
 import os
 import sys
 import tempfile
+import datetime
 
 from tuf.ngclient import Updater, RequestsFetcher, UpdaterConfig
 
@@ -19,10 +20,14 @@ def init(metadata_url: str, metadata_dir: str, trusted_root: str) -> None:
     shutil.copyfile(trusted_root, os.path.join(metadata_dir, "root.json"))
     print(f"python-tuf test client: Initialized repository in {metadata_dir}")
 
-def refresh(metadata_url: str, metadata_dir: str) -> None:
+def refresh(metadata_url: str, metadata_dir: str, days_in_future: str) -> None:
     """Refresh local metadata from remote"""
 
     updater = Updater(metadata_dir, metadata_url)
+    if days_in_future != "0":
+        day_int = int(days_in_future)
+        day_in_future = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=day_int) 
+        updater._trusted_set.reference_time = day_in_future
     updater.refresh()
     print(f"python-tuf test client: Refreshed metadata in {metadata_dir}")
 
@@ -66,6 +71,7 @@ def main() -> None:
     parser.add_argument("--target-url", required=False)
     parser.add_argument("--target-dir", required=False)
     parser.add_argument("--target-base-url", required=False)
+    parser.add_argument("--days-in-future", required=False, default="0")
 
     sub_command = parser.add_subparsers(dest="sub_command")
     init_parser = sub_command.add_parser(
@@ -90,7 +96,9 @@ def main() -> None:
     if command_args.sub_command == "init":
         init(command_args.metadata_url, command_args.metadata_dir, command_args.trusted_root)
     elif command_args.sub_command == "refresh":
-        refresh(command_args.metadata_url, command_args.metadata_dir)
+        refresh(command_args.metadata_url,
+                command_args.metadata_dir,
+                command_args.days_in_future)
     elif command_args.sub_command == "download":
         download_target(command_args.metadata_url,
                         command_args.metadata_dir,
