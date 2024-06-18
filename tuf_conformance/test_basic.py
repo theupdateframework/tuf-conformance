@@ -27,6 +27,22 @@ class TestTarget:
     content: bytes
     encoded_path: str
 
+def test_new_targets_version_mismatch(client: ClientRunner, server: SimulatorServer) -> None:
+    # Check against snapshot role's targets version
+    name = "test_new_targets_version_mismatch"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+
+    repo.targets.version += 1
+    client.refresh(init_data)
+    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+
 def test_new_targets_expired(client: ClientRunner, server: SimulatorServer) -> None:
     # Check against snapshot role's targets version
     name = "test_new_targets_expired"
