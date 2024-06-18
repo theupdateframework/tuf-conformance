@@ -27,6 +27,31 @@ class TestTarget:
     content: bytes
     encoded_path: str
 
+def test_new_targets_expired(client: ClientRunner, server: SimulatorServer) -> None:
+    # Check against snapshot role's targets version
+    name = "test_new_targets_expired"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+
+    repo.targets.expires = datetime.datetime.now(timezone.utc).replace(
+        microsecond=0
+    ) - datetime.timedelta(days=5)
+    repo.update_snapshot()
+
+    assert client.init_client(init_data) == 0
+
+    # Check that the client still has the correct metadata files
+    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+
+    # Client should not bump targets version, because it has expired
+    assert client._assert_version_equals(Targets.type, 1)
+
 def tttest_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None:
     """Verifies that expired local timestamp/snapshot can be used for
     updating from remote.

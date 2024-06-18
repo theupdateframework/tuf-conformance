@@ -83,12 +83,3 @@ class ClientRunner:
         local_metadata_files = sorted(os.listdir(self.metadata_dir))
         print("expected_files: ", expected_files, "local_metadata_files: ", local_metadata_files)
         return all(x in local_metadata_files for x in expected_files)
-        #for expected in expected_files:
-        #    for local in local_metadata_files:
-        #        print(type(expected), type(local))
-        #        if expected == local:
-        #            print("continuing")
-        #            continue
-        #    return False
-        #return True
-        #return local_metadata_files == expected_files
