@@ -73,6 +73,40 @@ def tttest_expired_metadata(client: ClientRunner, server: SimulatorServer) -> No
         )
         assert md.signed.version == 2
 
+def test_snapshot_rollback_with_local_snapshot_hash_mismatch(client: ClientRunner, server: SimulatorServer) -> None:
+    # Test triggering snapshot rollback check on a newly downloaded snapshot
+    # when the local snapshot is loaded even when there is a hash mismatch
+    # with timestamp.snapshot_meta.
+    name = "test_snapshot_rollback_with_local_snapshot_hash_mismatch"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+
+    # Initialize all metadata and assign targets version higher than 1.
+    repo.targets.version = 2
+    repo.update_snapshot()
+    client.refresh(init_data)
+    assert client._assert_version_equals(Targets.type, 2)
+
+    # By raising this flag on timestamp update the simulator would:
+    # 1) compute the hash of the new modified version of snapshot
+    # 2) assign the hash to timestamp.snapshot_meta
+    # The purpose is to create a hash mismatch between timestamp.meta and
+    # the local snapshot, but to have hash match between timestamp.meta and
+    # the next snapshot version.
+    repo.compute_metafile_hashes_length = True
+
+    # The new targets must have a lower version than the local trusted one.
+    repo.targets.version = 3
+    repo.update_snapshot()
+
+    # Client refresh should fail because there is a hash mismatch.
+    assert client.refresh(init_data) == 1
+    
+
 def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -> None:
     """This is an example of a test method: it should likely be a e.g. a unittest.TestCase"""
 
