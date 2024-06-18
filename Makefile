@@ -22,7 +22,7 @@ env/pyvenv.cfg: pyproject.toml
 dev: env/pyvenv.cfg
 
 .PHONY: test-all
-test-all: test-python-tuf test-go-tuf-metadata
+test-all: test-python-tuf test-go-tuf
 
 #########################
 # python-tuf section
@@ -33,13 +33,13 @@ test-python-tuf: dev
 	./env/bin/pytest tuf_conformance --entrypoint "./env/bin/python ./clients/python-tuf/python_tuf.py" -vv
 
 #########################
-# go-tuf-metadata section
+# go-tuf section
 #########################
 
-PHONY: test-go-tuf-metadata
-test-go-tuf-metadata: dev build-go-tuf-metadata
-	./env/bin/pytest tuf_conformance --entrypoint "./clients/go-tuf-metadata/go-tuf-metadata"
+PHONY: test-go-tuf
+test-go-tuf: dev build-go-tuf
+	./env/bin/pytest tuf_conformance --entrypoint "./clients/go-tuf/go-tuf"
 
-PHONY: build-go-tuf-metadata
-build-go-tuf-metadata:
-	cd ./clients/go-tuf-metadata && go build .
+PHONY: build-go-tuf
+build-go-tuf:
+	cd ./clients/go-tuf && go build .
