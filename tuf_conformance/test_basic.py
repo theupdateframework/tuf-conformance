@@ -27,8 +27,33 @@ class TestTarget:
     content: bytes
     encoded_path: str
 
+def test_new_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> None:
+    # Check for a freeze attack
+    name = "test_new_snapshot_expired"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+
+    # Update the timestamp but the expiration has passed.
+    repo.update_timestamp()
+    repo.snapshot.expires = datetime.datetime.now(timezone.utc).replace(
+        microsecond=0
+    ) - datetime.timedelta(days=5)
+    repo.update_snapshot()
+
+    client.refresh(init_data)
+
+    # Check that the client still has the correct metadata files
+    assert client._assert_files_exist([Root.type, Timestamp.type])
+    assert client._assert_version_equals(Snapshot.type, 1)
+
 def test_new_targets_hash_mismatch(client: ClientRunner, server: SimulatorServer) -> None:
-    # Check against snapshot role's targets version
+    # Check against snapshot role's targets hashes
     name = "test_new_targets_hash_mismatch"
 
     # initialize a simulator with repository content we need
