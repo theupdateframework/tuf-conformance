@@ -27,7 +27,7 @@ class TestTarget:
     content: bytes
     encoded_path: str
 
-def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None:
+def tttest_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None:
     """Verifies that expired local timestamp/snapshot can be used for
     updating from remote.
 

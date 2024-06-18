@@ -23,6 +23,7 @@ var FlagMetadataDir string
 var FlagTargetDir string
 var FlagTargetUrl string
 var FlagTargetBaseUrl string
+var FlagDaysInFuture string
 
 var rootCmd = &cobra.Command{
 	Use:   "tuf-client",

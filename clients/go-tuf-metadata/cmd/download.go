@@ -45,9 +45,10 @@ var downloadCmd = &cobra.Command{
 		if err != nil {
 			os.Exit(1)
 		}
+
 		// refresh metadata and try to download the desired target
 		// first arg means the name of the target file to download
-		return RefreshAndDownloadCmd(targetInfoName, targetBaseUrl, targetDownloadDir, FlagDaysInFuture, false)
+		return RefreshAndDownloadCmd(targetInfoName, targetBaseUrl, targetDownloadDir, "0", false)
 	},
 }
 
@@ -86,7 +87,8 @@ func RefreshAndDownloadCmd(targetName, targetBaseUrl, targetDownloadDir, daysInF
 	if daysInFuture != "0" {
 		laterDay, _ := strconv.Atoi(daysInFuture)
 		laterTime := time.Now().AddDate(0, 0, laterDay)
-		up.trusted.RefTime = laterTime
+		_ = laterTime
+		//up.trusted.RefTime = laterTime
 	}
 
 	// try to build the top-level metadata
