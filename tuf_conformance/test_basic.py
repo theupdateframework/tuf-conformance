@@ -635,3 +635,29 @@ def test_multiple_changes_to_target(client: ClientRunner, server: SimulatorServe
         with open(client.get_last_downloaded_target(), "r") as last_download_file:
             data_of_last_downloaded_file = last_download_file.read()
             assert data_of_last_downloaded_file == new_legitimate_file_contents
+
+def test_timestamp_eq_versions_check(client: ClientRunner, server: SimulatorServer) -> None:
+    # Test that a modified timestamp with different content, but the same
+    # version doesn't replace the valid locally stored one.
+    name = "test_timestamp_eq_versions_check"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+
+    # Make a successful update of valid metadata which stores it in cache
+    client.refresh(init_data)
+    initial_timestamp_meta_ver = repo.timestamp.snapshot_meta.version
+
+    # Change timestamp without bumping its version in order to test if a new
+    # timestamp with the same version will be persisted.
+    repo.timestamp.snapshot_meta.version = 100
+    client.refresh(init_data)
+
+    # If the local timestamp md file has the same snapshot_meta.version as
+    # the initial one, then the new modified timestamp has not been stored.
+    timestamp_path = os.path.join(client.metadata_dir, "timestamp.json")
+    timestamp: Metadata[Timestamp] = Metadata.from_file(timestamp_path)
+    assert initial_timestamp_meta_ver == timestamp.signed.snapshot_meta.version
