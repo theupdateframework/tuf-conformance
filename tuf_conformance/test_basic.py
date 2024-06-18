@@ -122,7 +122,7 @@ def test_new_targets_expired(client: ClientRunner, server: SimulatorServer) -> N
     # Client should not bump targets version, because it has expired
     assert client._assert_version_equals(Targets.type, 1)
 
-def tttest_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None:
+def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None:
     """Verifies that expired local timestamp/snapshot can be used for
     updating from remote.
 

@@ -87,8 +87,7 @@ func RefreshAndDownloadCmd(targetName, targetBaseUrl, targetDownloadDir, daysInF
 	if daysInFuture != "0" {
 		laterDay, _ := strconv.Atoi(daysInFuture)
 		laterTime := time.Now().AddDate(0, 0, laterDay)
-		_ = laterTime
-		//up.trusted.RefTime = laterTime
+		up.UnsafeSetRefTime(laterTime)
 	}
 
 	// try to build the top-level metadata
