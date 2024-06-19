@@ -31,8 +31,12 @@ var refreshCmd = &cobra.Command{
 		if err != nil {
 			os.Exit(1)
 		}
+		maxRootRotations, err := cmd.Flags().GetInt("max-root-rotations")
+		if err != nil {
+			os.Exit(1)
+		}
 		// do a refresh only
-		return RefreshAndDownloadCmd("", "", "", daysInFuture, true)
+		return RefreshAndDownloadCmd("", "", "", daysInFuture, maxRootRotations, true)
 	},
 }
 

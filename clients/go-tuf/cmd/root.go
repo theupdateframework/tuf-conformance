@@ -25,6 +25,7 @@ var FlagTargetDir string
 var FlagTargetUrl string
 var FlagTargetBaseUrl string
 var FlagDaysInFuture string
+var MaxRootRotations int
 
 var rootCmd = &cobra.Command{
 	Use:   "tuf-client",
@@ -46,6 +47,7 @@ func Execute() {
 	rootCmd.PersistentFlags().StringVar(&FlagTargetUrl, "target-url", "", "url for target file")
 	rootCmd.PersistentFlags().StringVar(&FlagTargetBaseUrl, "target-base-url", "", "base url for target file")
 	rootCmd.PersistentFlags().StringVar(&FlagDaysInFuture, "days-in-future", "0", "for refresh only. For setting the time.Now() at a time in the future")
+	rootCmd.PersistentFlags().IntVar(&MaxRootRotations, "max-root-rotations", 32, "number of max allowed root rotations")
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println("ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR", err)

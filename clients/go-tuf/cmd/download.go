@@ -48,7 +48,7 @@ var downloadCmd = &cobra.Command{
 
 		// refresh metadata and try to download the desired target
 		// first arg means the name of the target file to download
-		return RefreshAndDownloadCmd(targetInfoName, targetBaseUrl, targetDownloadDir, "0", false)
+		return RefreshAndDownloadCmd(targetInfoName, targetBaseUrl, targetDownloadDir, "0", 32, false)
 	},
 }
 
@@ -56,7 +56,11 @@ func init() {
 	rootCmd.AddCommand(downloadCmd)
 }
 
-func RefreshAndDownloadCmd(targetName, targetBaseUrl, targetDownloadDir, daysInFuture string, refreshOnly bool) error {
+func RefreshAndDownloadCmd(targetName,
+						   targetBaseUrl,
+						   targetDownloadDir,
+						   daysInFuture string, 
+						   maxRootRotations int, refreshOnly bool) error {
 	// handle verbosity level
 	if FlagVerbosity {
 		log.SetLevel(log.DebugLevel)
@@ -77,6 +81,7 @@ func RefreshAndDownloadCmd(targetName, targetBaseUrl, targetDownloadDir, daysInF
 	cfg.LocalTargetsDir = FlagMetadataDir // TODO: perhaps fix that once we progress
 	cfg.RemoteTargetsURL = targetBaseUrl
 	cfg.PrefixTargetsWithHash = false // change if needed to be compliant with python-tuf
+	cfg.MaxRootRotations = int64(maxRootRotations)
 
 	// create an Updater instance
 	up, err := updater.New(cfg)

@@ -26,6 +26,7 @@ class ClientRunner:
         # TODO: cleanup tempdir
         self.metadata_dir = os.path.join(self._tempdir.name, "metadata")
         os.mkdir(self.metadata_dir)
+        self.max_root_rotations = 32
 
     def get_last_downloaded_target(self) -> str:
         onlyfiles = [f for f in listdir(self._tempdir.name) if isfile(join(self._tempdir.name, f))]
@@ -57,6 +58,7 @@ class ClientRunner:
         cmd = self._cmd.split(" ") + ["--metadata-url", data.metadata_url,
                                       "--metadata-dir", self.metadata_dir,
                                       "--days-in-future", days_in_future,
+                                      "--max-root-rotations", str(self.max_root_rotations),
                                       "refresh"]
         return self._run(cmd)
 

@@ -21,11 +21,43 @@ from tuf.api.metadata import (
 
 from tuf.ngclient import RequestsFetcher
 
-
 class TestTarget:
     path: str
     content: bytes
     encoded_path: str
+
+def test_max_root_rotations(client: ClientRunner, server: SimulatorServer) -> None:
+    # Root must stop looking for new versions after Y number of
+    # intermediate files were downloaded.
+
+    name = "test_max_root_rotations"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+
+    updater_max_root_rotations = 3
+    client.max_root_rotations = updater_max_root_rotations
+    assert client.max_root_rotations == 3
+
+    while repo.root.version < updater_max_root_rotations+10:
+        repo.root.version += 1
+        repo.publish_root()
+    md_root = Metadata.from_file(
+        os.path.join(client.metadata_dir, "root.json")
+    )
+    initial_root_version = md_root.signed.version
+    client.refresh(init_data)
+
+    # Assert that root version was increased with no more
+    # than 'max_root_rotations'
+    assert client._assert_version_equals(
+        Root.type, initial_root_version+3
+    )
 
 def test_new_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> None:
     # Check for a freeze attack

@@ -20,10 +20,17 @@ def init(metadata_url: str, metadata_dir: str, trusted_root: str) -> None:
     shutil.copyfile(trusted_root, os.path.join(metadata_dir, "root.json"))
     print(f"python-tuf test client: Initialized repository in {metadata_dir}")
 
-def refresh(metadata_url: str, metadata_dir: str, days_in_future: str) -> None:
+def refresh(metadata_url: str,
+            metadata_dir: str,
+            days_in_future: str,
+            max_root_rotations: int) -> None:
     """Refresh local metadata from remote"""
+    print("MAX ROOT ROTATIONS")
 
-    updater = Updater(metadata_dir, metadata_url)
+
+    updater = Updater(metadata_dir,
+                      metadata_url,
+                      config=UpdaterConfig(max_root_rotations=int(max_root_rotations)))
     if days_in_future != "0":
         day_int = int(days_in_future)
         day_in_future = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=day_int) 
@@ -31,7 +38,11 @@ def refresh(metadata_url: str, metadata_dir: str, days_in_future: str) -> None:
     updater.refresh()
     print(f"python-tuf test client: Refreshed metadata in {metadata_dir}")
 
-def download_target(metadata_url: str, metadata_dir: str, target_url: str, download_dir: str, target_base_url: str) -> None:
+def download_target(metadata_url: str,
+                    metadata_dir: str,
+                    target_url: str,
+                    download_dir: str,
+                    target_base_url: str) -> None:
     """Download target."""
 
     print("target_base_url: ", target_base_url)
@@ -72,6 +83,7 @@ def main() -> None:
     parser.add_argument("--target-dir", required=False)
     parser.add_argument("--target-base-url", required=False)
     parser.add_argument("--days-in-future", required=False, default="0")
+    parser.add_argument("--max-root-rotations", required=False, default=32, type=int)
 
     sub_command = parser.add_subparsers(dest="sub_command")
     init_parser = sub_command.add_parser(
@@ -98,7 +110,8 @@ def main() -> None:
     elif command_args.sub_command == "refresh":
         refresh(command_args.metadata_url,
                 command_args.metadata_dir,
-                command_args.days_in_future)
+                command_args.days_in_future,
+                command_args.max_root_rotations)
     elif command_args.sub_command == "download":
         download_target(command_args.metadata_url,
                         command_args.metadata_dir,
