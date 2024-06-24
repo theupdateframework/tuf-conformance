@@ -26,6 +26,86 @@ class TestTarget:
     content: bytes
     encoded_path: str
 
+def test_simple_signing(client: ClientRunner, server: SimulatorServer) -> None:
+    # Tests that add_key_to_role works as intended
+
+    name = "test_simple_signing"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
+
+    # Sanity check
+    assert client._assert_version_equals(Snapshot.type, 1)
+
+    # Add signature to Snapshot
+    repo.add_key_to_role(Snapshot.type)
+    repo.add_key_to_role(Snapshot.type)
+    repo.add_key_to_role(Snapshot.type)
+    repo.root.version += 1
+    repo.publish_root()
+    assert len(repo.root.roles["snapshot"].keyids) == 4
+    print("keyidsssssssssssssssssssss: ", repo.root.roles[Snapshot.type].keyids)
+    repo.update_timestamp()
+    repo.update_snapshot()
+
+    assert client.refresh(init_data) == 0
+
+    # There should be 4 snapshot signatures
+    md_obj = Metadata.from_file(
+        os.path.join(client.metadata_dir, "root.json")).signed
+    md_obj2 = Metadata.from_file(
+        os.path.join(client.metadata_dir, "snapshot.json"))
+    print("md_obj: ", md_obj.roles[Snapshot.type].keyids)
+    assert len(md_obj.roles[Snapshot.type].keyids) == 4
+    print("len snapshot sigs: ", md_obj2.signatures.items())
+    assert len(md_obj2.signatures) == 4
+
+    # Add another signature
+    repo.add_key_to_role(Snapshot.type)
+    repo.root.version += 1
+    repo.publish_root()
+    assert len(repo.root.roles["snapshot"].keyids) == 5
+    print("keyidsssssssssssssssssssss: ", repo.root.roles[Snapshot.type].keyids)
+    repo.update_timestamp()
+    repo.update_snapshot()
+
+    assert client.refresh(init_data) == 0
+
+    # There should be 5 snapshot signatures
+    md_obj = Metadata.from_file(
+        os.path.join(client.metadata_dir, "root.json")).signed
+    md_obj2 = Metadata.from_file(
+        os.path.join(client.metadata_dir, "snapshot.json"))
+    print("md_obj: ", md_obj.roles[Snapshot.type].keyids)
+    assert len(md_obj.roles[Snapshot.type].keyids) == 5
+    print("len snapshot sigs: ", md_obj2.signatures.items())
+    assert len(md_obj2.signatures) == 5
+
+    # Test things. Non-general
+
+    # Test 1:
+    # Set higher threshold than we have keys. Should fail
+    repo.root.roles[Snapshot.type].threshold = 10
+    initial_root_version = repo.root.version
+    repo.root.version += 1
+    repo.publish_root()
+    repo.update_timestamp()
+    repo.update_snapshot()
+    client.refresh(init_data)
+
+    assert client.refresh(init_data) == 1
+
+    client.refresh(init_data)
+    assert client._assert_version_equals(Snapshot.type, initial_root_version)
+
+
+
+
 def test_max_root_rotations(client: ClientRunner, server: SimulatorServer) -> None:
     # Root must stop looking for new versions after Y number of
     # intermediate files were downloaded.
