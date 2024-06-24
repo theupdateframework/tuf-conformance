@@ -190,8 +190,8 @@ def test_new_targets_hash_mismatch(client: ClientRunner, server: SimulatorServer
     repo.update_timestamp()
 
     client.refresh(init_data)
-    client._assert_version_equals(Snapshot.type, 3)
-    client._assert_version_equals(Targets.type, 1)
+    assert client._assert_version_equals(Snapshot.type, 1)
+    assert client._assert_version_equals(Targets.type, 1)
 
 def test_new_targets_version_mismatch(client: ClientRunner, server: SimulatorServer) -> None:
     # Check against snapshot role's targets version
@@ -473,7 +473,7 @@ def test_new_targets_fast_forward_recovery(client: ClientRunner, server: Simulat
 
     repo.update_snapshot()
     client.refresh(init_data)
-    client._assert_version_equals(Targets.type, 99999)
+    assert client._assert_version_equals(Targets.type, 99999)
 
     repo.rotate_keys(Snapshot.type)
     repo.root.version += 1
@@ -508,7 +508,7 @@ def test_new_snapshot_fast_forward_recovery(client: ClientRunner, server: Simula
 
     repo.update_timestamp()
     client.refresh(init_data)
-    client._assert_version_equals(Snapshot.type, 99999)
+    assert client._assert_version_equals(Snapshot.type, 99999)
 
     repo.rotate_keys(Snapshot.type)
     repo.rotate_keys(Timestamp.type)

@@ -74,7 +74,7 @@ class ClientRunner:
     def _assert_version_equals(self, role: str, expected_version: int) -> None:
         """Assert that local metadata version is the expected"""
         md = Metadata.from_file(os.path.join(self.metadata_dir, f"{role}.json"))
-        print("md:::::::::::::::::::", md.signed.version, "role:::::::::", role)
+        print("md:::::::::::::::::::", md.signed.version, "role:::::::::", role, "expected: ", expected_version)
         return md.signed.version == expected_version
 
     def _assert_files_exist(self, roles: Iterable[str]) -> None:
