@@ -10,6 +10,7 @@ from tuf_conformance.repository_simulator import RepositorySimulator
 from tuf_conformance.simulator_server import SimulatorServer
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance import utils
+from tuf.api.serialization import DeserializationError
 
 from tuf.api.exceptions import (
     BadVersionNumberError
@@ -98,11 +99,68 @@ def test_simple_signing(client: ClientRunner, server: SimulatorServer) -> None:
     repo.update_snapshot()
     client.refresh(init_data)
 
+    # Ensure that client does not refresh
     assert client.refresh(init_data) == 1
 
     client.refresh(init_data)
     assert client._assert_version_equals(Snapshot.type, initial_root_version)
 
+
+
+# Test 2:
+# Set/keep a threshold of 10 keys. All the keyids are different,
+# but the keys are all identical. As such, the snapshot metadata
+# has been signed by 1 key.
+def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> None:
+    # Tests that add_key_to_role works as intended
+
+    name = "test_duplicate_keys_root"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
+
+    # Sanity check
+    assert client._assert_version_equals(Snapshot.type, 1)
+
+    # Add signature to Snapshot
+    repo.add_one_key_n_times_to_role(Snapshot.type, 9)
+    repo.root.version += 1
+    repo.publish_root()
+    assert len(repo.root.roles["snapshot"].keyids) == 11
+    print("keyidsssssssssssssssssssss: ", repo.root.roles[Snapshot.type].keyids)
+    repo.update_timestamp()
+    repo.update_snapshot()
+
+    # This should fail because the metadata should not have the same key 
+    # in more than 1 keyids
+    client.refresh(init_data)
+
+    # Verify that we have not updated
+    try:
+        md_root = Metadata.from_file(
+            os.path.join(client.metadata_dir, "root.json")).signed
+    except DeserializationError as e:
+        assert False, "The client has updated its local root metadata with corrupted data"
+
+    try:
+        md_snapshot = Metadata.from_file(
+            os.path.join(client.metadata_dir, "snapshot.json"))
+    except DeserializationError as e:
+        assert False, "The client has updated its local root metadata with corrupted data"
+
+    md_root = Metadata.from_file(
+            os.path.join(client.metadata_dir, "root.json")).signed
+    md_snapshot = Metadata.from_file(
+        os.path.join(client.metadata_dir, "snapshot.json"))
+    print("md_root: ", md_root.roles[Snapshot.type].keyids)
+    assert len(md_root.roles[Snapshot.type].keyids) == 1
+    print("len snapshot sigs: ", md_snapshot.signatures.items())
+    assert len(md_snapshot.signatures) == 1
 
 
 

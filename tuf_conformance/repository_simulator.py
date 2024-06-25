@@ -171,11 +171,26 @@ class RepositorySimulator():
         elif role == Snapshot.type:
             self.md_snapshot.sign(signer, append=True)
         elif role == Targets.type:
-            self.md_targets.sign(signer, append=True)
-        elif role == Root.type:
-            self.md_root.sign(signer, append=True)
-        
+            self.md_targets.sign(signer, append=True)        
         print("self.md_snapshot", self.md_snapshot.signatures)
+
+    def add_one_key_n_times_to_role(self, role: str, times: int) -> None:
+        """add new key"""
+        signer = CryptoSigner.generate_ecdsa()
+        self.root.add_key(signer.public_key, role)
+        self.add_signer(role, signer)
+        self.md_root.sign(signer, append=True)
+
+        if role == Timestamp.type:
+            self.md_timestamp.sign(signer, append=True)
+        elif role == Snapshot.type:
+            self.md_snapshot.sign(signer, append=True)
+        elif role == Targets.type:
+            self.md_targets.sign(signer, append=True)
+        
+        # Add one key n times to root
+        for n in range(0, times):
+            self.root.roles[role].keyids.append(signer.public_key.keyid)
 
     def publish_root(self) -> None:
         """Sign and store a new serialized version of root."""
