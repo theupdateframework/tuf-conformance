@@ -128,7 +128,7 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
     assert client._assert_version_equals(Snapshot.type, 1)
 
     # Add signature to Snapshot
-    repo.add_one_key_n_times_to_role(Snapshot.type, 9)
+    repo.add_one_role_key_n_times_to_root(Snapshot.type, 9)
     repo.root.version += 1
     repo.publish_root()
     assert len(repo.root.roles["snapshot"].keyids) == 11
@@ -163,6 +163,27 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
     assert len(md_snapshot.signatures) == 1
 
 
+
+def test_TestTimestampEqVersionsCheck(client: ClientRunner, server: SimulatorServer) -> None:
+    #https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_top_level_update_test.go#L1058
+
+    name = "test_TestTimestampEqVersionsCheck"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+
+    initial_timestamp_meta_ver = repo.timestamp.snapshot_meta.version
+    # Change timestamp without bumping its version in order to test if a new
+    # timestamp with the same version will be persisted.
+    repo.timestamp.snapshot_meta.version = 100
+    client.refresh(init_data)
+
+    assert client._assert_version_equals(Timestamp.type, initial_timestamp_meta_ver)
 
 def test_max_root_rotations(client: ClientRunner, server: SimulatorServer) -> None:
     # Root must stop looking for new versions after Y number of

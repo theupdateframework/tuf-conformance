@@ -174,7 +174,7 @@ class RepositorySimulator():
             self.md_targets.sign(signer, append=True)        
         print("self.md_snapshot", self.md_snapshot.signatures)
 
-    def add_one_key_n_times_to_role(self, role: str, times: int) -> None:
+    def add_one_role_key_n_times_to_root(self, role: str, times: int) -> None:
         """add new key"""
         signer = CryptoSigner.generate_ecdsa()
         self.root.add_key(signer.public_key, role)
