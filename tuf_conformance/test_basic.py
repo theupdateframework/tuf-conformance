@@ -17,7 +17,8 @@ from tuf.api.exceptions import (
 )
 
 from tuf.api.metadata import (
-    Timestamp, Snapshot, Root, Targets, Metadata
+    Timestamp, Snapshot, Root, Targets, Metadata,
+    DelegatedRole
 )
 
 from tuf.ngclient import RequestsFetcher
@@ -162,8 +163,6 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
     print("len snapshot sigs: ", md_snapshot.signatures.items())
     assert len(md_snapshot.signatures) == 1
 
-
-
 def test_TestTimestampEqVersionsCheck(client: ClientRunner, server: SimulatorServer) -> None:
     #https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_top_level_update_test.go#L1058
 
@@ -184,6 +183,57 @@ def test_TestTimestampEqVersionsCheck(client: ClientRunner, server: SimulatorSer
     client.refresh(init_data)
 
     assert client._assert_version_equals(Timestamp.type, initial_timestamp_meta_ver)
+
+def test_TestDelegatesRolesUpdateWithConsistentSnapshotDisabled(client: ClientRunner, server: SimulatorServer) -> None:
+    #https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_consistent_snapshot_test.go#L97C6-L97C60
+
+    name = "test_TestDelegatesRolesUpdateWithConsistentSnapshotDisabled"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+
+    repo.root.consistent_snapshot = False
+    repo.root.version += 1
+    repo.publish_root()
+
+    # Target that expires 5 days in the future
+    new_target = Targets(expires=datetime.datetime.now(timezone.utc).replace(
+        microsecond=0
+    ) + datetime.timedelta(days=5))
+
+    delegated_role1 = DelegatedRole(name="role1",
+                                     keyids=list(),
+                                     threshold=1,
+                                     terminating=False,
+                                     paths=["*"])
+    repo.add_delegation(Targets.type, delegated_role1, new_target)
+
+    delegated_role2 = DelegatedRole(name="..",
+                                     keyids=list(),
+                                     threshold=1,
+                                     terminating=False,
+                                     paths=["*"])
+    repo.add_delegation(Targets.type, delegated_role2, new_target)
+
+    delegated_role3 = DelegatedRole(name=".",
+                                     keyids=list(),
+                                     threshold=1,
+                                     terminating=False,
+                                     paths=["*"])
+    repo.add_delegation(Targets.type, delegated_role3, new_target)
+    repo.update_snapshot()
+
+    assert client.refresh(init_data) == 0
+
+    # TODO: Implement this: https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_consistent_snapshot_test.go#L146-L161
+
+
+
 
 def test_max_root_rotations(client: ClientRunner, server: SimulatorServer) -> None:
     # Root must stop looking for new versions after Y number of
