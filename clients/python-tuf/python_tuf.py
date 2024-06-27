@@ -51,7 +51,7 @@ def download_target(metadata_url: str,
                       download_dir,
                       target_base_url,
                       config=UpdaterConfig(prefix_targets_with_hash = False))
-
+    print("target_url in python_tuf.py: ", target_url)
     target_info = updater.get_targetinfo(target_url)
     print("target_info:::::::::::::::::::::::", target_info.path)
 
