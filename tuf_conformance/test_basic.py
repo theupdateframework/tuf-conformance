@@ -438,15 +438,13 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
     # Assert that the final version of timestamp/snapshot is version 2
     # which means a successful refresh is performed
     # with expired local metadata.
-    # TODO: Currently we assert that targets version is 1.
-    # Double-check this is true.    
     for role in ["timestamp", "snapshot", "targets"]:
         print("Current role: ", role)
         md = Metadata.from_file(
             os.path.join(client.metadata_dir, f"{role}.json")
         )
         if role == "targets":
-            assert md.signed.version == 2 # TODO: Double check that this is true
+            assert md.signed.version == 2
         elif role == "snapshot":
             assert md.signed.version == 2
         else:
@@ -658,17 +656,17 @@ def test_new_targets_fast_forward_recovery(client: ClientRunner, server: Simulat
     init_data = server.get_client_init_data(name)
 
     assert client.init_client(init_data) == 0
+
     new_targets = repo.load_metadata(Targets.type)
     new_targets.signed.version = 99999
     repo.save_metadata(Targets.type, new_targets)
-
     repo.update_snapshot()
+
     client.refresh(init_data)
     assert client._assert_version_equals(Targets.type, 99999)
 
     repo.rotate_keys(Snapshot.type)
     repo.bump_root_by_one()
-
     new_targets = repo.load_metadata(Targets.type)
     new_targets.signed.version = 1
     repo.save_metadata(Targets.type, new_targets)
@@ -830,8 +828,6 @@ def test_downloaded_file_is_correct(client: ClientRunner, server: SimulatorServe
     with open(target_file_path) as f:
         assert f.read() == file_contents_str
 
-    targets_md = repo.load_metadata(Targets.type)
-    print("UPDATEDDDDDDDDDDDDDDDDDDDD         ", targets_md.signed.targets)
 
     # Sanity check that we have not downloaded any files yet
     assert client.get_last_downloaded_target() == ""
@@ -839,7 +835,6 @@ def test_downloaded_file_is_correct(client: ClientRunner, server: SimulatorServe
     target_file2 = client.download_target(init_data,
                                           target_base_name,
                                           target_base_url=url_prefix)
-    print("target_file2: ", target_file2)
 
     # Sanity check that we downloaded the file
     assert client.get_last_downloaded_target() == os.path.join(client._target_dir.name,
