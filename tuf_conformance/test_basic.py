@@ -76,7 +76,6 @@ def test_simple_signing(client: ClientRunner, server: SimulatorServer) -> None:
 
     repo.bump_root_by_one()
 
-    #repo_root = Metadata.from_bytes(repo.md_root_json)
     repo_root = repo.load_metadata(Root.type)
     assert len(repo_root.signed.roles["snapshot"].keyids) == 4
     repo.update_timestamp()
@@ -96,7 +95,6 @@ def test_simple_signing(client: ClientRunner, server: SimulatorServer) -> None:
     repo.add_key_to_role(Snapshot.type)
     repo.bump_root_by_one()
     repo_root = repo.load_metadata(Root.type)
-    #repo_root = Metadata.from_bytes(repo.md_root_json)
     assert len(repo_root.signed.roles["snapshot"].keyids) == 5
 
     repo.update_timestamp()
@@ -202,11 +200,9 @@ def test_TestTimestampEqVersionsCheck(client: ClientRunner, server: SimulatorSer
     # Change timestamp without bumping its version in order to test if a new
     # timestamp with the same version will be persisted.
     new_timestamp = repo.load_metadata(Timestamp.type)
-    #new_timestamp = Metadata.from_bytes(repo.md_timestamp_json)
     new_timestamp.signed.snapshot_meta.version = 100
     repo.save_metadata(Timestamp.type, new_timestamp)
-    #repo.md_timestamp_json = new_timestamp.to_bytes()
-    repo.timestamp.snapshot_meta.version = 100
+    
     client.refresh(init_data)
 
     assert client._assert_version_equals(Timestamp.type, initial_timestamp_meta_ver)
@@ -311,17 +307,10 @@ def test_new_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> 
 
     # Update the timestamp but the expiration has passed.
     new_snapshot = repo.load_metadata(Snapshot.type)
-    #new_snapshot = Metadata.from_bytes(repo.md_snapshot_json)
     new_snapshot.signed.expires = datetime.datetime.now(timezone.utc).replace(
         microsecond=0
     ) - datetime.timedelta(days=5)
     repo.save_metadata(Snapshot.type, new_snapshot)
-    #repo.md_snapshot_json = new_snapshot.to_bytes()
-
-    # Update date old way
-    #repo.snapshot.expires = datetime.datetime.now(timezone.utc).replace(
-    #    microsecond=0
-    #) - datetime.timedelta(days=5)
     repo.update_snapshot()
 
     client.refresh(init_data)
@@ -418,12 +407,9 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
     assert client.init_client(init_data) == 0
 
     now = datetime.datetime.now(timezone.utc)
-    #repo.timestamp.expires = now + datetime.timedelta(days=7)
     new_timestamp = repo.load_metadata(Timestamp.type)
-    #new_timestamp = Metadata.from_bytes(repo.md_timestamp_json)
     new_timestamp.signed.expires = now + datetime.timedelta(days=7)
     repo.save_metadata(Timestamp.type, new_timestamp)
-    #repo.md_timestamp_json = new_timestamp.to_bytes()
 
     # Refresh and perform sanity check
     client.refresh(init_data)
@@ -435,20 +421,14 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
         assert md.signed.version == 1
     
 
-    #repo.targets.version += 1
     new_targets = repo.load_metadata(Targets.type)
-    #new_targets = Metadata.from_bytes(repo.md_targets_json)
     new_targets.signed.version += 1
-    #repo.md_targets_json = new_targets.to_bytes()
     repo.save_metadata(Targets.type, new_targets)
     repo.update_snapshot()
 
-    #repo.timestamp.expires = now + datetime.timedelta(days=21)
     new_timestamp = repo.load_metadata(Timestamp.type)
-    #new_timestamp = Metadata.from_bytes(repo.md_timestamp_json)
     new_timestamp.signed.expires = now + datetime.timedelta(days=21)
     repo.save_metadata(Timestamp.type, new_timestamp)
-    #repo.md_timestamp_json = new_timestamp.to_bytes()
     repo.update_timestamp()
 
     # Mocking time so that local timestamp has expired
@@ -459,8 +439,7 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
     # which means a successful refresh is performed
     # with expired local metadata.
     # TODO: Currently we assert that targets version is 1.
-    # Double-check this is true.
-    
+    # Double-check this is true.    
     for role in ["timestamp", "snapshot", "targets"]:
         print("Current role: ", role)
         md = Metadata.from_file(
@@ -489,12 +468,9 @@ def test_snapshot_rollback_with_local_snapshot_hash_mismatch(client: ClientRunne
     assert client._assert_files_exist ([Root.type, Timestamp.type, Snapshot.type, Targets.type])
 
     # Initialize all metadata and assign targets version higher than 1.
-    #repo.targets.version = 2
-    #new_targets = Metadata.from_bytes(repo.md_targets_json)
     new_targets = repo.load_metadata(Targets.type)
     new_targets.signed.version = 2
     repo.save_metadata(Targets.type, new_targets)
-    #repo.md_targets_json = new_targets.to_bytes()
     repo.update_snapshot()
     client.refresh(init_data)
     assert client._assert_version_equals(Targets.type, 2)
@@ -616,10 +592,8 @@ def test_new_timestamp_snapshot_rollback(client: ClientRunner, server: Simulator
     # Start snapshot version at 2
     #repo.snapshot.version = 2
     new_snapshot = repo.load_metadata(Snapshot.type)
-    #new_snapshot = Metadata.from_bytes(repo.md_snapshot_json)
     new_snapshot.signed.version = 2
     repo.save_metadata(Snapshot.type, new_snapshot)
-    #repo.md_snapshot_json = new_snapshot.to_bytes()
 
     # Repository performs legitimate update to snapshot
     repo.update_timestamp()
@@ -629,17 +603,12 @@ def test_new_timestamp_snapshot_rollback(client: ClientRunner, server: Simulator
     assert client.refresh(init_data) == 0
 
     # Repo attempts rollback attack
-    #repo.timestamp.snapshot_meta.version = 1
-    #repo.timestamp.version += 1
     new_timestamp = repo.load_metadata(Timestamp.type)
-    #new_timestamp = Metadata.from_bytes(repo.md_timestamp_json)
     new_timestamp.signed.snapshot_meta.version = 1
     new_timestamp.signed.version += 1
     repo.save_metadata(Timestamp.type, new_timestamp)
-    #repo.md_timestamp_json = new_timestamp.to_bytes()
     # Sanity check
     assert repo._assert_version_equals(Timestamp.type, 3)
-    #assert repo.timestamp.version == 3
     assert client._assert_version_equals(Timestamp.type, 2)
 
     client.refresh(init_data)
@@ -689,12 +658,9 @@ def test_new_targets_fast_forward_recovery(client: ClientRunner, server: Simulat
     init_data = server.get_client_init_data(name)
 
     assert client.init_client(init_data) == 0
-    #repo.targets.version = 99999
     new_targets = repo.load_metadata(Targets.type)
-    #new_targets = Metadata.from_bytes(repo.md_targets_json)
     new_targets.signed.version = 99999
     repo.save_metadata(Targets.type, new_targets)
-    #repo.md_targets_json = new_targets.to_bytes()
 
     repo.update_snapshot()
     client.refresh(init_data)
@@ -703,12 +669,9 @@ def test_new_targets_fast_forward_recovery(client: ClientRunner, server: Simulat
     repo.rotate_keys(Snapshot.type)
     repo.bump_root_by_one()
 
-    #repo.targets.version = 1
-    #new_targets = Metadata.from_bytes(repo.md_targets_json)
     new_targets = repo.load_metadata(Targets.type)
     new_targets.signed.version = 1
     repo.save_metadata(Targets.type, new_targets)
-    #repo.md_targets_json = new_targets.to_bytes()
     repo.update_snapshot()
 
     client.refresh(init_data)
@@ -734,12 +697,9 @@ def test_new_snapshot_fast_forward_recovery(client: ClientRunner, server: Simula
     init_data = server.get_client_init_data(name)
 
     assert client.init_client(init_data) == 0
-    #new_snapshot = Metadata.from_bytes(repo.md_snapshot_json)
     new_snapshot = repo.load_metadata(Snapshot.type)
     new_snapshot.signed.version = 99999
     repo.save_metadata(Snapshot.type, new_snapshot)
-    #repo.md_snapshot_json = new_snapshot.to_bytes()
-    #repo.snapshot.version = 99999
 
     repo.update_timestamp()
     client.refresh(init_data)
@@ -751,10 +711,8 @@ def test_new_snapshot_fast_forward_recovery(client: ClientRunner, server: Simula
 
     #repo.snapshot.version = 1
     new_snapshot = repo.load_metadata(Snapshot.type)
-    #new_snapshot = Metadata.from_bytes(repo.md_snapshot_json)
     new_snapshot.signed.version = 1
     repo.save_metadata(Snapshot.type, new_snapshot)
-    #repo.md_snapshot_json = new_snapshot.to_bytes()
     repo.update_timestamp()
 
     client.refresh(init_data)
@@ -798,19 +756,13 @@ def test_new_timestamp_fast_forward_recovery(client: ClientRunner, server: Simul
     assert client.init_client(init_data) == 0
 
     # attacker updates to a higher version
-    #new_timestamp = Metadata.from_bytes(repo.md_timestamp_json)
     new_timestamp = repo.load_metadata(Timestamp.type)
     new_timestamp.signed.version = 99998
     repo.save_metadata(Timestamp.type, new_timestamp)
-    #repo.md_timestamp_json = new_timestamp.to_bytes()
     repo.update_timestamp()
-
-    #repo.timestamp.version = 99998
-    #repo.update_timestamp()
 
     # Sanity check
     assert repo._assert_version_equals(Timestamp.type, 99999)
-    #assert repo.timestamp.version == 99999
 
     # client refreshes the metadata and see the new timestamp version
     client.refresh(init_data)
@@ -821,11 +773,9 @@ def test_new_timestamp_fast_forward_recovery(client: ClientRunner, server: Simul
     repo.bump_root_by_one()
     #repo.timestamp.version = 1
 
-    #new_timestamp = Metadata.from_bytes(repo.md_timestamp_json)
     new_timestamp = repo.load_metadata(Timestamp.type)
     new_timestamp.signed.version = 1
     repo.save_metadata(Timestamp.type, new_timestamp)
-    #repo.md_timestamp_json = new_timestamp.to_bytes()
 
     # client refresh the metadata and see the initial timestamp version
     client.refresh(init_data)
@@ -868,12 +818,9 @@ def test_downloaded_file_is_correct(client: ClientRunner, server: SimulatorServe
     target.encoded_path = target_base_name
 
     # Add target to repository
-    #repo.targets.version += 1
-    #new_targets = Metadata.from_bytes(repo.md_targets_json)
     new_targets = repo.load_metadata(Targets.type)
     new_targets.signed.version += 1
     repo.save_metadata(Targets.type, new_targets)
-    #repo.md_targets_json = new_targets.to_bytes()
     repo.add_target_with_length("targets", target.content, target.path, len(target.content))
     repo.update_snapshot()
     client.refresh(init_data)
@@ -883,7 +830,6 @@ def test_downloaded_file_is_correct(client: ClientRunner, server: SimulatorServe
     with open(target_file_path) as f:
         assert f.read() == file_contents_str
 
-    #targets_md = Metadata.from_bytes(repo.md_targets_json)
     targets_md = repo.load_metadata(Targets.type)
     print("UPDATEDDDDDDDDDDDDDDDDDDDD         ", targets_md.signed.targets)
 
@@ -1156,12 +1102,9 @@ def test_multiple_changes_to_target(client: ClientRunner, server: SimulatorServe
         target_file.write(new_legitimate_file_contents)
         target_file.close()
 
-        #repo.targets.version += 1
         new_targets = repo.load_metadata(Targets.type)
-        #new_targets = Metadata.from_bytes(repo.md_targets_json)
         new_targets.signed.version += 1
         repo.save_metadata(Targets.type, new_targets)
-        #repo.md_targets_json = new_targets.to_bytes()
 
         repo.add_target_with_length("targets", bytes(new_legitimate_file_contents, 'utf-8'),
                                     target_base_name, len(bytes(new_legitimate_file_contents, 'utf-8')))
