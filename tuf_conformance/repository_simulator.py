@@ -129,9 +129,9 @@ class RepositorySimulator():
         parsed_targets = Metadata.from_bytes(self.md_targets_json)
         yield Targets.type, parsed_targets.signed
         #yield Targets.type, self.md_targets.signed
-        # I have commented this out. Tests pass, but it might need to be reverted
-        #for role, md in self.md_delegates.items():
-        #    yield role, md.signed
+        # (ADAM) I have commented this out. Tests pass, but it might need to be reverted
+        for role, md in self.md_delegates.items():
+            yield role, md.signed
 
     def add_signer(self, role: str, signer: CryptoSigner) -> None:
         if role not in self.signers:
@@ -177,9 +177,9 @@ class RepositorySimulator():
 
     def set_root_consistent_snapshot(self, b: bool) -> None:
         root = Metadata.from_bytes(self.md_root_json)
-        root.consistent_snapshot = False
+        root.signed.consistent_snapshot = b
         self.md_root_json = root.to_bytes(JSONSerializer())
-        self.root.consistent_snapshot = False
+        self.root.consistent_snapshot = b
 
     def bump_root_by_one(self) -> None:
         self.bump_version_by_one(Root.type)
@@ -188,13 +188,25 @@ class RepositorySimulator():
     def bump_version_by_one(self, role: str) -> None:
         # Does not update hashes and signatures
         if role == Root.type:
-            self.root.version += 1
+            new_root = self.load_metadata(Root.type)
+            new_root.signed.version += 1
+            self.save_metadata(Root.type, new_root)
+            #self.root.version += 1
         elif role == Snapshot.type:
-            self.snapshot.version += 1
+            new_snapshot = self.load_metadata(Snapshot.type)
+            new_snapshot.signed.version += 1
+            self.save_metadata(Snapshot.type, new_snapshot)
+            #self.snapshot.version += 1
         elif role == Timestamp.type:
-            self.timestamp.version += 1
+            new_timestamp = self.load_metadata(Timestamp.type)
+            new_timestamp.signed.version += 1
+            self.save_metadata(Timestamp.type, new_timestamp)
+            #self.timestamp.version += 1
         elif role == Targets.type:
-            self.targets.version += 1
+            new_targets = self.load_metadata(Targets.type)
+            new_targets.signed.version += 1
+            self.save_metadata(Targets.type, new_targets)
+            #self.targets.version += 1
 
 
     def add_key_to_role(self, role: str) -> None:
@@ -204,20 +216,21 @@ class RepositorySimulator():
         # Update root in new way #
         root = Metadata.from_bytes(self.md_root_json)
         root.signed.add_key(signer.public_key, role)
+        root.sign(signer, append=True)
         self.md_root_json = root.to_bytes(JSONSerializer())
         ##########################
 
-        self.root.add_key(signer.public_key, role)
-        self.md_root.sign(signer, append=True)
+        #self.root.add_key(signer.public_key, role)
+        #self.md_root.sign(signer, append=True)
 
         self.add_signer(role, signer)
 
         if role == Timestamp.type:
             # Sign in old way
-            self.md_timestamp.sign(signer, append=True)
+            #self.md_timestamp.sign(signer, append=True)
             ##################
 
-            # Update root in new way #
+            # Update Timestamp in new way #
             md = Metadata.from_bytes(self.md_timestamp_json)
             md.sign(signer, append=True)
             self.md_timestamp_json = md.to_bytes(JSONSerializer())
@@ -226,16 +239,16 @@ class RepositorySimulator():
         elif role == Snapshot.type:
             self.md_snapshot.sign(signer, append=True)
 
-            # Update root in new way #
+            # Update Snapshot in new way #
             md = Metadata.from_bytes(self.md_snapshot_json)
             md.sign(signer, append=True)
             self.md_snapshot_json = md.to_bytes(JSONSerializer())
             ##########################
 
         elif role == Targets.type:
-            self.md_targets.sign(signer, append=True)       
+            #self.md_targets.sign(signer, append=True)       
 
-            # Update root in new way #
+            # Update Targets in new way #
             md = Metadata.from_bytes(self.md_targets_json)
             md.sign(signer, append=True)
             self.md_targets_json = md.to_bytes(JSONSerializer())
@@ -249,22 +262,15 @@ class RepositorySimulator():
 
         # Update in old way
         self.add_signer(role, signer)
-        self.root.add_key(signer.public_key, role)
-        self.md_root.sign(signer, append=True)
+        #self.root.add_key(signer.public_key, role)
+        #self.md_root.sign(signer, append=True)
 
         # Update root in new way (old is above) #
-        #json_object0 = json.loads(self.md_root_json)
-        #print("json0:", json.dumps(json_object0, indent=2))
         root = Metadata.from_bytes(self.md_root_json)
         root.signed.add_key(signer.public_key, role)
         root.sign(signer, append=True)
         self.md_root_json = root.to_bytes(JSONSerializer())
         existing_root = Metadata.from_bytes(self.md_root_json)
-        #json_object1 = json.loads(self.md_root_json)
-        #print("json:", json.dumps(json_object1, indent=2))
-        #self.md_root_json = self.md_root.to_bytes(JSONSerializer())
-        #json_object12 = json.loads(self.md_root_json)
-        #print("json12:", json.dumps(json_object12, indent=2))
         ##########################
 
         if role == Timestamp.type:
@@ -276,7 +282,7 @@ class RepositorySimulator():
             ##########################
 
             # old way
-            self.md_timestamp.sign(signer, append=True)
+            #self.md_timestamp.sign(signer, append=True)
         elif role == Snapshot.type:
 
             # Sign in new way #
@@ -286,7 +292,7 @@ class RepositorySimulator():
             ##########################
 
             # old way
-            self.md_snapshot.sign(signer, append=True)
+            #self.md_snapshot.sign(signer, append=True)
         elif role == Targets.type:
 
             # Sign in new way #
@@ -296,7 +302,7 @@ class RepositorySimulator():
             ##########################
 
             # old way
-            self.md_targets.sign(signer, append=True)
+            #self.md_targets.sign(signer, append=True)
         
         # Add one key n times to root
         for n in range(0, times):
@@ -331,10 +337,10 @@ class RepositorySimulator():
             self.md_root.sign(signer, append=True)
 
         # New
-        #self.signed_roots.append(self.md_root_json)
+        self.signed_roots.append(self.md_root_json)
 
         # Old
-        self.signed_roots.append(self.md_root.to_bytes(JSONSerializer()))
+        #self.signed_roots.append(self.md_root.to_bytes(JSONSerializer()))
         logger.debug("Published root v%d", self.root.version)
 
     def fetch_MitM(self, path: str) -> bytes:
@@ -357,17 +363,20 @@ class RepositorySimulator():
             # figure out rolename and version
             ver_and_name = path[len("metadata/") :][: -len(".json")]
             version_str, _, role = ver_and_name.partition(".")
-            print("version_str: ", version_str)
+            print("version_str, _, role:::::::::::::::: ", version_str, _, role)
+            #print("version_str: ", version_str)
             # root is always version-prefixed while timestamp is always NOT
+            uses_consistent_snapshot = self.load_metadata(Root.type).signed.consistent_snapshot
+
             if role == Root.type or (
-                self.root.consistent_snapshot and ver_and_name != Timestamp.type
+                uses_consistent_snapshot and ver_and_name != Timestamp.type
             ):
                 version: Optional[int] = int(version_str)
             else:
                 # the file is not version-prefixed
                 role = ver_and_name
                 version = None
-            print("role:::::::::::::::::", role)
+            print("role:::::::::::::::::2222", role, "version::::2222 ", version)
 
             return self.fetch_metadata(role, version)
         elif path.startswith("targets/"):
@@ -377,7 +386,8 @@ class RepositorySimulator():
             # extract the hash prefix, if any
             prefix: Optional[str] = None
             filename = prefixed_filename
-            if self.root.consistent_snapshot and self.prefix_targets_with_hash:
+            uses_consistent_snapshot = self.load_metadata(Root.type).signed.consistent_snapshot
+            if uses_consistent_snapshot and self.prefix_targets_with_hash:
                 prefix, _, filename = prefixed_filename.partition(".")
             target_path = f"{dir_parts}{sep}{filename}"
 
@@ -407,7 +417,7 @@ class RepositorySimulator():
         return repo_target.data
 
     def fetch_metadata(self, role: str, version: Optional[int] = None) -> bytes:
-        print("version::::::::::::::::::::", version)
+        print("version::::::::::::::::::::", version, "role    : ", role)
         """Return signed metadata for 'role', using 'version' if it is given.
 
         If version is None, non-versioned metadata is being requested.
@@ -426,34 +436,34 @@ class RepositorySimulator():
         # sign and serialize the requested metadata
         md: Optional[Metadata]
         if role == Timestamp.type:
-            md = self.md_timestamp
-            md2 = Metadata.from_bytes(self.md_timestamp_json)
+            #md = self.md_timestamp
+            md = Metadata.from_bytes(self.md_timestamp_json)
         elif role == Snapshot.type:
-            md = self.md_snapshot
-            md2 = Metadata.from_bytes(self.md_snapshot_json)
+            #md = self.md_snapshot
+            md = Metadata.from_bytes(self.md_snapshot_json)
         elif role == Targets.type:
-            md = self.md_targets
-            md2 = Metadata.from_bytes(self.md_targets_json)
-            print("AAAAA: ", md2.signed.version)
+            #md = self.md_targets
+            md = Metadata.from_bytes(self.md_targets_json)
+            #print("AAAAA: ", md2.signed.version)
         else:
             md = self.md_delegates.get(role)
 
-        if md2 is None or md is None:
+        if md is None:
             raise ValueError(f"Unknown role {role}")
 
-        md2.signatures.clear()
+        md.signatures.clear()
         for signer in self.signers[role].values():
             print("Signing")
             md.sign(signer, append=True)
-            md2.sign(signer, append=True)
+            #md2.sign(signer, append=True)
 
         logger.debug(
             "fetched %s v%d with %d sigs",
             role,
-            md2.signed.version,
+            md.signed.version,
             len(self.signers[role]),
         )
-        return md2.to_bytes(JSONSerializer())
+        return md.to_bytes(JSONSerializer())
 
     def _assert_version_equals(self, role: str, expected_version: int) -> None:
         """Assert that local metadata version is the expected"""
@@ -487,18 +497,19 @@ class RepositorySimulator():
 
         ############ new way: ##############
         existing_ss = Metadata.from_bytes(self.md_snapshot_json)
-        existing_ts = Metadata.from_bytes(self.md_timestamp_json)
-        existing_ts.signed.snapshot_meta = MetaFile(
+        new_ts = Metadata.from_bytes(self.md_timestamp_json)
+        new_ts.signed.snapshot_meta = MetaFile(
             existing_ss.signed.version, length, hashes
         )
-        existing_ts.signed.version += 1
-        self.md_timestamp_json = existing_ts.to_bytes(JSONSerializer())
+        new_ts.signed.version += 1
+        self.md_timestamp_json = new_ts.to_bytes(JSONSerializer())
         ####################################
 
         # old way
         #self.timestamp.snapshot_meta = MetaFile(
         #    self.snapshot.version, length, hashes
         #)
+        print("SAVED TIMESTAMP")
 
         #self.timestamp.version += 1
 
@@ -526,22 +537,25 @@ class RepositorySimulator():
             self.snapshot.version, length, hashes
         )
 
-        self.timestamp.version -= 1
+        #self.timestamp.version -= 1
 
     def update_snapshot(self) -> None:
         """Update snapshot, assign targets versions and update timestamp."""
         for role, delegate in self.all_targets():
+            print("update_snapshot: role: ", role, "delegate: ", delegate)
             hashes = None
             length = None
             if self.compute_metafile_hashes_length:
                 hashes, length = self._compute_hashes_and_length(role)
 
             ############ new way: ##############
-            existing_ss = Metadata.from_bytes(self.md_snapshot_json)
-            existing_ss.signed.meta[f"{role}.json"] = MetaFile(
+            #new_ss = Metadata.from_bytes(self.md_snapshot_json)
+            new_ss = self.load_metadata(Snapshot.type)
+            new_ss.signed.meta[f"{role}.json"] = MetaFile(
                 delegate.version, length, hashes
             )
-            self.md_snapshot_json = existing_ss.to_bytes(JSONSerializer())
+            self.save_metadata(Snapshot.type, new_ss)
+            #self.md_snapshot_json = existing_ss.to_bytes(JSONSerializer())
             ####################################
 
             #self.snapshot.meta[f"{role}.json"] = MetaFile(
@@ -549,10 +563,16 @@ class RepositorySimulator():
             #)
 
         ############ new way: ##############
-        existing_ss = Metadata.from_bytes(self.md_snapshot_json)
-        existing_ss.signed.version += 1
-        self.md_snapshot_json = existing_ss.to_bytes(JSONSerializer())
+        new_ss = self.load_metadata(Snapshot.type)
+        new_ss.signed.version += 1
+        self.save_metadata(Snapshot.type, new_ss)
+
+        #existing_ss = Metadata.from_bytes(self.md_snapshot_json)
+        #existing_ss.signed.version += 1
+        #self.md_snapshot_json = existing_ss.to_bytes(JSONSerializer())
         ####################################
+
+        print("S4444444444444VED SNAPSHOT. Now saving timestamp")
 
         #self.snapshot.version += 1
         self.update_timestamp()
@@ -584,14 +604,26 @@ class RepositorySimulator():
         self.md_snapshot_json = existing_ss.to_bytes(JSONSerializer())
         ####################################
 
-        self.snapshot.version -= 1
+        #self.snapshot.version -= 1
         self.update_timestamp()
 
     def _get_delegator(self, delegator_name: str) -> Targets:
         """Given a delegator name return, its corresponding Targets object."""
+        if delegator_name in TOP_LEVEL_ROLE_NAMES:
+            return self.load_metadata(delegator_name)
+
+        '''if delegator_name == Targets.type || :
+            return Metadata.from_bytes(self.md_targets_json)
+            #return self.targets
         if delegator_name == Targets.type:
             return Metadata.from_bytes(self.md_targets_json)
-            return self.targets
+            #return self.targets
+        if delegator_name == Targets.type:
+            return Metadata.from_bytes(self.md_targets_json)
+            #return self.targets
+        if delegator_name == Targets.type:
+            return Metadata.from_bytes(self.md_targets_json)'''
+            #return self.targets
 
 
         return self.md_delegates[delegator_name]
@@ -656,6 +688,7 @@ class RepositorySimulator():
 
         # Add metadata for the role
         if role.name not in self.md_delegates:
+            print("adding delegate ---------------------- ", role)
             self.md_delegates[role.name] = Metadata(targets, {})
 
     def load_metadata(self, role: str) -> None:

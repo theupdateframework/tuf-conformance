@@ -28,7 +28,6 @@ class _ReqHandler(BaseHTTPRequestHandler):
             return
 
         try:
-            print("Fetching................")
             if test.endswith("_MitM"):
                 print("MitM test================")
                 data = repo.fetch(path)
