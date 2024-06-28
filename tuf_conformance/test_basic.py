@@ -327,9 +327,7 @@ def test_new_snapshot_expired(client: ClientRunner,
                                        Targets.type])
 
     new_snapshot = repo.load_metadata(Snapshot.type)
-    new_snapshot.signed.expires = datetime.datetime.now(timezone.utc).replace(
-        microsecond=0
-    ) - datetime.timedelta(days=5)
+    new_snapshot.signed.expires = utils.get_date_n_days_in_past(5)
     repo.save_metadata(Snapshot.type, new_snapshot)
     repo.update_snapshot()
 
@@ -415,9 +413,7 @@ def test_new_targets_expired(client: ClientRunner,
                                        Snapshot.type,
                                        Targets.type])
 
-    repo.targets.expires = datetime.datetime.now(timezone.utc).replace(
-        microsecond=0
-    ) - datetime.timedelta(days=5)
+    repo.targets.expires = utils.get_date_n_days_in_past(5)
     repo.update_snapshot()
 
     assert client.init_client(init_data) == 0
@@ -685,9 +681,7 @@ def test_new_timestamp_expired(client: ClientRunner,
     init_data = server.get_client_init_data(name)
 
     assert client.init_client(init_data) == 0
-    repo.timestamp.expires = datetime.datetime.now(timezone.utc).replace(
-        microsecond=0
-    ) - datetime.timedelta(days=5)
+    repo.timestamp.expires = utils.get_date_n_days_in_past(5)
     repo.update_timestamp()
 
     client.refresh(init_data)

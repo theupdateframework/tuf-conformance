@@ -19,6 +19,7 @@
 """
 
 import argparse
+import datetime
 import errno
 import logging
 import os
@@ -31,6 +32,7 @@ import time
 import unittest
 import warnings
 from contextlib import contextmanager
+from datetime import timezone
 from typing import IO, Any, Callable, Dict, Iterator, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -160,6 +162,11 @@ def cleanup_dir(path: str) -> None:
     ]:
         os.remove(filepath)
 
+
+def get_date_n_days_in_past(days: int) -> datetime.datetime:
+    return datetime.datetime.now(timezone.utc).replace(
+        microsecond=0
+    ) - datetime.timedelta(days=days)
 
 class TestServerProcess:
     """Helper class used to create a child process with the subprocess.Popen
