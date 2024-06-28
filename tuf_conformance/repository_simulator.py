@@ -387,7 +387,9 @@ class RepositorySimulator():
         )
         return md.to_bytes(JSONSerializer())
 
-    def _version_equals(self, role: str, expected_version: int) -> None:
+    def _version_equals(
+        self, role: str, expected_version: int
+    ) -> None:
         """Assert that repositorys metadata version is the expected"""
         return self.load_metadata(role).signed.version == expected_version
 
@@ -489,7 +491,9 @@ class RepositorySimulator():
         self.artifacts[path] = Artifact(data, target)
         print(targets.to_dict())
 
-    def add_target_with_length(self, role: str, data: bytes, path: str, length: int) -> None:
+    def add_target_with_length(
+        self, role: str, data: bytes, path: str, length: int
+    ) -> None:
         """Create a target from data and add it to the target_files.
            The hash value can be invalid compared to the length"""
         targets = self._get_delegator(role)
