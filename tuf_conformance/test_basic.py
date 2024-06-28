@@ -28,31 +28,6 @@ class TestTarget:
     content: bytes
     encoded_path: str
 
-def test_different_date_formats_MitM(client: ClientRunner, server: SimulatorServer) -> None:
-    # Create metadata and change the date formats in the server json
-
-    name = "test_different_date_formats_MitM"
-
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
-    assert client.init_client(init_data) == 0
-    client.refresh(init_data)
-    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
-
-    # Read files
-    '''with open(os.path.join(client.metadata_dir, "root.json")) as f:
-        print(f.read())
-    with open(os.path.join(client.metadata_dir, "timestamp.json")) as f:
-        print(f.read())
-    with open(os.path.join(client.metadata_dir, "snapshot.json")) as f:
-        print(f.read())
-    with open(os.path.join(client.metadata_dir, "targets.json")) as f:
-        print(f.read())'''
-    #root_bytes = repo.
-    #assert 1==2
-
 def test_simple_signing(client: ClientRunner, server: SimulatorServer) -> None:
     # Tests that add_key_to_role works as intended
 
@@ -119,8 +94,6 @@ def test_simple_signing(client: ClientRunner, server: SimulatorServer) -> None:
     assert len(md_obj.roles[Snapshot.type].keyids) == 5
     assert len(md_obj2.signatures) == 5
 
-    # Test things. Non-general
-
     # Test 1:
     # Set higher threshold than we have keys. Should fail
     new_root = repo.load_metadata(Root.type)
@@ -128,8 +101,6 @@ def test_simple_signing(client: ClientRunner, server: SimulatorServer) -> None:
     repo.save_metadata(Root.type, new_root)
     initial_root_version = new_root.signed.version
 
-    #repo.root.roles[Snapshot.type].threshold = 10
-    #initial_root_version = repo.root.version
     repo.bump_root_by_one()
     repo.update_timestamp()
     repo.update_snapshot()
@@ -137,8 +108,6 @@ def test_simple_signing(client: ClientRunner, server: SimulatorServer) -> None:
 
     # Ensure that client does not refresh
     assert client.refresh(init_data) == 1
-
-    client.refresh(init_data)
     assert client._assert_version_equals(Snapshot.type, initial_root_version)
 
 
@@ -167,7 +136,6 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
     repo.add_one_role_key_n_times_to_root(Snapshot.type, 9)
     repo.bump_root_by_one()
     assert len(repo.root.roles["snapshot"].keyids) == 10
-    #print("keyidsssssssssssssssssssss: ", repo.root.roles[Snapshot.type].keyids)
     repo.update_timestamp()
     repo.update_snapshot()
 
@@ -194,7 +162,6 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
         os.path.join(client.metadata_dir, "snapshot.json"))
     print("md_root: ", md_root.roles[Snapshot.type].keyids)
     assert len(md_root.roles[Snapshot.type].keyids) == 2 # TODO: Double check that "2" is correct here
-    #print("len snapshot sigs: ", md_snapshot.signatures.items())
     assert len(md_snapshot.signatures) == 2 # TODO: Double check that "2" is correct here
 
 def test_TestTimestampEqVersionsCheck(client: ClientRunner, server: SimulatorServer) -> None:
@@ -235,7 +202,6 @@ def test_TestDelegatesRolesUpdateWithConsistentSnapshotDisabled(client: ClientRu
     assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
 
     repo.set_root_consistent_snapshot(False)
-    #repo.root.consistent_snapshot = False
     repo.bump_root_by_one()
 
     # Target that expires 5 days in the future
@@ -265,7 +231,6 @@ def test_TestDelegatesRolesUpdateWithConsistentSnapshotDisabled(client: ClientRu
     repo.add_delegation(Targets.type, delegated_role3, new_target)
 
     repo.update_snapshot()
-    print("TRY TO FETCH..................")
     assert client.refresh(init_data) == 0
 
     # TODO: Implement this: https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_consistent_snapshot_test.go#L146-L161

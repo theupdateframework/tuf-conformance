@@ -28,11 +28,7 @@ class _ReqHandler(BaseHTTPRequestHandler):
             return
 
         try:
-            if test.endswith("_MitM"):
-                print("MitM test================")
-                data = repo.fetch(path)
-            else:
-                data = repo.fetch(path)
+            data = repo.fetch(path)
         except ValueError as e:
             self.send_error(404, str(e))
             return
