@@ -55,14 +55,14 @@ def test_simple_signing(client: ClientRunner,
     # Sanity-check. TODO: Make unit test outside
     # of conformance test for this
     repo_root = repo.load_metadata(Root.type)
-    assert repo_root.signed.version == 1
+    assert repo._version_equals(Root.type, 1)
 
     repo.bump_root_by_one()
 
     # Sanity-check. TODO: Make unit test outside
     # of conformance test for this
     repo_root = repo.load_metadata(Root.type)
-    assert repo_root.signed.version == 2
+    assert repo._version_equals(Root.type, 2)
     assert len(repo_root.signed.roles["snapshot"].keyids) == 4
 
     repo.update_timestamp()
@@ -294,7 +294,7 @@ def test_max_root_rotations(client: ClientRunner,
         repo.bump_root_by_one()
 
     # The repositorys root version is now 13.
-    assert repo.load_metadata(Root.type).signed.version == 13
+    assert repo._version_equals(Root.type, 13)
 
     # Check that the client does not upgrade by more than its max
     md_root = Metadata.from_file(
@@ -587,8 +587,7 @@ def test_new_snapshot_version_rollback(client: ClientRunner,
 
     # Repository attempts rollback attack:
     repo.downgrade_snapshot()
-    assert repo._assert_version_equals(Snapshot.type, 1)
-    #assert repo.snapshot.version == 1
+    assert repo._version_equals(Snapshot.type, 1)
     client.refresh(init_data)
 
     # Check that client resisted rollback attack
@@ -609,7 +608,7 @@ def test_new_timestamp_version_rollback(client: ClientRunner,
 
     # Repository performs legitimate update to snapshot
     repo.update_timestamp()
-    assert repo._assert_version_equals(Timestamp.type, 2)
+    assert repo._version_equals(Timestamp.type, 2)
     assert client.refresh(init_data) == 0
 
     # Sanity check that client saw the snapshot update:
@@ -620,7 +619,7 @@ def test_new_timestamp_version_rollback(client: ClientRunner,
 
     # Sanitty check that the repository is attempting a
     # rollback attack
-    assert repo._assert_version_equals(Timestamp.type, 1)
+    assert repo._version_equals(Timestamp.type, 1)
 
     client.refresh(init_data)
 
@@ -650,8 +649,7 @@ def test_new_timestamp_snapshot_rollback(client: ClientRunner,
     # Repository performs legitimate update to snapshot
     repo.update_timestamp()
     # Sanity check
-    assert repo._assert_version_equals(Timestamp.type, 2)
-    #assert repo.timestamp.version == 2
+    assert repo._version_equals(Timestamp.type, 2)
     assert client.refresh(init_data) == 0
 
     # Repo attempts rollback attack
@@ -660,7 +658,7 @@ def test_new_timestamp_snapshot_rollback(client: ClientRunner,
     new_timestamp.signed.version += 1
     repo.save_metadata(Timestamp.type, new_timestamp)
     # Sanity check
-    assert repo._assert_version_equals(Timestamp.type, 3)
+    assert repo._version_equals(Timestamp.type, 3)
     assert client._assert_version_equals(Timestamp.type, 2)
 
     client.refresh(init_data)
@@ -815,7 +813,7 @@ def test_new_timestamp_fast_forward_recovery(client: ClientRunner,
     repo.update_timestamp()
 
     # Sanity check
-    assert repo._assert_version_equals(Timestamp.type, 99999)
+    assert repo._version_equals(Timestamp.type, 99999)
 
     # client refreshes the metadata and see the new timestamp version
     client.refresh(init_data)
@@ -875,7 +873,10 @@ def test_downloaded_file_is_correct(client: ClientRunner,
     new_targets = repo.load_metadata(Targets.type)
     new_targets.signed.version += 1
     repo.save_metadata(Targets.type, new_targets)
-    repo.add_target_with_length("targets", target.content, target.path, len(target.content))
+    repo.add_target_with_length("targets",
+                                target.content,
+                                target.path,
+                                len(target.content))
     repo.update_snapshot()
     client.refresh(init_data)
 
@@ -893,8 +894,10 @@ def test_downloaded_file_is_correct(client: ClientRunner,
                                           target_base_url=url_prefix)
 
     # Sanity check that we downloaded the file
-    assert client.get_last_downloaded_target() == os.path.join(client._target_dir.name,
-                                                               target_base_name)
+    expected_last_file = os.path.join(client._target_dir.name,
+                                                 target_base_name)
+    last_downloaded_file = client.get_last_downloaded_target()
+    assert last_downloaded_file == expected_last_file
 
     with open(client.get_last_downloaded_target(), "r") as last_download_file:
         donwloaded_file_contents = last_download_file.read()
@@ -904,8 +907,8 @@ def test_downloaded_file_is_correct(client: ClientRunner,
 # TODO: Needs work
 def test_downloaded_file_is_correct2(client: ClientRunner,
                                      server: SimulatorServer) -> None:
-    # A test that upgrades the version of one of the files in snapshot.json only
-    # but does does not upgrade in the file itself.
+    # A test that upgrades the version of one of the files in
+    # snapshot.json only but does does not upgrade in the file itself.
     name = "test_downloaded_file_is_correct2"
 
     # initialize a simulator with repository content we need
@@ -921,7 +924,8 @@ def test_downloaded_file_is_correct2(client: ClientRunner,
     target_base_name = "target_file.txt"
 
     ## Create, upload and update a legitimate target file
-    target_file_path = os.path.join(client._remote_target_dir.name, target_base_name)
+    target_file_path = os.path.join(client._remote_target_dir.name,
+                                    target_base_name)
     target_file = open(target_file_path, 'w')
     target_file.write(file_contents_str)
     target_file.close()
@@ -1014,7 +1018,8 @@ def test_downloaded_file_is_correct3(client: ClientRunner,
     target_base_name = "target_file.txt"
 
     ## Create, upload and update a legitimate target file
-    target_file_path = os.path.join(client._remote_target_dir.name, target_base_name)
+    target_file_path = os.path.join(client._remote_target_dir.name,
+                                    target_base_name)
     target_file = open(target_file_path, 'w')
     target_file.write(file_contents_str)
     target_file.close()
