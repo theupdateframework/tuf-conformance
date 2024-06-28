@@ -12,6 +12,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -21,6 +22,10 @@ var FlagVerbosity bool
 var FlagMetadataURL string
 var FlagMetadataDir string
 var FlagTargetDir string
+var FlagTargetUrl string
+var FlagTargetBaseUrl string
+var FlagDaysInFuture string
+var MaxRootRotations int
 
 var rootCmd = &cobra.Command{
 	Use:   "tuf-client",
@@ -39,8 +44,13 @@ func Execute() {
 	rootCmd.PersistentFlags().StringVar(&FlagMetadataURL, "metadata-url", "", "URL of the TUF repository")
 	rootCmd.PersistentFlags().StringVar(&FlagMetadataDir, "metadata-dir", "", "directory to save metadata")
 	rootCmd.PersistentFlags().StringVar(&FlagTargetDir, "target-dir", "", "directory to save target files")
+	rootCmd.PersistentFlags().StringVar(&FlagTargetUrl, "target-url", "", "url for target file")
+	rootCmd.PersistentFlags().StringVar(&FlagTargetBaseUrl, "target-base-url", "", "base url for target file")
+	rootCmd.PersistentFlags().StringVar(&FlagDaysInFuture, "days-in-future", "0", "for refresh only. For setting the time.Now() at a time in the future")
+	rootCmd.PersistentFlags().IntVar(&MaxRootRotations, "max-root-rotations", 32, "number of max allowed root rotations")
 
 	if err := rootCmd.Execute(); err != nil {
+		fmt.Println("ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR", err)
 		os.Exit(1)
 	}
 }

@@ -27,8 +27,16 @@ var refreshCmd = &cobra.Command{
 			fmt.Println("Error: required flag(s): \"metadata-url\" or \"metadata-dir\" not set")
 			os.Exit(1)
 		}
+		daysInFuture, err := cmd.Flags().GetString("days-in-future")
+		if err != nil {
+			os.Exit(1)
+		}
+		maxRootRotations, err := cmd.Flags().GetInt("max-root-rotations")
+		if err != nil {
+			os.Exit(1)
+		}
 		// do a refresh only
-		return RefreshAndDownloadCmd("", true)
+		return RefreshAndDownloadCmd("", "", "", daysInFuture, maxRootRotations, true)
 	},
 }
 
