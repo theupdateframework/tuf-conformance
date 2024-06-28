@@ -28,7 +28,8 @@ class TestTarget:
     content: bytes
     encoded_path: str
 
-def test_simple_signing(client: ClientRunner, server: SimulatorServer) -> None:
+def test_simple_signing(client: ClientRunner,
+                        server: SimulatorServer) -> None:
     # Tests that add_key_to_role works as intended
 
     name = "test_simple_signing"
@@ -39,9 +40,11 @@ def test_simple_signing(client: ClientRunner, server: SimulatorServer) -> None:
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
-
-    # Sanity check
+    # Sanity checks
+    assert client._assert_files_exist([Root.type,
+                                       Timestamp.type,
+                                       Snapshot.type,
+                                       Targets.type])
     assert client._assert_version_equals(Snapshot.type, 1)
 
     # Add signature to Snapshot
@@ -49,25 +52,25 @@ def test_simple_signing(client: ClientRunner, server: SimulatorServer) -> None:
     repo.add_key_to_role(Snapshot.type)
     repo.add_key_to_role(Snapshot.type)
 
-    # Sanity-check. TODO: Make unit test outside of conformance test for this
+    # Sanity-check. TODO: Make unit test outside
+    # of conformance test for this
     repo_root = repo.load_metadata(Root.type)
     assert repo_root.signed.version == 1
 
     repo.bump_root_by_one()
 
-    # Sanity-check. TODO: Make unit test outside of conformance test for this
+    # Sanity-check. TODO: Make unit test outside
+    # of conformance test for this
     repo_root = repo.load_metadata(Root.type)
     assert repo_root.signed.version == 2
-
-
-    repo_root = repo.load_metadata(Root.type)
     assert len(repo_root.signed.roles["snapshot"].keyids) == 4
+
     repo.update_timestamp()
     repo.update_snapshot()
 
     assert client.refresh(init_data) == 0
 
-    # There should be 4 snapshot signatures
+    # There should be 4 snapshot signatures in the clients metadata
     md_obj = Metadata.from_file(
         os.path.join(client.metadata_dir, "root.json")).signed
     md_obj2 = Metadata.from_file(
@@ -78,6 +81,8 @@ def test_simple_signing(client: ClientRunner, server: SimulatorServer) -> None:
     # Add another signature
     repo.add_key_to_role(Snapshot.type)
     repo.bump_root_by_one()
+
+    # Sanity check
     repo_root = repo.load_metadata(Root.type)
     assert len(repo_root.signed.roles["snapshot"].keyids) == 5
 
@@ -86,7 +91,7 @@ def test_simple_signing(client: ClientRunner, server: SimulatorServer) -> None:
 
     assert client.refresh(init_data) == 0
 
-    # There should be 5 snapshot signatures
+    # There should be 5 snapshot signatures in the clients metadata
     md_obj = Metadata.from_file(
         os.path.join(client.metadata_dir, "root.json")).signed
     md_obj2 = Metadata.from_file(
@@ -111,12 +116,11 @@ def test_simple_signing(client: ClientRunner, server: SimulatorServer) -> None:
     assert client._assert_version_equals(Snapshot.type, initial_root_version)
 
 
-
-# Test 2:
 # Set/keep a threshold of 10 keys. All the keyids are different,
 # but the keys are all identical. As such, the snapshot metadata
 # has been signed by 1 key.
-def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> None:
+def test_duplicate_keys_root(client: ClientRunner,
+                             server: SimulatorServer) -> None:
     # Tests that add_key_to_role works as intended
 
     name = "test_duplicate_keys_root"
@@ -127,23 +131,27 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
-
-    # Sanity check
+    # Sanity checks
+    assert client._assert_files_exist([Root.type,
+                                       Timestamp.type,
+                                       Snapshot.type,
+                                       Targets.type])
     assert client._assert_version_equals(Snapshot.type, 1)
 
-    # Add signature to Snapshot
+    # Add the same signature to Snapshot 9 times
     repo.add_one_role_key_n_times_to_root(Snapshot.type, 9)
     repo.bump_root_by_one()
     assert len(repo.root.roles["snapshot"].keyids) == 10
     repo.update_timestamp()
     repo.update_snapshot()
 
-    # This should fail because the metadata should not have the same key 
-    # in more than 1 keyids
+    # This should fail because the metadata should not have
+    # the same key in more than 1 keyids. We check failure
+    # here, and further down we check that the clients
+    # metadata has not been updated.
     client.refresh(init_data)
 
-    # Verify that we have not updated
+    # Verify that the client has not updated its metadata
     try:
         md_root = Metadata.from_file(
             os.path.join(client.metadata_dir, "root.json")).signed
@@ -160,13 +168,14 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
             os.path.join(client.metadata_dir, "root.json")).signed
     md_snapshot = Metadata.from_file(
         os.path.join(client.metadata_dir, "snapshot.json"))
-    print("md_root: ", md_root.roles[Snapshot.type].keyids)
-    assert len(md_root.roles[Snapshot.type].keyids) == 2 # TODO: Double check that "2" is correct here
-    assert len(md_snapshot.signatures) == 2 # TODO: Double check that "2" is correct here
+
+    # TODO: Double check that "2" is correct here:
+    assert len(md_root.roles[Snapshot.type].keyids) == 2
+    # TODO: Double check that "2" is correct here:
+    assert len(md_snapshot.signatures) == 2
 
 def test_TestTimestampEqVersionsCheck(client: ClientRunner, server: SimulatorServer) -> None:
     #https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_top_level_update_test.go#L1058
-
     name = "test_TestTimestampEqVersionsCheck"
 
     # initialize a simulator with repository content we need
@@ -175,7 +184,11 @@ def test_TestTimestampEqVersionsCheck(client: ClientRunner, server: SimulatorSer
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+    # Sanity check
+    assert client._assert_files_exist([Root.type,
+                                       Timestamp.type,
+                                       Snapshot.type,
+                                       Targets.type])
 
     initial_timestamp_meta_ver = repo.timestamp.snapshot_meta.version
     # Change timestamp without bumping its version in order to test if a new
@@ -188,9 +201,9 @@ def test_TestTimestampEqVersionsCheck(client: ClientRunner, server: SimulatorSer
 
     assert client._assert_version_equals(Timestamp.type, initial_timestamp_meta_ver)
 
-def test_TestDelegatesRolesUpdateWithConsistentSnapshotDisabled(client: ClientRunner, server: SimulatorServer) -> None:
+def test_TestDelegatesRolesUpdateWithConsistentSnapshotDisabled(client: ClientRunner,
+                                                                server: SimulatorServer) -> None:
     #https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_consistent_snapshot_test.go#L97C6-L97C60
-
     name = "test_TestDelegatesRolesUpdateWithConsistentSnapshotDisabled"
 
     # initialize a simulator with repository content we need
@@ -199,46 +212,55 @@ def test_TestDelegatesRolesUpdateWithConsistentSnapshotDisabled(client: ClientRu
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+    # Sanity check
+    assert client._assert_files_exist([Root.type,
+                                       Timestamp.type,
+                                       Snapshot.type,
+                                       Targets.type])
 
     repo.set_root_consistent_snapshot(False)
     repo.bump_root_by_one()
 
+    # Add 3 delegates for new target
     # Target that expires 5 days in the future
-    new_target = Targets(expires=datetime.datetime.now(timezone.utc).replace(
-        microsecond=0
-    ) + datetime.timedelta(days=5))
+    new_target = Targets(expires=datetime.datetime.now(timezone.utc)
+                         .replace(microsecond=0)
+                         + datetime.timedelta(days=5))
 
     delegated_role1 = DelegatedRole(name="role1",
                                     keyids=list(),
                                     threshold=1,
                                     terminating=False,
                                     paths=["*"])
-    repo.add_delegation(Targets.type, delegated_role1, new_target)
+    repo.add_delegation(Targets.type,
+                        delegated_role1,
+                        new_target)
 
     delegated_role2 = DelegatedRole(name="..",
                                     keyids=list(),
                                     threshold=1,
                                     terminating=False,
                                     paths=["*"])
-    repo.add_delegation(Targets.type, delegated_role2, new_target)
+    repo.add_delegation(Targets.type,
+                        delegated_role2,
+                        new_target)
 
     delegated_role3 = DelegatedRole(name=".",
                                     keyids=list(),
                                     threshold=1,
                                     terminating=False,
                                     paths=["*"])
-    repo.add_delegation(Targets.type, delegated_role3, new_target)
-
+    repo.add_delegation(Targets.type,
+                        delegated_role3,
+                        new_target)
     repo.update_snapshot()
+
     assert client.refresh(init_data) == 0
 
     # TODO: Implement this: https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_consistent_snapshot_test.go#L146-L161
 
-
-
-
-def test_max_root_rotations(client: ClientRunner, server: SimulatorServer) -> None:
+def test_max_root_rotations(client: ClientRunner,
+                            server: SimulatorServer) -> None:
     # Root must stop looking for new versions after Y number of
     # intermediate files were downloaded.
 
@@ -250,13 +272,16 @@ def test_max_root_rotations(client: ClientRunner, server: SimulatorServer) -> No
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+    # Sanity check
+    assert client._assert_files_exist([Root.type,
+                                       Timestamp.type,
+                                       Snapshot.type,
+                                       Targets.type])
 
     updater_max_root_rotations = 3
     client.max_root_rotations = updater_max_root_rotations
-    #assert client.max_root_rotations == 3
 
-    # repo bumps Root version by more than the client allows
+    # repo bumps the Root version by more than the client allows
     maxIterations = 20
     for i in range(20):
         if i > maxIterations:
@@ -268,7 +293,10 @@ def test_max_root_rotations(client: ClientRunner, server: SimulatorServer) -> No
             break
         repo.bump_root_by_one()
 
+    # The repositorys root version is now 13.
+    assert repo.load_metadata(Root.type).signed.version == 13
 
+    # Check that the client does not upgrade by more than its max
     md_root = Metadata.from_file(
         os.path.join(client.metadata_dir, "root.json")
     )
@@ -281,7 +309,8 @@ def test_max_root_rotations(client: ClientRunner, server: SimulatorServer) -> No
         Root.type, initial_root_version+3
     )
 
-def test_new_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> None:
+def test_new_snapshot_expired(client: ClientRunner,
+                              server: SimulatorServer) -> None:
     # Check for a freeze attack
     name = "test_new_snapshot_expired"
 
@@ -291,12 +320,12 @@ def test_new_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> 
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+    # Sanity check
+    assert client._assert_files_exist([Root.type,
+                                       Timestamp.type,
+                                       Snapshot.type,
+                                       Targets.type])
 
-    # Update the timestamp but the expiration has passed.
-    #repo.update_timestamp()
-
-    # Update the timestamp but the expiration has passed.
     new_snapshot = repo.load_metadata(Snapshot.type)
     new_snapshot.signed.expires = datetime.datetime.now(timezone.utc).replace(
         microsecond=0
@@ -307,10 +336,12 @@ def test_new_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> 
     client.refresh(init_data)
 
     # Check that the client still has the correct metadata files
+    # i.e. that it has not updated to the expired metadata
     assert client._assert_files_exist([Root.type, Timestamp.type])
     assert client._assert_version_equals(Snapshot.type, 1)
 
-def test_new_targets_hash_mismatch(client: ClientRunner, server: SimulatorServer) -> None:
+def test_new_targets_hash_mismatch(client: ClientRunner,
+                                   server: SimulatorServer) -> None:
     # Check against snapshot role's targets hashes
     name = "test_new_targets_hash_mismatch"
 
@@ -320,24 +351,32 @@ def test_new_targets_hash_mismatch(client: ClientRunner, server: SimulatorServer
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+    # Sanity check
+    assert client._assert_files_exist([Root.type,
+                                       Timestamp.type,
+                                       Snapshot.type])
 
     repo.compute_metafile_hashes_length = True
     repo.update_snapshot()
+
     client.refresh(init_data)
 
     # Modify targets contents without updating
     # snapshot's targets hashes
-    repo.targets.version += 1
-    repo.snapshot.meta["targets.json"].version = repo.targets.version
-    repo.snapshot.version += 1
+    repo.bump_version_by_one(Targets.type)
+    new_ss = repo.load_metadata(Snapshot.type)
+    targets_version = repo.load_metadata(Targets.type).signed.version
+    new_ss.signed.meta["targets.json"].version = targets_version
+    new_ss.signed.version += 1
+    repo.save_metadata(Snapshot.type, new_ss)
     repo.update_timestamp()
 
     client.refresh(init_data)
     assert client._assert_version_equals(Snapshot.type, 1)
     assert client._assert_version_equals(Targets.type, 1)
 
-def test_new_targets_version_mismatch(client: ClientRunner, server: SimulatorServer) -> None:
+def test_new_targets_version_mismatch(client: ClientRunner,
+                                       server: SimulatorServer) -> None:
     # Check against snapshot role's targets version
     name = "test_new_targets_version_mismatch"
 
@@ -347,13 +386,21 @@ def test_new_targets_version_mismatch(client: ClientRunner, server: SimulatorSer
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+    assert client._assert_files_exist([Root.type,
+                                       Timestamp.type,
+                                       Snapshot.type,
+                                       Targets.type])
 
-    repo.targets.version += 1
+    repo.bump_version_by_one(Targets.type)
     client.refresh(init_data)
-    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+    # Check that the client still has the correct metadata files
+    assert client._assert_files_exist([Root.type,
+                                       Timestamp.type,
+                                       Snapshot.type,
+                                       Targets.type])
 
-def test_new_targets_expired(client: ClientRunner, server: SimulatorServer) -> None:
+def test_new_targets_expired(client: ClientRunner,
+                             server: SimulatorServer) -> None:
     # Check against snapshot role's targets version
     name = "test_new_targets_expired"
 
@@ -363,7 +410,10 @@ def test_new_targets_expired(client: ClientRunner, server: SimulatorServer) -> N
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+    assert client._assert_files_exist([Root.type,
+                                       Timestamp.type,
+                                       Snapshot.type,
+                                       Targets.type])
 
     repo.targets.expires = datetime.datetime.now(timezone.utc).replace(
         microsecond=0
@@ -373,7 +423,10 @@ def test_new_targets_expired(client: ClientRunner, server: SimulatorServer) -> N
     assert client.init_client(init_data) == 0
 
     # Check that the client still has the correct metadata files
-    assert client._assert_files_exist([Root.type, Timestamp.type, Snapshot.type])
+    assert client._assert_files_exist([Root.type,
+                                       Timestamp.type,
+                                       Snapshot.type,
+                                       Targets.type])
 
     # Client should not bump targets version, because it has expired
     assert client._assert_version_equals(Targets.type, 1)
@@ -442,7 +495,8 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
             assert md.signed.version == 3
 
 
-def test_snapshot_rollback_with_local_snapshot_hash_mismatch(client: ClientRunner, server: SimulatorServer) -> None:
+def test_snapshot_rollback_with_local_snapshot_hash_mismatch(client: ClientRunner,
+                                                             server: SimulatorServer) -> None:
     # Test triggering snapshot rollback check on a newly downloaded snapshot
     # when the local snapshot is loaded even when there is a hash mismatch
     # with timestamp.snapshot_meta.
@@ -454,7 +508,10 @@ def test_snapshot_rollback_with_local_snapshot_hash_mismatch(client: ClientRunne
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._assert_files_exist ([Root.type, Timestamp.type, Snapshot.type, Targets.type])
+    assert client._assert_files_exist([Root.type,
+                                       Timestamp.type,
+                                       Snapshot.type,
+                                       Targets.type])
 
     # Initialize all metadata and assign targets version higher than 1.
     new_targets = repo.load_metadata(Targets.type)
@@ -480,8 +537,10 @@ def test_snapshot_rollback_with_local_snapshot_hash_mismatch(client: ClientRunne
     assert client.refresh(init_data) == 1
     
 
-def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -> None:
-    """This is an example of a test method: it should likely be a e.g. a unittest.TestCase"""
+def test_basic_init_and_refresh(client: ClientRunner,
+                                server: SimulatorServer) -> None:
+    """This is an example of a test method:
+    it should likely be a e.g. a unittest.TestCase"""
 
     name = "test_init"
 
@@ -502,11 +561,17 @@ def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -
     assert client.refresh(init_data) == 0
 
     # Verify that expected requests were made
-    assert repo.metadata_statistics == [('root', 1), ('root', 2), ('timestamp', None), ('snapshot', 1), ('targets', 1)]
+    assert repo.metadata_statistics == [('root', 1),
+                                        ('root', 2),
+                                        ('timestamp', None),
+                                        ('snapshot', 1),
+                                        ('targets', 1)]
     # TODO verify that local metadata cache has the files we expect
 
-def test_new_snapshot_version_rollback(client: ClientRunner, server: SimulatorServer) -> None:
-    """This is an example of a test method: it should likely be a e.g. a unittest.TestCase"""
+def test_new_snapshot_version_rollback(client: ClientRunner,
+                                       server: SimulatorServer) -> None:
+    """This is an example of a test method:
+    it should likely be a e.g. a unittest.TestCase"""
 
     name = "test_new_snapshot_version_rollback"
 
@@ -533,8 +598,10 @@ def test_new_snapshot_version_rollback(client: ClientRunner, server: SimulatorSe
     # Check that client resisted rollback attack
     assert client._assert_version_equals(Snapshot.type, 2)
 
-def test_new_timestamp_version_rollback(client: ClientRunner, server: SimulatorServer) -> None:
-    """This is an example of a test method: it should likely be a e.g. a unittest.TestCase"""
+def test_new_timestamp_version_rollback(client: ClientRunner,
+                                        server: SimulatorServer) -> None:
+    """This is an example of a test method:
+    it should likely be a e.g. a unittest.TestCase"""
 
     name = "test_new_timestamp_version_rollback"
 
@@ -542,13 +609,11 @@ def test_new_timestamp_version_rollback(client: ClientRunner, server: SimulatorS
     repo = RepositorySimulator()
     server.repos[name] = repo
     init_data = server.get_client_init_data(name)
-
     assert client.init_client(init_data) == 0
 
     # Repository performs legitimate update to snapshot
     repo.update_timestamp()
     assert repo._assert_version_equals(Timestamp.type, 2)
-    #assert repo.timestamp.version == 2
     assert client.refresh(init_data) == 0
 
     # Sanity check that client saw the snapshot update:
@@ -557,17 +622,19 @@ def test_new_timestamp_version_rollback(client: ClientRunner, server: SimulatorS
     # Repository attempts rollback attack:
     repo.downgrade_timestamp()
 
-    # Sanitty check that the repository is attempting a rollback attack
+    # Sanitty check that the repository is attempting a
+    # rollback attack
     assert repo._assert_version_equals(Timestamp.type, 1)
-    #assert repo.timestamp.version == 1
 
     client.refresh(init_data)
 
     # Check that client resisted rollback attack
     assert client._assert_version_equals(Timestamp.type, 2)
 
-def test_new_timestamp_snapshot_rollback(client: ClientRunner, server: SimulatorServer) -> None:
-    """This is an example of a test method: it should likely be a e.g. a unittest.TestCase"""
+def test_new_timestamp_snapshot_rollback(client: ClientRunner, 
+                                         server: SimulatorServer) -> None:
+    """This is an example of a test method:
+    it should likely be a e.g. a unittest.TestCase"""
 
     name = "test_new_timestamp_snapshot_rollback"
 
@@ -605,8 +672,10 @@ def test_new_timestamp_snapshot_rollback(client: ClientRunner, server: Simulator
     # Check that client resisted rollback attack
     assert client._assert_version_equals(Timestamp.type, 2)
 
-def test_new_timestamp_expired(client: ClientRunner, server: SimulatorServer) -> None:
-    """This is an example of a test method: it should likely be a e.g. a unittest.TestCase"""
+def test_new_timestamp_expired(client: ClientRunner,
+                               server: SimulatorServer) -> None:
+    """This is an example of a test method:
+    it should likely be a e.g. a unittest.TestCase"""
 
     name = "test_new_timestamp_expired"
 
@@ -619,8 +688,6 @@ def test_new_timestamp_expired(client: ClientRunner, server: SimulatorServer) ->
     repo.timestamp.expires = datetime.datetime.now(timezone.utc).replace(
         microsecond=0
     ) - datetime.timedelta(days=5)
-    client.refresh(init_data)
-
     repo.update_timestamp()
 
     client.refresh(init_data)
@@ -628,7 +695,8 @@ def test_new_timestamp_expired(client: ClientRunner, server: SimulatorServer) ->
     # Check that client resisted rollback attack
     assert client._assert_files_exist([Root.type])
 
-def test_new_targets_fast_forward_recovery(client: ClientRunner, server: SimulatorServer) -> None:
+def test_new_targets_fast_forward_recovery(client: ClientRunner,
+                                           server: SimulatorServer) -> None:
     """Test targets fast-forward recovery using key rotation.
 
     The targets recovery is made by issuing new Snapshot keys, by following
@@ -645,7 +713,6 @@ def test_new_targets_fast_forward_recovery(client: ClientRunner, server: Simulat
     repo = RepositorySimulator()
     server.repos[name] = repo
     init_data = server.get_client_init_data(name)
-
     assert client.init_client(init_data) == 0
 
     new_targets = repo.load_metadata(Targets.type)
@@ -667,7 +734,8 @@ def test_new_targets_fast_forward_recovery(client: ClientRunner, server: Simulat
     # TODO: Is it really true that the targets version is 1?
     assert client._assert_version_equals(Targets.type, 99999)
 
-def test_new_snapshot_fast_forward_recovery(client: ClientRunner, server: SimulatorServer) -> None:
+def test_new_snapshot_fast_forward_recovery(client: ClientRunner,
+                                            server: SimulatorServer) -> None:
     """Test snapshot fast-forward recovery using key rotation.
 
     The snapshot recovery requires the snapshot and timestamp key rotation.
@@ -708,7 +776,8 @@ def test_new_snapshot_fast_forward_recovery(client: ClientRunner, server: Simula
     # TODO: Can this really be true?
     assert client._assert_version_equals(Snapshot.type, 99999)
 
-def test_new_snapshot_version_mismatch(client: ClientRunner, server: SimulatorServer) -> None:
+def test_new_snapshot_version_mismatch(client: ClientRunner,
+                                       server: SimulatorServer) -> None:
     # Check against timestamp role's snapshot version
 
     name = "test_new_snapshot_version_mismatch"
@@ -727,7 +796,8 @@ def test_new_snapshot_version_mismatch(client: ClientRunner, server: SimulatorSe
     client.refresh(init_data)
     assert client._assert_files_exist([Root.type, Timestamp.type])
 
-def test_new_timestamp_fast_forward_recovery(client: ClientRunner, server: SimulatorServer) -> None:
+def test_new_timestamp_fast_forward_recovery(client: ClientRunner,
+                                             server: SimulatorServer) -> None:
     """The timestamp recovery is made by the following steps
      - Remove the timestamp key
      - Create and add a new key for timestamp
@@ -771,7 +841,8 @@ def test_new_timestamp_fast_forward_recovery(client: ClientRunner, server: Simul
     assert client._assert_version_equals(Timestamp.type, 99999)
 
 # TODO: Needs work
-def test_downloaded_file_is_correct(client: ClientRunner, server: SimulatorServer) -> None:
+def test_downloaded_file_is_correct(client: ClientRunner,
+                                    server: SimulatorServer) -> None:
     # A test that upgrades the version of one of the files in snapshot.json only
     # but does does not upgrade in the file itself.
     name = "test_downloaded_file_is_correct"
@@ -837,7 +908,8 @@ def test_downloaded_file_is_correct(client: ClientRunner, server: SimulatorServe
         print("last file contents: ", donwloaded_file_contents)
 
 # TODO: Needs work
-def test_downloaded_file_is_correct2(client: ClientRunner, server: SimulatorServer) -> None:
+def test_downloaded_file_is_correct2(client: ClientRunner,
+                                     server: SimulatorServer) -> None:
     # A test that upgrades the version of one of the files in snapshot.json only
     # but does does not upgrade in the file itself.
     name = "test_downloaded_file_is_correct2"
@@ -929,7 +1001,8 @@ def test_downloaded_file_is_correct2(client: ClientRunner, server: SimulatorServ
         assert data_of_last_downloaded_file == file_contents_str
 
 # TODO: Needs work
-def test_downloaded_file_is_correct3(client: ClientRunner, server: SimulatorServer) -> None:
+def test_downloaded_file_is_correct3(client: ClientRunner,
+                                     server: SimulatorServer) -> None:
     # A test that upgrades the version of one of the files in snapshot.json only
     # but does does not upgrade in the file itself.
     name = "test_downloaded_file_is_correct3"
@@ -1007,7 +1080,7 @@ def test_downloaded_file_is_correct3(client: ClientRunner, server: SimulatorServ
         repo.update_timestamp()
         repo.rotate_keys(Snapshot.type)
         repo.bump_root_by_one()
-        repo.targets.version += 1
+        repo.bump_version_by_one(Targets.type)
         repo.update_snapshot()
         client.refresh(init_data)
         # Sanity checks
@@ -1021,7 +1094,8 @@ def test_downloaded_file_is_correct3(client: ClientRunner, server: SimulatorServ
             data_of_last_downloaded_file = last_download_file.read()
             assert data_of_last_downloaded_file == file_contents_str
 
-def test_multiple_changes_to_target(client: ClientRunner, server: SimulatorServer) -> None:
+def test_multiple_changes_to_target(client: ClientRunner,
+                                    server: SimulatorServer) -> None:
     name = "test_downloaded_file_is_correct3"
 
     # initialize a simulator with repository content we need
@@ -1124,7 +1198,8 @@ def test_multiple_changes_to_target(client: ClientRunner, server: SimulatorServe
             data_of_last_downloaded_file = last_download_file.read()
             assert data_of_last_downloaded_file == new_legitimate_file_contents
 
-def test_timestamp_eq_versions_check(client: ClientRunner, server: SimulatorServer) -> None:
+def test_timestamp_eq_versions_check(client: ClientRunner,
+                                     server: SimulatorServer) -> None:
     # Test that a modified timestamp with different content, but the same
     # version doesn't replace the valid locally stored one.
     name = "test_timestamp_eq_versions_check"
