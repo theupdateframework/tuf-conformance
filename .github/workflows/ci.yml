@@ -32,5 +32,5 @@ jobs:
         run: make dev
       - name: Test python-tuf
         run: make test-python-tuf
-      - name: Test go-tuf-metadata
-        run: make test-go-tuf-metadata
+      - name: Test go-tuf
+        run: make test-go-tuf
