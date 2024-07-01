@@ -41,7 +41,7 @@ def test_simple_signing(client: ClientRunner,
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity checks
-    assert client._assert_files_exist([Root.type,
+    assert client._files_exist([Root.type,
                                        Timestamp.type,
                                        Snapshot.type,
                                        Targets.type])
@@ -132,7 +132,7 @@ def test_duplicate_keys_root(client: ClientRunner,
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity checks
-    assert client._assert_files_exist([Root.type,
+    assert client._files_exist([Root.type,
                                        Timestamp.type,
                                        Snapshot.type,
                                        Targets.type])
@@ -185,7 +185,7 @@ def test_TestTimestampEqVersionsCheck(client: ClientRunner, server: SimulatorSer
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity check
-    assert client._assert_files_exist([Root.type,
+    assert client._files_exist([Root.type,
                                        Timestamp.type,
                                        Snapshot.type,
                                        Targets.type])
@@ -213,7 +213,7 @@ def test_TestDelegatesRolesUpdateWithConsistentSnapshotDisabled(client: ClientRu
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity check
-    assert client._assert_files_exist([Root.type,
+    assert client._files_exist([Root.type,
                                        Timestamp.type,
                                        Snapshot.type,
                                        Targets.type])
@@ -273,7 +273,7 @@ def test_max_root_rotations(client: ClientRunner,
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity check
-    assert client._assert_files_exist([Root.type,
+    assert client._files_exist([Root.type,
                                        Timestamp.type,
                                        Snapshot.type,
                                        Targets.type])
@@ -321,7 +321,7 @@ def test_new_snapshot_expired(client: ClientRunner,
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity check
-    assert client._assert_files_exist([Root.type,
+    assert client._files_exist([Root.type,
                                        Timestamp.type,
                                        Snapshot.type,
                                        Targets.type])
@@ -335,7 +335,7 @@ def test_new_snapshot_expired(client: ClientRunner,
 
     # Check that the client still has the correct metadata files
     # i.e. that it has not updated to the expired metadata
-    assert client._assert_files_exist([Root.type, Timestamp.type])
+    assert client._files_exist([Root.type, Timestamp.type])
     assert client._version_equals(Snapshot.type, 1)
 
 def test_new_targets_hash_mismatch(client: ClientRunner,
@@ -350,7 +350,7 @@ def test_new_targets_hash_mismatch(client: ClientRunner,
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity check
-    assert client._assert_files_exist([Root.type,
+    assert client._files_exist([Root.type,
                                        Timestamp.type,
                                        Snapshot.type])
 
@@ -384,7 +384,7 @@ def test_new_targets_version_mismatch(client: ClientRunner,
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._assert_files_exist([Root.type,
+    assert client._files_exist([Root.type,
                                        Timestamp.type,
                                        Snapshot.type,
                                        Targets.type])
@@ -392,7 +392,7 @@ def test_new_targets_version_mismatch(client: ClientRunner,
     repo.bump_version_by_one(Targets.type)
     client.refresh(init_data)
     # Check that the client still has the correct metadata files
-    assert client._assert_files_exist([Root.type,
+    assert client._files_exist([Root.type,
                                        Timestamp.type,
                                        Snapshot.type,
                                        Targets.type])
@@ -408,7 +408,7 @@ def test_new_targets_expired(client: ClientRunner,
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._assert_files_exist([Root.type,
+    assert client._files_exist([Root.type,
                                        Timestamp.type,
                                        Snapshot.type,
                                        Targets.type])
@@ -419,7 +419,7 @@ def test_new_targets_expired(client: ClientRunner,
     assert client.init_client(init_data) == 0
 
     # Check that the client still has the correct metadata files
-    assert client._assert_files_exist([Root.type,
+    assert client._files_exist([Root.type,
                                        Timestamp.type,
                                        Snapshot.type,
                                        Targets.type])
@@ -504,7 +504,7 @@ def test_snapshot_rollback_with_local_snapshot_hash_mismatch(client: ClientRunne
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._assert_files_exist([Root.type,
+    assert client._files_exist([Root.type,
                                        Timestamp.type,
                                        Snapshot.type,
                                        Targets.type])
@@ -685,7 +685,7 @@ def test_new_timestamp_expired(client: ClientRunner,
     client.refresh(init_data)
 
     # Check that client resisted rollback attack
-    assert client._assert_files_exist([Root.type])
+    assert client._files_exist([Root.type])
 
 def test_new_targets_fast_forward_recovery(client: ClientRunner,
                                            server: SimulatorServer) -> None:
@@ -786,7 +786,7 @@ def test_new_snapshot_version_mismatch(client: ClientRunner,
     repo.update_snapshot()
 
     client.refresh(init_data)
-    assert client._assert_files_exist([Root.type, Timestamp.type])
+    assert client._files_exist([Root.type, Timestamp.type])
 
 def test_new_timestamp_fast_forward_recovery(client: ClientRunner,
                                              server: SimulatorServer) -> None:
