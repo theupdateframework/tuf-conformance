@@ -41,6 +41,7 @@ from urllib import parse
 
 import securesystemslib.hash as sslib_hash
 from securesystemslib.signer import CryptoSigner, Signer
+from tuf_conformance.utils import meta_dict_to_bytes
 
 from tuf.api.metadata import (
     SPECIFICATION_VERSION,
@@ -58,6 +59,7 @@ from tuf.api.metadata import (
     Timestamp,
 )
 from tuf.api.serialization.json import JSONSerializer
+from tuf.api.exceptions import UnsignedMetadataError
 
 logger = logging.getLogger(__name__)
 
@@ -345,6 +347,27 @@ class RepositorySimulator():
         logger.debug("fetched target %s", target_path)
         return repo_target.data
 
+    def save_metadata_bytes(self, role: str, md: bytes) -> None:
+        if role == Targets.type:
+            self.md_targets_json = md
+        elif role == Snapshot.type:
+            self.md_snapshot_json = md
+        elif role == Root.type:
+            self.md_root_json = md
+        elif role == Timestamp.type:
+            self.md_timestamp_json = md
+
+    def load_metadata_bytes(self, role: str) -> None:
+        # Returns a parsed copy of the repositorys metadata
+        if role == Targets.type:
+            return self.md_targets_json
+        elif role == Snapshot.type:
+            return self.md_snapshot_json
+        elif role == Root.type:
+            return self.md_root_json
+        elif role == Timestamp.type:
+            return self.md_timestamp_json
+
     def fetch_metadata(self, role: str, version: Optional[int] = None) -> bytes:
         """Return signed metadata for 'role', using 'version' if it is given.
 
@@ -621,3 +644,115 @@ class RepositorySimulator():
             quoted_role = parse.quote(role, "")
             with open(os.path.join(dest_dir, f"{quoted_role}.json"), "wb") as f:
                 f.write(self.fetch_metadata(role))
+
+    def sign_any(self, role: str, signer: Signer, append: bool = False) -> None:
+        # Signs invalid metadata. Currently only used in a few tests.
+        from tuf.api.serialization.json import CanonicalJSONSerializer
+
+
+        md_bytes = self.load_metadata_bytes(role)
+        ss_obj = json.loads(md_bytes)
+
+        try:
+            signature = signer.sign(meta_dict_to_bytes(ss_obj["signed"]))
+        except Exception as e:
+            raise UnsignedMetadataError(f"Failed to sign: {e}") from e
+
+        if not append:
+            ss_obj["signatures"] = []
+
+        ss_obj["signatures"].append({"keyid": signature.keyid,
+                                     "sig": signature.to_dict()["sig"]})
+
+        new_ss_bytes = json.dumps(ss_obj, indent=1).encode("utf-8")
+        # check that the json is valid:
+        json.loads(new_ss_bytes)
+        # update repo metadata
+        self.save_metadata_bytes(role, new_ss_bytes)
+
+    def fetch_metadata_any(self, role: str, version: Optional[int] = None) -> bytes:
+        """Fetch metadata. This is used for tests that test cases,
+        where the repo metadata should fail client validation.
+        Currently, only Timestamp, Snapshot and Targets are supported.
+        This is still not mature and is only used in a few tests.
+        """
+        self.metadata_statistics.append((role, version))
+        role = parse.unquote(role, encoding="utf-8")
+
+        # sign and return the requested metadata
+        if (
+            role == Timestamp.type 
+            or role == Snapshot.type 
+            or role == Targets.type
+            ):
+            for signer in self.signers[role].values():
+                self.sign_any(role, signer, append=True)
+            return self.load_metadata_bytes(role)
+
+        # Implement other types if you need it. 
+        # This should not happen:
+        return None
+
+    def set_any_expiration_date(self, date_string: str) -> None:
+        # Set any expiration date of Metadata (Snapshot for now).
+        # The date does not have to be valid. This method is explicitly
+        # for testing wrong dates. Other methods might not be available
+        # after the metadata has been updated with a wrong date.
+        ss_obj = json.loads(self.md_snapshot_json)
+        existing_date = ss_obj["signed"]["expires"]
+
+        existing_ss = self.md_snapshot_json.decode()
+        new_ss = existing_ss.replace(existing_date, date_string)
+
+        # check that the json is valid:
+        json.loads(new_ss)
+
+        # update repo metadata
+        self.md_snapshot_json = new_ss.encode()
+
+    def update_any_snapshot(self) -> None:
+        """Update invalid snapshot, assign targets versions
+        and update timestamp."""
+
+        snapshot_bytes = self.load_metadata_bytes(Snapshot.type)
+        current_ss = json.loads(snapshot_bytes)
+        current_ss["signed"]["version"] += 1
+
+        # check that the json is valid:
+        json.loads(json.dumps(current_ss, indent=1).encode("utf-8"))
+
+        # update repo metadata
+        self.md_snapshot_json = meta_dict_to_bytes(current_ss)
+
+        #self.bump_version_by_one(Snapshot.type)
+        self.update_any_timestamp()
+
+    def _compute_any_hashes_and_length(
+        self, role: str
+    ) -> Tuple[Dict[str, str], int]:
+        data = self.fetch_metadata_any(role)
+        digest_object = sslib_hash.digest(sslib_hash.DEFAULT_HASH_ALGORITHM)
+        digest_object.update(data)
+        hashes = {sslib_hash.DEFAULT_HASH_ALGORITHM: digest_object.hexdigest()}
+        return hashes, len(data)
+
+    def update_any_timestamp(self) -> None:
+        """Update timestamp and assign snapshot version to snapshot_meta
+        version.
+        """
+
+        hashes = None
+        length = None
+        if self.compute_metafile_hashes_length:
+            hashes, length = self._compute_any_hashes_and_length(Snapshot.type)
+
+        current_ts = json.loads(self.load_metadata_bytes(Timestamp.type))
+        current_ss = json.loads(self.load_metadata_bytes(Snapshot.type))
+        current_ts["signed"]["meta"]["snapshot.json"]["version"] = current_ss["signed"]["version"]
+        current_ts["signed"]["version"] += 1
+
+        # check that the json is valid:
+        json.loads(json.dumps(current_ts, indent=1).encode("utf-8"))
+
+        # update repo metadata
+        self.md_timestamp_json = meta_dict_to_bytes(current_ts)
