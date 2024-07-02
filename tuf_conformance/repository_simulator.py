@@ -664,7 +664,7 @@ class RepositorySimulator():
         ss_obj["signatures"].append({"keyid": signature.keyid,
                                      "sig": signature.to_dict()["sig"]})
 
-        new_ss_bytes = json.dumps(ss_obj, indent=1).encode('utf-8')
+        new_ss_bytes = json.dumps(ss_obj, indent=1).encode("utf-8")
         # check that the json is valid:
         json.loads(new_ss_bytes)
         # update repo metadata
@@ -719,7 +719,7 @@ class RepositorySimulator():
         current_ss["signed"]["version"] += 1
 
         # check that the json is valid:
-        json.loads(json.dumps(current_ss, indent=1).encode('utf-8'))
+        json.loads(json.dumps(current_ss, indent=1).encode("utf-8"))
 
         # update repo metadata
         self.md_snapshot_json = meta_dict_to_bytes(current_ss)
@@ -752,7 +752,7 @@ class RepositorySimulator():
         current_ts["signed"]["version"] += 1
 
         # check that the json is valid:
-        json.loads(json.dumps(current_ts, indent=1).encode('utf-8'))
+        json.loads(json.dumps(current_ts, indent=1).encode("utf-8"))
 
         # update repo metadata
         self.md_timestamp_json = meta_dict_to_bytes(current_ts)

@@ -30,13 +30,12 @@ class TestTarget:
 
 def test_invalid_date_format(client: ClientRunner,
                         server: SimulatorServer) -> None:
-    # Tests the client rejects metadata with wrong date format
+    """Tests the client rejects metadata with wrong date format"""
 
     name = "test_invalid_date_format"
 
     # initialize a simulator with repository content we need
     repo = RepositorySimulator()
-    #repo.compute_metafile_hashes_length = False
     server.repos[name] = repo
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
