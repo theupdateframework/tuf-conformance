@@ -28,6 +28,97 @@ class TestTarget:
     content: bytes
     encoded_path: str
 
+def test_invalid_date_format(client: ClientRunner,
+                        server: SimulatorServer) -> None:
+    # Tests the client rejects metadata with wrong date format
+
+    name = "test_invalid_date_format"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    #repo.compute_metafile_hashes_length = False
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    # Sanity checks
+    assert client._files_exist([Root.type,
+                                       Timestamp.type,
+                                       Snapshot.type,
+                                       Targets.type])
+    assert client._version_equals(Snapshot.type, 1)
+    five_days_in_future = utils.get_date_n_days_in_future(5)
+    date_str = five_days_in_future.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    new_snapshot = repo.load_metadata(Snapshot.type)
+    new_snapshot.signed.expires = five_days_in_future
+    repo.save_metadata(Snapshot.type, new_snapshot)
+    repo.update_snapshot()
+    assert client.refresh(init_data) == 0
+    assert client._version_equals(Snapshot.type, 2)
+    assert client._version_equals(Timestamp.type, 2)
+
+    # Set a valid expiration
+    repo.set_any_expiration_date(date_str)
+    repo.update_any_snapshot()
+    assert client.refresh(init_data) == 0
+    assert client._version_equals(Snapshot.type, 3)
+    assert client._version_equals(Timestamp.type, 3)
+
+    # Set another valid expiration
+    # mostly a sanity check
+    date_str = five_days_in_future.strftime("%Y-%m-%dT%H:%M:%SZ")
+    repo.set_any_expiration_date(date_str)
+    repo.update_any_snapshot()
+    assert client.refresh(init_data) == 0
+    assert client._version_equals(Snapshot.type, 4)
+    assert client._version_equals(Timestamp.type, 4)
+
+    # Set an invalid expiration
+    date_str = five_days_in_future.strftime("%m-%d-%YT%H:%M:%SZ")
+    repo.set_any_expiration_date(date_str)
+    repo.update_any_snapshot()
+    # Client refresh should fail
+    assert client.refresh(init_data) == 1
+    assert client._version_equals(Snapshot.type, 4)
+    # Timestamp gets updated because the Snapshot is invalid.
+    # snapshot is updated after timestamp
+    assert client._version_equals(Timestamp.type, 5)
+
+    # Set a valid expiration
+    date_str = five_days_in_future.strftime("%Y-%m-%dT%H:%M:%SZ")
+    repo.set_any_expiration_date(date_str)
+    repo.update_any_snapshot()
+    assert client.refresh(init_data) == 0
+    assert client._version_equals(Snapshot.type, 6)
+    assert client._version_equals(Timestamp.type, 6)
+
+    # Set an invalid expiration - seconds are missing
+    date_str = five_days_in_future.strftime("%Y-%m-%dT%H:%MZ")
+    repo.set_any_expiration_date(date_str)
+    repo.update_any_snapshot()
+    # Client refresh should fail
+    assert client.refresh(init_data) == 1
+    assert client._version_equals(Snapshot.type, 6)
+    assert client._version_equals(Timestamp.type, 7)
+
+    # Set an invalid expiration - minutes and seconds are missing
+    date_str = five_days_in_future.strftime("%Y-%m-%dT%HZ")
+    repo.set_any_expiration_date(date_str)
+    repo.update_any_snapshot()
+    # Client refresh should fail
+    assert client.refresh(init_data) == 1
+    assert client._version_equals(Snapshot.type, 6)
+    assert client._version_equals(Timestamp.type, 8)
+
+    # Set a valid expiration
+    date_str = five_days_in_future.strftime("%Y-%m-%dT%H:%M:%SZ")
+    repo.set_any_expiration_date(date_str)
+    repo.update_any_snapshot()
+    assert client.refresh(init_data) == 0
+    assert client._version_equals(Snapshot.type, 9)
+    assert client._version_equals(Timestamp.type, 9)
+
 def test_simple_signing(client: ClientRunner,
                         server: SimulatorServer) -> None:
     # Tests that add_key_to_role works as intended

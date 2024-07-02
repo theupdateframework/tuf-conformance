@@ -21,6 +21,7 @@
 import argparse
 import datetime
 import errno
+import json
 import logging
 import os
 import queue
@@ -162,11 +163,19 @@ def cleanup_dir(path: str) -> None:
     ]:
         os.remove(filepath)
 
-
 def get_date_n_days_in_past(days: int) -> datetime.datetime:
     return datetime.datetime.now(timezone.utc).replace(
         microsecond=0
     ) - datetime.timedelta(days=days)
+
+def get_date_n_days_in_future(days: int) -> datetime.datetime:
+    return datetime.datetime.now(timezone.utc).replace(
+        microsecond=0
+    ) + datetime.timedelta(days=days)
+
+def meta_dict_to_bytes(md: dict) -> bytes:
+    # Converts a dict to bytes typically to save metadata as bytes.
+    return json.dumps(md, indent=1).encode('utf-8')
 
 class TestServerProcess:
     """Helper class used to create a child process with the subprocess.Popen
