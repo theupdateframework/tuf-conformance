@@ -174,7 +174,7 @@ def get_date_n_days_in_future(days: int) -> datetime.datetime:
     ) + datetime.timedelta(days=days)
 
 def meta_dict_to_bytes(md: dict) -> bytes:
-    # Converts a dict to bytes typically to save metadata as bytes.
+    """Converts a dict to bytes typically to save metadata as bytes."""
     return json.dumps(md, indent=1).encode('utf-8')
 
 class TestServerProcess:
