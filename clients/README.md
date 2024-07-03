@@ -1,13 +1,13 @@
 # Client implementation wrappers
 
-The conformance tests uses a type called `ClientRunner`. This represents the client-side of the conformance test and implements methods that are useful for the tests. The goal of the `ClientRunner` is to carry out higher-level tasks that are useful to test the TUF specification, for example:
+The conformance tests uses a type called `ClientRunner` which represents the client-side of the conformance test suite and implements methods that are useful for the tests. The goal of the `ClientRunner` is to carry out high-level tasks that are useful to test the TUF specification, for example:
 
 1. Update local metadata
 2. Download target file
 3. Check that the local metadata is what we expect
 4. Check that a downloaded target file is the one we expected.
 
-Some of these are assertions that check the local state. Others require the `ClientRunner` to interact with the remote repository. When the `ClientRunner` needs to interact with the repository, it does so through a client wrapper. A client wrapper is a layer between the TUF-conformance suite and a TUF client implementation. The client wrappers goal is to invoke the client implementation we want to test. They are responsible for:
+Some of these tasks are mere assertions against the local state. Others require `ClientRunner` to interact with the remote repository. When the `ClientRunner` needs to interact with the repository, it does so through a client wrapper. A client wrapper is a layer between the TUF-conformance suite and a TUF client implementation. The client wrappers goal is to invoke the client implementation we want to test. Client wrappers are responsible for:
 
 1. receiving the parameters from the conformance test-suite
 2. invoking the client implementation in a correct manner with the parameters from the test-suite.
@@ -18,7 +18,7 @@ We can illustrate the behavior as such:
 
 In a conformance test, a `ClientRunner` instructs the client wrapper to fetch the latest metadata. The client wrapper invokes the client implementation - for example python-tuf or go-tuf. The client implementation interacts with the test repository; the client implementation also directly stores the metadata. Onces that workflow is done, the conformance test can interact directly with the local metadata and verify that it is correct. 
 
-The intention is that TUF implementations that want to use the test suite will include wrappers like this in
+The intention is that TUF client implementations that want to use the test suite will include wrappers like this in
 their source code, and will run the test suite in their CI systems.
 
 This project may then also run the test suite using the wrappers from the TUF implementations, but the intention
