@@ -33,7 +33,7 @@ var downloadCmd = &cobra.Command{
 			fmt.Println("Error: required flag(s): \"metadata-url\" or \"metadata-dir\" not set")
 			os.Exit(1)
 		}
-		targetInfoName, err := cmd.Flags().GetString("target-url")
+		targetInfoName, err := cmd.Flags().GetString("target-name")
 		if err != nil {
 			os.Exit(1)
 		}

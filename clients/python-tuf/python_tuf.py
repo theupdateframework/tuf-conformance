@@ -13,7 +13,7 @@ import datetime
 
 from tuf.ngclient import Updater, RequestsFetcher, UpdaterConfig
 
-def init(metadata_url: str, metadata_dir: str, trusted_root: str) -> None:
+def init(metadata_dir: str, trusted_root: str) -> None:
     """Initialize local trusted metadata"""
     
     # No need to actually run python-tuf code at this point
@@ -38,7 +38,7 @@ def refresh(metadata_url: str,
 
 def download_target(metadata_url: str,
                     metadata_dir: str,
-                    target_url: str,
+                    target_name: str,
                     download_dir: str,
                     target_base_url: str) -> None:
     """Download target."""
@@ -63,9 +63,9 @@ def main() -> None:
     """Main TUF Client Example function"""
 
     parser = argparse.ArgumentParser(description="TUF Client Example")
-    parser.add_argument("--metadata-url", required=True)
+    parser.add_argument("--metadata-url", required=False)
     parser.add_argument("--metadata-dir", required=True)
-    parser.add_argument("--target-url", required=False)
+    parser.add_argument("--target-name", required=False)
     parser.add_argument("--target-dir", required=False)
     parser.add_argument("--target-base-url", required=False)
     parser.add_argument("--days-in-future", required=False, default="0")
@@ -92,7 +92,7 @@ def main() -> None:
 
     # initialize the TUF Client Example infrastructure
     if command_args.sub_command == "init":
-        init(command_args.metadata_url, command_args.metadata_dir, command_args.trusted_root)
+        init(command_args.metadata_dir, command_args.trusted_root)
     elif command_args.sub_command == "refresh":
         refresh(command_args.metadata_url,
                 command_args.metadata_dir,
@@ -101,7 +101,7 @@ def main() -> None:
     elif command_args.sub_command == "download":
         download_target(command_args.metadata_url,
                         command_args.metadata_dir,
-                        command_args.target_url,
+                        command_args.target_name,
                         command_args.target_dir,
                         command_args.target_base_url)
     else:
