@@ -7,3 +7,4 @@ html/
 dist/
 .python-version
 build
+clients/go-tuf/go-tuf
