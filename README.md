@@ -1,7 +1,5 @@
 # Experiments related to tuf-conformance testing
 
-This is **very** early: there's barely anything here.
-
 Rough design:
 
 * test runner is given a specific client wrapper as argument
@@ -25,7 +23,7 @@ Rough design:
 
 ## Install
 
-I suggest using a venv but anywhere works:
+Setting up the virtual environment (recommended):
 
 ```bash
 pip install -e .
@@ -33,25 +31,16 @@ pip install -e .
 
 ## Run the tests
 
-The following examples demonstrate how to run the test rig against each client
+How to run the test rig against each client.
 
 ### python-tuf
 
-There's one half-written test wrapper for python-tuf ngclient.
-The test suite contains one half implemented test.
-
-Run that test:
-
 ```bash
-tuf-conformance "python ./clients/python-tuf/python_tuf.py"
+make test-python-tuf
 ```
 
 ### go-tuf-metadata
 
-Initial client based on rdimitrov/go-tuf-metadata.
-
-To run the test:
-
 ```bash
-tuf-conformance "./clients/go-tuf-metadata/go-tuf-metadata"
+make test-go-tuf
 ```
