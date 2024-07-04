@@ -175,7 +175,10 @@ def get_date_n_days_in_future(days: int) -> datetime.datetime:
 
 def meta_dict_to_bytes(md: dict) -> bytes:
     """Converts a dict to bytes typically to save metadata as bytes."""
-    return json.dumps(md, indent=1).encode("utf-8")
+    return json.dumps(md,
+                      indent=None,
+                      separators = (",", ":"),
+                      sort_keys=True).encode("utf-8")
 
 class TestServerProcess:
     """Helper class used to create a child process with the subprocess.Popen

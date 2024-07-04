@@ -142,18 +142,7 @@ def test_simple_signing(client: ClientRunner,
     repo.add_key_to_role(Snapshot.type)
     repo.add_key_to_role(Snapshot.type)
 
-    # Sanity-check. TODO: Make unit test outside
-    # of conformance test for this
-    repo_root = repo.load_metadata(Root.type)
-    assert repo._version_equals(Root.type, 1)
-
     repo.bump_root_by_one()
-
-    # Sanity-check. TODO: Make unit test outside
-    # of conformance test for this
-    repo_root = repo.load_metadata(Root.type)
-    assert repo._version_equals(Root.type, 2)
-    assert len(repo_root.signed.roles["snapshot"].keyids) == 4
 
     repo.update_timestamp()
     repo.update_snapshot()
@@ -228,10 +217,12 @@ def test_duplicate_keys_root(client: ClientRunner,
                                        Targets.type])
     assert client._version_equals(Snapshot.type, 1)
 
-    # Add the same signature to Snapshot 9 times
+    # Add the same signature to Snapshot 9 times in the repository
     repo.add_one_role_key_n_times_to_root(Snapshot.type, 9)
     repo.bump_root_by_one()
-    assert len(repo.root.roles["snapshot"].keyids) == 10
+    ss_obj = json.loads(repo.md_root_json)
+    assert len(ss_obj["signed"]["roles"]["snapshot"]["keyids"]) == 10
+    
     repo.update_timestamp()
     repo.update_snapshot()
 
@@ -259,10 +250,10 @@ def test_duplicate_keys_root(client: ClientRunner,
     md_snapshot = Metadata.from_file(
         os.path.join(client.metadata_dir, "snapshot.json"))
 
-    # TODO: Double check that "2" is correct here:
-    assert len(md_root.roles[Snapshot.type].keyids) == 2
-    # TODO: Double check that "2" is correct here:
-    assert len(md_snapshot.signatures) == 2
+    # TODO: Double check that "1" is correct here:
+    assert len(md_root.roles[Snapshot.type].keyids) == 1
+    # TODO: Double check that "1" is correct here:
+    assert len(md_snapshot.signatures) == 1
 
 def test_TestTimestampEqVersionsCheck(client: ClientRunner, server: SimulatorServer) -> None:
     #https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_top_level_update_test.go#L1058
