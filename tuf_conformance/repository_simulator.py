@@ -223,8 +223,6 @@ class RepositorySimulator():
             new_md.sign(signer, append=True)
             self.save_metadata(role, new_md)
 
-
-
     def sign_any(self, role: str, signer: Signer, append: bool = False) -> None:
         # Signs invalid metadata. Currently only used in a few tests.
         # This is our own implementation for signing and updating keys
@@ -235,7 +233,12 @@ class RepositorySimulator():
 
         try:
             signed_bytes = meta_dict_to_bytes(ss_obj["signed"])
+
+            # At this point, b"\n" may be escaped to the raw bytes
+            # b"\\n". We should not sign the escaped version, so
+            # We change b"\\n" to b"\n":
             signed_bytes = signed_bytes.replace(b"\\n", b"\n")
+
             signature = signer.sign(signed_bytes)
         except Exception as e:
             raise UnsignedMetadataError(f"Failed to sign: {e}") from e
@@ -254,6 +257,8 @@ class RepositorySimulator():
         json.loads(new_ss_bytes)
         # update repo metadata
         self.save_metadata_bytes(role, new_ss_bytes)
+        md_bytes = self.load_metadata_bytes(role)
+        ss_obj = json.loads(md_bytes)
 
     def add_key(self, delegator: str, role: str, signer: Signer) -> None:
         """Add key to Root"""
@@ -280,7 +285,7 @@ class RepositorySimulator():
         signer = CryptoSigner.generate_ecdsa()
 
         self.add_key(Root.type, role, signer)
-        self.sign(Root.type, signer)
+        self.sign_any(Root.type, signer, append=True)
         self.add_signer(role, signer)
 
         if (
@@ -288,7 +293,7 @@ class RepositorySimulator():
             or role == Snapshot.type 
             or role == Targets.type
             ):
-            self.sign(role, signer)
+            self.sign_any(role, signer, append=True)
 
     def add_one_role_key_n_times_to_root(self, role: str, times: int) -> None:
         """add new key"""

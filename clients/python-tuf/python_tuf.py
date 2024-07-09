@@ -25,8 +25,6 @@ def refresh(metadata_url: str,
             days_in_future: str,
             max_root_rotations: int) -> None:
     """Refresh local metadata from remote"""
-    print("MAX ROOT ROTATIONS")
-
 
     updater = Updater(metadata_dir,
                       metadata_url,
@@ -45,26 +43,14 @@ def download_target(metadata_url: str,
                     target_base_url: str) -> None:
     """Download target."""
 
-    print("target_base_url: ", target_base_url)
     updater = Updater(metadata_dir,
                       metadata_url,
                       download_dir,
                       target_base_url,
                       config=UpdaterConfig(prefix_targets_with_hash = False))
-    print("target_url in python_tuf.py: ", target_url)
     target_info = updater.get_targetinfo(target_url)
-    print("target_info:::::::::::::::::::::::", target_info.path)
-
-
-
-    if os.path.isfile(os.path.join(download_dir, target_info.path)):
-        print("FILE EXISTS2: ", os.path.join(download_dir, target_info.path))
-    else:
-        print("FILE DOES NOT EXIST")
-
 
     target_path = updater.download_target(target_info)
-    print("target_path: ", target_path)
 
     #fetcher = RequestsFetcher()
     #with open(os.path.join(download_dir, target_url.split("/")[-1]), "wb") as temp_file:
