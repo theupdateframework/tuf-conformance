@@ -1,0 +1,27 @@
+name: "tuf-conformance"
+description: "TUF client conformance test suite"
+
+inputs:
+  entrypoint:
+    description: "client wrapper to invoke"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
+      with:
+        python-version: "3.11"
+        cache: "pip"
+
+    - name: Install test
+      run: |
+        pip install -e "${{ github.action_path }}"
+      shell: bash
+
+    - name: Run test suite
+      id: sigstore-conformance
+      run: |
+        pytest tuf_conformance --entrypoint "${{ inputs.entrypoint }}"
+      shell: bash
