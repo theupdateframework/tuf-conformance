@@ -24,6 +24,7 @@ runs:
       id: sigstore-conformance
       env:
         ENTRYPOINT: ${{ inputs.entrypoint }}
+        TEST_LOCATION: ${{ github.action_path }}/tuf_conformance
       run: |
-        pytest tuf_conformance --entrypoint "$ENTRYPOINT"
+        pytest "$TEST_LOCATION" --entrypoint "$ENTRYPOINT"
       shell: bash
