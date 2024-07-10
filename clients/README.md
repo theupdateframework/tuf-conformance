@@ -1,6 +1,6 @@
 # Client implementation wrappers
 
-The conformance tests uses a type called `ClientRunner` which represents the client-side of the conformance test suite and implements methods that are useful for the tests. The goal of the `ClientRunner` is to carry out high-level tasks that are useful to test the TUF specification, for example:
+The conformance tests use a type called `ClientRunner` which represents the client-side of the conformance test suite and implements methods that are useful for the tests. The goal of the `ClientRunner` is to carry out high-level tasks that are useful to test the TUF specification, for example:
 
 1. Update local metadata
 2. Download target file
