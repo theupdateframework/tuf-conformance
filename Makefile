@@ -24,6 +24,10 @@ dev: env/pyvenv.cfg
 .PHONY: test-all
 test-all: test-python-tuf test-go-tuf
 
+PHONY: self-tests
+self-tests: dev
+	./env/bin/pytest self_tests
+
 #########################
 # python-tuf section
 #########################
