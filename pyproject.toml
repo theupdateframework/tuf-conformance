@@ -4,11 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tuf-conformance"
-dependencies = ["securesystemslib[crypto, pynacl]", "tuf", "pytest"]
+dependencies = [
+    "securesystemslib[crypto, pynacl]==1.1.0" ,
+    "tuf==5.0.0",
+    "pytest==8.2.2"
+]
 dynamic = ["version"]
-
-[project.scripts]
-tuf-conformance = "tuf_conformance.run_tests:main"
 
 [tool.hatch.version]
 path = "tuf_conformance/__init__.py"
