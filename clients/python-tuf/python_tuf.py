@@ -48,7 +48,7 @@ def download_target(metadata_url: str,
                       download_dir,
                       target_base_url,
                       config=UpdaterConfig(prefix_targets_with_hash = False))
-    target_info = updater.get_targetinfo(target_url)
+    target_info = updater.get_targetinfo(target_name)
 
     target_path = updater.download_target(target_info)
 
