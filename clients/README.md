@@ -7,7 +7,7 @@ The conformance tests uses a type called `ClientRunner` which represents the cli
 3. Check that the local metadata is what we expect
 4. Check that a downloaded target file is the one we expected.
 
-Some of these tasks are mere assertions against the local state. Others require `ClientRunner` to interact with the remote repository. When the `ClientRunner` needs to interact with the repository, it does so through a client wrapper. A client wrapper is a layer between the TUF-conformance suite and a TUF client implementation. The client wrappers goal is to invoke the client implementation we want to test. Client wrappers are responsible for:
+Some of these tasks are mere assertions against the local state. Others require `ClientRunner` to interact with the remote repository. When the `ClientRunner` needs to interact with the repository, it does so through a client wrapper. A client wrapper is a layer between the TUF-conformance test suite and a TUF client implementation. The client wrapper's goal is to invoke the client implementation we want to test. Client wrappers are responsible for:
 
 1. receiving the parameters from the conformance test-suite
 2. invoking the client implementation in a correct manner with the parameters from the test-suite.
