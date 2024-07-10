@@ -25,8 +25,8 @@ var initCmd = &cobra.Command{
 	Short: "Initialize the client with trusted root.json metadata",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if FlagMetadataURL == "" || FlagMetadataDir == "" {
-			fmt.Println("Error: required flag(s): \"metadata-url\" or \"metadata-dir\" not set")
+		if FlagMetadataDir == "" {
+			fmt.Println("Error: required flag(s): \"metadata-dir\" not set")
 			os.Exit(1)
 		}
 		// first arg means the path to trusted root.json

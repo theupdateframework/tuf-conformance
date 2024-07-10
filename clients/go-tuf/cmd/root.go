@@ -44,7 +44,7 @@ func Execute() {
 	rootCmd.PersistentFlags().StringVar(&FlagMetadataURL, "metadata-url", "", "URL of the TUF repository")
 	rootCmd.PersistentFlags().StringVar(&FlagMetadataDir, "metadata-dir", "", "directory to save metadata")
 	rootCmd.PersistentFlags().StringVar(&FlagTargetDir, "target-dir", "", "directory to save target files")
-	rootCmd.PersistentFlags().StringVar(&FlagTargetUrl, "target-url", "", "url for target file")
+	rootCmd.PersistentFlags().StringVar(&FlagTargetUrl, "target-name", "", "name of target file from the targets.json metadata")
 	rootCmd.PersistentFlags().StringVar(&FlagTargetBaseUrl, "target-base-url", "", "base url for target file")
 	rootCmd.PersistentFlags().StringVar(&FlagDaysInFuture, "days-in-future", "0", "for refresh only. For setting the time.Now() at a time in the future")
 	rootCmd.PersistentFlags().IntVar(&MaxRootRotations, "max-root-rotations", 32, "number of max allowed root rotations")
