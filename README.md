@@ -1,6 +1,37 @@
-# Experiments related to tuf-conformance testing
+# TUF conformance test suite
 
-Rough design:
+This is the repository of the conformance suite for TUF clients. The goal of this repository is to provide a test suite that allows client developers and maintainers to test their clients against the TUF specification. The repository has a series of conformance tests and an infrastructure to run the conformance tests. It is currently under heavy development, and some things will change. We work to keep the test suite in a state where client developers can integrate and test their clients at any time during the test suites development. Currently, there are two clients integrated into the test suite; Over time, clients should consume the TUF conformance test suite through the GitHub action, and the two integrated clients will likely be removed from this repository.
+
+- [Run a client against the conformance tests](#run-a-client-against-the-conformance-tests)
+- [Rough design](#rough-design)
+- [Integrating a client](#integrating-a-client)
+
+
+## Run a client against the conformance tests
+
+We have made it easy to run the clients from this project. 
+
+### Install
+
+Before running a client, we recommend setting up a virtual environment.
+
+```bash
+pip install -e .
+```
+
+### python-tuf
+
+```bash
+make test-python-tuf
+```
+
+### go-tuf-metadata
+
+```bash
+make test-go-tuf
+```
+
+## Rough design
 
 * test runner is given a specific client wrapper as argument
 * The client wrapper is an executable that implements a _client-under-test CLI_ (to be defined)
@@ -21,26 +52,7 @@ Rough design:
 
 [Original ideas document](https://docs.google.com/document/d/11bKcRoC0G8b_YnLfK0tj1RfJjrMfXGhO8Li2LA1FUUk/edit?usp=sharing)
 
-## Install
+## Integrating a client
 
-Setting up the virtual environment (recommended):
+See [the documentation on integrating a client](https://github.com/theupdateframework/tuf-conformance/tree/main/clients).
 
-```bash
-pip install -e .
-```
-
-## Run the tests
-
-How to run the test rig against each client.
-
-### python-tuf
-
-```bash
-make test-python-tuf
-```
-
-### go-tuf-metadata
-
-```bash
-make test-go-tuf
-```
