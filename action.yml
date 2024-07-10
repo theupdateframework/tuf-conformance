@@ -22,6 +22,8 @@ runs:
 
     - name: Run test suite
       id: sigstore-conformance
+      env:
+        ENTRYPOINT: ${{ inputs.entrypoint }}
       run: |
-        pytest tuf_conformance --entrypoint "${{ inputs.entrypoint }}"
+        pytest tuf_conformance --entrypoint "$ENTRYPOINT"
       shell: bash
