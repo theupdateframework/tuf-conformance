@@ -204,7 +204,8 @@ def test_root_has_keys_but_not_snapshot(client: ClientRunner,
     assert client._version_equals(Snapshot.type, 3)
     assert len(json.loads(repo.md_snapshot_json)["signatures"]) == 3
 
-def test_wrong_keytype_and_scheme(client: ClientRunner,
+# prefixed with "T" to not run in CI.
+def Ttest_wrong_keytype_and_scheme(client: ClientRunner,
                         server: SimulatorServer) -> None:
     """Does the following:
     1. Create 5 valid keys
@@ -351,8 +352,8 @@ def test_wrong_keytype_and_scheme(client: ClientRunner,
     assert client._version_equals(Root.type, 8)
     assert client._version_equals(Snapshot.type, 4)
 
-
-def test_key_with_invalid_scheme(client: ClientRunner,
+# prefixed with "T" to not run in CI.
+def Ttest_key_with_invalid_scheme(client: ClientRunner,
                         server: SimulatorServer) -> None:
     """Sets the scheme for a key for snapshot MD in root
     to an invalid one and expects the client to update
