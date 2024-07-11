@@ -131,5 +131,19 @@ class TestRepositorySimulator(unittest.TestCase):
         expected_bytes = meta_dict_to_bytes(json.loads(repo.md_root.to_bytes())["signed"])
         self.assertEqual(our_own_bytes, expected_bytes)
 
+    def test_downgrade_snapshot(self):
+        repo = RepositorySimulator()
+        repo.update_snapshot() # v2
+        self.assertTrue(repo._version_equals(Snapshot.type, 2))
+        repo.downgrade_snapshot() # v1
+        self.assertTrue(repo._version_equals(Snapshot.type, 1))
+
+    def test_downgrade_timestamp(self):
+        repo = RepositorySimulator()
+        repo.update_timestamp() # v2
+        self.assertTrue(repo._version_equals(Timestamp.type, 2))
+        repo.downgrade_timestamp() # v1
+        self.assertTrue(repo._version_equals(Timestamp.type, 1))
+
 if __name__ == '__main__':
     unittest.main()
