@@ -60,6 +60,7 @@ from tuf.api.metadata import (
 )
 from tuf.api.serialization.json import JSONSerializer
 from tuf.api.exceptions import UnsignedMetadataError
+from tuf_conformance.utils import TestTarget
 
 logger = logging.getLogger(__name__)
 
@@ -567,17 +568,19 @@ class RepositorySimulator():
         print(targets.to_dict())
 
     def add_target_with_length(
-        self, role: str, data: bytes, path: str, length: int
-    ) -> None:
+        self, role: str, test_target: TestTarget) -> None:
         """Create a target from data and add it to the target_files.
            The hash value can be invalid compared to the length"""
+        content = test_target.content
+        path = test_target.path
+        length = len(test_target.content)
         targets = self._get_delegator(role)
 
-        target = TargetFile.from_data(path, data, ["sha256"])
+        target = TargetFile.from_data(path, content, ["sha256"])
         target.length = length
         targets.signed.targets[path] = target
         self.save_metadata(Targets.type, targets)
-        self.artifacts[path] = Artifact(data, target)
+        self.artifacts[path] = Artifact(content, target)
 
     def add_delegation(
         self, delegator_name: str, role: DelegatedRole, targets: Targets
