@@ -4,15 +4,19 @@ from tuf_conformance.repository_simulator import RepositorySimulator
 from tuf_conformance.simulator_server import SimulatorServer
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance import utils
+from tuf_conformance.utils import TestTarget
 
 from tuf.api.metadata import (
     Targets, Snapshot
 )
 
-class TestTarget:
-    path: str
-    content: bytes
-    encoded_path: str
+def get_url_prefix(server_process_handler: utils.TestServerProcess,
+                   client: ClientRunner) -> str:
+    url_prefix = (
+        f"http://{utils.TEST_HOST_ADDRESS}:"
+        f"{server_process_handler.port!s}/{os.path.basename(client._remote_target_dir.name)}"
+    )
+    return url_prefix
 
 # TODO: Needs work
 def test_downloaded_file_is_correct(client: ClientRunner,
@@ -36,29 +40,21 @@ def test_downloaded_file_is_correct(client: ClientRunner,
     file_length = len(file_contents)
     target_base_name = "target_file.txt"
 
-    target_file_path = os.path.join(client._remote_target_dir.name, target_base_name)
+    target_file_path = os.path.join(client._remote_target_dir.name,
+                                    target_base_name)
     target_file = open(target_file_path, 'w')
     target_file.write(file_contents_str)
     target_file.close()
 
-    url_prefix = (
-        f"http://{utils.TEST_HOST_ADDRESS}:"
-        f"{server_process_handler.port!s}/{os.path.basename(client._remote_target_dir.name)}"
-    )
+    url_prefix = get_url_prefix(server_process_handler, client)
 
     target = TestTarget()
     target.path = target_base_name
     target.content = file_contents
-    target.encoded_path = target_base_name
 
     # Add target to repository
-    new_targets = repo.load_metadata(Targets.type)
-    new_targets.signed.version += 1
-    repo.save_metadata(Targets.type, new_targets)
-    repo.add_target_with_length("targets",
-                                target.content,
-                                target.path,
-                                len(target.content))
+    repo.add_target_with_length("targets", target)
+    repo.bump_version_by_one(Targets.type)
     repo.update_snapshot()
     client.refresh(init_data)
 
@@ -71,20 +67,19 @@ def test_downloaded_file_is_correct(client: ClientRunner,
     # Sanity check that we have not downloaded any files yet
     assert client.get_last_downloaded_target() == ""
 
-    target_file2 = client.download_target(init_data,
-                                          target_base_name,
-                                          target_base_url=url_prefix)
+    assert client.download_target(init_data,
+                                  target_base_name,
+                                  target_base_url=url_prefix) == 0
 
     # Sanity check that we downloaded the file
     expected_last_file = os.path.join(client._target_dir.name,
-                                                 target_base_name)
+                                      target_base_name)
     last_downloaded_file = client.get_last_downloaded_target()
     assert last_downloaded_file == expected_last_file
 
     with open(client.get_last_downloaded_target(), "r") as last_download_file:
         donwloaded_file_contents = last_download_file.read()
         assert donwloaded_file_contents == file_contents_str
-        print("last file contents: ", donwloaded_file_contents)
 
 # TODO: Needs work
 def test_downloaded_file_is_correct2(client: ClientRunner,
@@ -115,12 +110,10 @@ def test_downloaded_file_is_correct2(client: ClientRunner,
     target = TestTarget()
     target.path = target_base_name
     target.content = file_contents
-    target.encoded_path = target_base_name
 
     # Add target to repository
-    repo.targets.version += 1
-    repo.add_target_with_length("targets", target.content,
-                                target.path, len(target.content))
+    repo.add_target_with_length("targets", target)
+    repo.bump_version_by_one(Targets.type)
     repo.update_snapshot()
     client.refresh(init_data)
 
@@ -129,10 +122,8 @@ def test_downloaded_file_is_correct2(client: ClientRunner,
     with open(target_file_path) as f:
         assert f.read() == file_contents_str
 
-    url_prefix = (
-        f"http://{utils.TEST_HOST_ADDRESS}:"
-        f"{server_process_handler.port!s}/{os.path.basename(client._remote_target_dir.name)}"
-    )
+    url_prefix = get_url_prefix(server_process_handler, client)
+
 
     # Sanity check that we have not downloaded any files yet
     assert client.get_last_downloaded_target() == ""
@@ -145,8 +136,7 @@ def test_downloaded_file_is_correct2(client: ClientRunner,
                                                                target_base_name)
 
     with open(client.get_last_downloaded_target(), "r") as last_download_file:
-        data_of_last_downloaded_file = last_download_file.read()
-        assert data_of_last_downloaded_file == file_contents_str
+        assert last_download_file.read() == file_contents_str
 
 
     ## Now do the following:
@@ -163,7 +153,7 @@ def test_downloaded_file_is_correct2(client: ClientRunner,
 
     # Update target version target to repository without
     # updating the target in the metadata
-    repo.targets.version += 1
+    repo.bump_version_by_one(Targets.type)
     repo.update_snapshot()
     client.refresh(init_data)
 
@@ -177,14 +167,13 @@ def test_downloaded_file_is_correct2(client: ClientRunner,
                                           target_base_url=url_prefix)
 
     with open(client.get_last_downloaded_target(), "r") as last_download_file:
-        data_of_last_downloaded_file = last_download_file.read()
-        assert data_of_last_downloaded_file == file_contents_str
+        assert last_download_file.read() == file_contents_str
 
 # TODO: Needs work
 def test_downloaded_file_is_correct3(client: ClientRunner,
                                      server: SimulatorServer) -> None:
-    # A test that upgrades the version of one of the files in snapshot.json only
-    # but does does not upgrade in the file itself.
+    """A test that upgrades the version of one of the files in 
+    snapshot.json only but does does not upgrade in the file itself."""
     name = "test_downloaded_file_is_correct3"
 
     # initialize a simulator with repository content we need
@@ -195,38 +184,31 @@ def test_downloaded_file_is_correct3(client: ClientRunner,
     server_process_handler = utils.TestServerProcess(log=utils.logger)
 
     file_contents = b"legitimate data"
-    file_contents_str = "legitimate data"
-    file_length = len(file_contents)
     target_base_name = "target_file.txt"
 
     ## Create, upload and update a legitimate target file
     target_file_path = os.path.join(client._remote_target_dir.name,
                                     target_base_name)
     target_file = open(target_file_path, 'w')
-    target_file.write(file_contents_str)
+    target_file.write(file_contents.decode())
     target_file.close()
 
     target = TestTarget()
     target.path = target_base_name
     target.content = file_contents
-    target.encoded_path = target_base_name
 
     # Add target to repository
-    repo.targets.version += 1
-    repo.add_target_with_length("targets", target.content,
-                                target.path, len(target.content))
+    repo.add_target_with_length("targets", target)
+    repo.bump_version_by_one(Targets.type)
     repo.update_snapshot()
     client.refresh(init_data)
 
     # Sanity checks
     assert os.path.isfile(target_file_path)
     with open(target_file_path) as f:
-        assert f.read() == file_contents_str
+        assert f.read() == file_contents.decode()
 
-    url_prefix = (
-        f"http://{utils.TEST_HOST_ADDRESS}:"
-        f"{server_process_handler.port!s}/{os.path.basename(client._remote_target_dir.name)}"
-    )
+    url_prefix = get_url_prefix(server_process_handler, client)
 
     # Sanity check that we have not downloaded any files yet
     assert client.get_last_downloaded_target() == ""
@@ -236,11 +218,10 @@ def test_downloaded_file_is_correct3(client: ClientRunner,
                                           target_base_url=url_prefix)
     # Sanity check that we downloaded the file
     assert client.get_last_downloaded_target() == os.path.join(client._target_dir.name,
-                                                               target_base_name)
+                                                         target_base_name)
 
     with open(client.get_last_downloaded_target(), "r") as last_download_file:
-        data_of_last_downloaded_file = last_download_file.read()
-        assert data_of_last_downloaded_file == file_contents_str
+        assert last_download_file.read() == file_contents.decode()
 
 
     ## Now do the following:
@@ -272,12 +253,11 @@ def test_downloaded_file_is_correct3(client: ClientRunner,
                                               target_base_name,
                                               target_base_url=url_prefix)
         with open(client.get_last_downloaded_target(), "r") as last_download_file:
-            data_of_last_downloaded_file = last_download_file.read()
-            assert data_of_last_downloaded_file == file_contents_str
+            assert last_download_file.read() == file_contents.decode()
 
 def test_multiple_changes_to_target(client: ClientRunner,
                                     server: SimulatorServer) -> None:
-    name = "test_downloaded_file_is_correct3"
+    name = "test_multiple_changes_to_target"
 
     # initialize a simulator with repository content we need
     repo = RepositorySimulator()
@@ -287,37 +267,31 @@ def test_multiple_changes_to_target(client: ClientRunner,
     server_process_handler = utils.TestServerProcess(log=utils.logger)
 
     file_contents = b"legitimate data"
-    file_contents_str = "legitimate data"
-    file_length = len(file_contents)
     target_base_name = "target_file.txt"
 
     ## Create, upload and update a legitimate target file
-    target_file_path = os.path.join(client._remote_target_dir.name, target_base_name)
+    target_file_path = os.path.join(client._remote_target_dir.name,
+                                    target_base_name)
     target_file = open(target_file_path, 'w')
-    target_file.write(file_contents_str)
+    target_file.write(file_contents.decode())
     target_file.close()
 
     target = TestTarget()
     target.path = target_base_name
     target.content = file_contents
-    target.encoded_path = target_base_name
 
     # Add target to repository
-    repo.targets.version += 1
-    repo.add_target_with_length("targets", target.content,
-                                target.path, len(target.content))
+    repo.bump_version_by_one(Targets.type)
+    repo.add_target_with_length("targets", target)
     repo.update_snapshot()
     client.refresh(init_data)
 
     # Sanity checks
     assert os.path.isfile(target_file_path)
     with open(target_file_path) as f:
-        assert f.read() == file_contents_str
+        assert f.read() == file_contents.decode()
 
-    url_prefix = (
-        f"http://{utils.TEST_HOST_ADDRESS}:"
-        f"{server_process_handler.port!s}/{os.path.basename(client._remote_target_dir.name)}"
-    )
+    url_prefix = get_url_prefix(server_process_handler, client)
 
     # Sanity check that we have not downloaded any files yet
     assert client.get_last_downloaded_target() == ""
@@ -330,40 +304,41 @@ def test_multiple_changes_to_target(client: ClientRunner,
                                                                target_base_name)
 
     with open(client.get_last_downloaded_target(), "r") as last_download_file:
-        data_of_last_downloaded_file = last_download_file.read()
-        assert data_of_last_downloaded_file == file_contents_str
+        assert file_contents.decode() == last_download_file.read()
     
 
     # Change the target contents 10 times and check it each time
     for i in range(10):
-        new_legitimate_file_contents = f"{file_contents_str}-{i}"
-        file_length = len(new_legitimate_file_contents)
+        new_file_contents = f"{file_contents.decode()}-{i}"
+        file_length = len(new_file_contents)
 
         target_file = open(target_file_path, 'w+')
-        target_file.write(new_legitimate_file_contents)
+        target_file.write(new_file_contents)
         target_file.close()
 
-        new_targets = repo.load_metadata(Targets.type)
-        new_targets.signed.version += 1
-        repo.save_metadata(Targets.type, new_targets)
+        repo.bump_version_by_one(Targets.type)
 
-        repo.add_target_with_length("targets", bytes(new_legitimate_file_contents, 'utf-8'),
-                                    target_base_name, len(bytes(new_legitimate_file_contents, 'utf-8')))
+        target = TestTarget()
+        target.path = target_base_name
+        target.content = bytes(new_file_contents, 'utf-8')
+
+        repo.add_target_with_length("targets", target)
         repo.update_snapshot()
         client.refresh(init_data)
 
         # Check that the file is the one we expect
         assert os.path.isfile(target_file_path)
         with open(target_file_path) as f:
-            assert f.read() == new_legitimate_file_contents
+            assert f.read() == new_file_contents
         target_file2 = client.download_target(init_data,
                                               target_base_name,
                                               target_base_url=url_prefix)
         with open(client.get_last_downloaded_target(), "r") as last_download_file:
-            data_of_last_downloaded_file = last_download_file.read()
-            assert data_of_last_downloaded_file == new_legitimate_file_contents
+            assert last_download_file.read() == new_file_contents
 
         # Substitute the file and check that the file is still the one we expect
+        # The client should not download this malicious one even though it exists
+        # at the same path as the legitimate one.
         malicious_file_contents_str = f"malicious-file-contents-{i}"
         new_target_file = open(target_file_path, 'w+')
         new_target_file.write(malicious_file_contents_str)
@@ -376,5 +351,4 @@ def test_multiple_changes_to_target(client: ClientRunner,
                                               target_base_name,
                                               target_base_url=url_prefix)
         with open(client.get_last_downloaded_target(), "r") as last_download_file:
-            data_of_last_downloaded_file = last_download_file.read()
-            assert data_of_last_downloaded_file == new_legitimate_file_contents
+            assert new_file_contents == last_download_file.read()

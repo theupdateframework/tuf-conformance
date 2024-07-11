@@ -47,6 +47,11 @@ TEST_HOST_ADDRESS = "127.0.0.1"
 # DataSet is only here so type hints can be used.
 DataSet = Dict[str, Any]
 
+class TestTarget:
+    path: str
+    content: bytes
+    encoded_path: str
+
 
 # Test runner decorator: Runs the test as a set of N SubTests,
 # (where N is number of items in dataset), feeding the actual test
