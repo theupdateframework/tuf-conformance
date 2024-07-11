@@ -1,58 +1,75 @@
 # TUF conformance test suite
 
-This is the repository of the conformance suite for TUF clients. The goal of this repository is to provide a test suite that allows client developers and maintainers to test their clients against the TUF specification. The repository has a series of conformance tests and an infrastructure to run the conformance tests. It is currently under heavy development, and some things will change. We work to keep the test suite in a state where client developers can integrate and test their clients at any time during the test suite's development. Currently, there are two clients integrated into the test suite; Over time, clients should consume the TUF conformance test suite through the GitHub action, and the two integrated clients will likely be removed from this repository.
+This is the repository of the conformance test suite for TUF clients. The goal of this
+repository is to allow client developers to
+  1. test their clients against the TUF specification
+  2. Achieve better practical compatibility with other implementations
+  3. Collaborate on tests with other client developers
 
-- [Run a client against the conformance tests](#run-a-client-against-the-conformance-tests)
-- [Rough design](#rough-design)
-- [Integrating a client](#integrating-a-client)
+> [!NOTE]
+> The conformance test suite is currently under rapid development. There is no stability guarantee
+> on either the GitHub action inputs or the client-under-test CLI protocol yet. Please wait for
+> initial release if that sounds unappealing. 
 
 
-## Run a client against the conformance tests
+- [Usage](#Usage)
+- [Development](#Development)
 
-We have made it easy to run the clients from this project. 
 
-### Install
+## Usage
 
-Before running a client, we recommend setting up a virtual environment.
+The conformance test suite provides a GitHub action that can be used to test a TUF client.
+There are two required steps:
+
+1. Include an executable in the client project that implements the client-under-test
+   [CLI protocol](clients/README.md). 
+2. Use the `theupdateframework/tuf-conformance` action in your test workflow:
+    ```yaml
+    jobs:
+      tuf-conformance:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+
+          # insert possible client compilation/installation steps here
+
+          - uses: theupdateframework/tuf-conformance@main
+            with:
+              entrypoint: path/to/my/test/executable
+    ```
+
+
+## Development
+
+This repository contains two client-under-test CLI protocol implementations
+to enable easy development and testing. There is a Makefile that runs the test suite in
+virtual environment:
 
 ```bash
-pip install -e .
-```
-
-### python-tuf
-
-```bash
+# run against both clients or just one of them:
+make test-all
 make test-python-tuf
-```
-
-### go-tuf-metadata
-
-```bash
 make test-go-tuf
 ```
 
-## Rough design
+It's also possible to locally run the test suite with a client-under-test CLI from another location:
 
-* test runner is given a specific client wrapper as argument
-* The client wrapper is an executable that implements a _client-under-test CLI_ (to be defined)
-  -- each tested client will need a wrapper. That wrapper is responsible for doing the requested TUF client
-  operations and also for making the client metadata cache available in the given location
-* test runner runs a single web server that individual tests can attach a simulated TUF repository to
-* each test sets up a simulated repository, attaches it to the server, runs the client-under-test
+```bash
+pip install -e $CONFORMANCE_SUITE_DIR
+pytest "$CONFORMANCE_SUITE_DIR/tuf_conformance" --entrypoint path/to/my/client-under-test/cli
+```
+
+### Some design notes
+
+* pytest is used as the test infrastructure, the client-under-test executable is given with `--entrypoint`
+* A single web server is started. Individual tests can create a simulated TUF repository that will be served in 
+  subdirectories of the web server 
+* Each test sets up a simulated repository, attaches it to the server, runs the client-under-test
   against that repository. It can then modify the repository state and run the client-under-test again
-* the testrunner and web server run in the same thread: when a client-under-test process is started
-  the web server request handler is manually pumped until the client-under-test finishes
 * the idea is that a test can run the client multiple times while modifying the repository state. After each client
   execution the test can verify 
   1. client success/failure
   2. clients internal  metadata state (what it considers currently valid metadata) and
   3. that the requests client made were the expected ones
-* There should be helpers to make these verifications simple in the tests but these helpers are still
-  largely unimplemented.
-
-[Original ideas document](https://docs.google.com/document/d/11bKcRoC0G8b_YnLfK0tj1RfJjrMfXGhO8Li2LA1FUUk/edit?usp=sharing)
-
-## Integrating a client
-
-See [the documentation on integrating a client](https://github.com/theupdateframework/tuf-conformance/tree/main/clients).
+* There should be helpers to make these verifications simple in the tests
 
