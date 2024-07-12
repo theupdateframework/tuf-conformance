@@ -17,7 +17,9 @@ runs:
 
     - name: Install test
       run: |
+        echo "::group::Install test suite and dependencies"
         pip install -e "${{ github.action_path }}"
+        echo "::endgroup::"
       shell: bash
 
     - name: Run test suite
@@ -26,5 +28,5 @@ runs:
         ENTRYPOINT: ${{ inputs.entrypoint }}
         TEST_LOCATION: ${{ github.action_path }}/tuf_conformance
       run: |
-        pytest "$TEST_LOCATION" --entrypoint "$ENTRYPOINT"
+        pytest -v "$TEST_LOCATION" --entrypoint "$ENTRYPOINT"
       shell: bash
