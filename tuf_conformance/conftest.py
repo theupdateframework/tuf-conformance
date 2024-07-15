@@ -13,6 +13,14 @@ def pytest_addoption(parser) -> None:
         required=True,
         type=str,
     )
+    parser.addoption(
+        "--expected-failures",
+        action="store",
+        help="Optional space delimited list of test names expected to fail",
+        required=False,
+        type=str,
+    )
+
 
 @pytest.fixture
 def server():
@@ -34,4 +42,12 @@ def client(pytestconfig, server):
 
     return ClientRunner(entrypoint, server)
 
-    
+
+@pytest.fixture(autouse=True)
+def conformance_xfail(pytestconfig, request):
+    xfail_option = pytestconfig.getoption("--expected-failures")
+    if xfail_option is None:
+        return
+
+    if request.node.originalname in xfail_option.split(" "):
+        request.node.add_marker(pytest.mark.xfail(strict=True))
