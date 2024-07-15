@@ -3,8 +3,12 @@ description: "TUF client conformance test suite"
 
 inputs:
   entrypoint:
-    description: "client wrapper to invoke"
+    description: "client-under-test CLI to invoke"
     required: true
+  expected-failures:
+    description: "Optional list test names expected to fail"
+    default: ""
+    required: false
 
 runs:
   using: "composite"
@@ -26,7 +30,10 @@ runs:
       id: sigstore-conformance
       env:
         ENTRYPOINT: ${{ inputs.entrypoint }}
+        EXPECTED_FAILURES: ${{ inputs.expected-failures }}
         TEST_LOCATION: ${{ github.action_path }}/tuf_conformance
       run: |
-        pytest -v "$TEST_LOCATION" --entrypoint "$ENTRYPOINT"
+        pytest -v "$TEST_LOCATION" \
+          --entrypoint "$ENTRYPOINT" \
+          --expected-failures "$EXPECTED_FAILURES"
       shell: bash
