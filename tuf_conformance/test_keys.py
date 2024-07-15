@@ -323,3 +323,66 @@ def test_duplicate_keys_root(client: ClientRunner,
     assert len(md_root.roles[Snapshot.type].keyids) == 1
     # TODO: Double check that "1" is correct here:
     assert len(md_snapshot.signatures) == 1
+
+
+def test_custom_field_in_meta(client: ClientRunner,
+                            server: SimulatorServer) -> None:
+    """Bumps up the version at adds a custom field in the timestamp
+    metadata at MD["signed"]["meta"]["snapshot.json"]["hash"].
+    Then the client bumps and the test checks for the expected
+    metadata version."""
+
+    name = "test_custom_field_in_meta"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    # Sanity check
+    assert client._files_exist([Root.type,
+                               Timestamp.type,
+                               Snapshot.type,
+                               Targets.type])
+
+    new_root_md = json.loads(repo.md_root_json)
+    new_root_md["signed"]["roles"]["timestamp"]["threshold"] = 2
+    repo.save_metadata_bytes(Root.type, meta_dict_to_bytes(new_root_md))
+
+    # Add a valid key and bump
+    repo.add_key_to_role(Timestamp.type)
+    # Bump so that client should update
+    repo.update_snapshot() # snapshot: v2, timestamp: v2
+    repo.bump_root_by_one() # v2
+    assert len(json.loads(repo.md_root_json)["signed"]["roles"]["timestamp"]["keyids"]) == 2
+
+    # Add a custom field without re-calculating hashes
+    new_timestamp_md = json.loads(repo.md_timestamp_json)
+    # "hash" is a custom field
+    new_timestamp_md["signed"]["meta"]["snapshot.json"]["hash"] = "custom_field_value"
+    repo.save_metadata_bytes(Timestamp.type, meta_dict_to_bytes(new_timestamp_md))
+    assert client._version_equals(Timestamp.type, 1)
+
+    # Client updates
+    client.refresh(init_data)
+    with open(os.path.join(client.metadata_dir, "timestamp.json"), "r") as client_timestamp_json:
+        print("client timestamp: ", client_timestamp_json)
+        assert json.load(client_timestamp_json)[0]["signed"]["meta"]["snapshot.json"]["hash"] == "custom_field_value"
+
+    # Client should not bump snapshot to v2 because the repo metadata
+    # has not recalculated the hashes
+    assert client._version_equals(Root.type, 2)
+    assert client._version_equals(Snapshot.type, 1)
+    assert client._version_equals(Timestamp.type, 1)
+
+    # Update and also recalculate hashes (update_snapshot
+    # recalculates lengths and hashes)
+    repo.update_snapshot() # timestamp: v3, snapshot: v3
+
+    # Client updates
+    client.refresh(init_data)
+
+    # Now the client should update properly
+    assert client._version_equals(Snapshot.type, 3)
+    assert client._version_equals(Timestamp.type, 3)

@@ -8,11 +8,53 @@ import copy
 from tuf_conformance.repository_simulator import RepositorySimulator
 from tuf_conformance.simulator_server import SimulatorServer
 from tuf_conformance.client_runner import ClientRunner
+from tuf_conformance.utils import meta_dict_to_bytes
 
 from tuf.api.metadata import (
     Timestamp, Snapshot, Root, Targets, Metadata
 )
 
+def test_custom_field_hash_verificatio(client: ClientRunner,
+                            server: SimulatorServer) -> None:
+    """Tests that custom fields are included in hash verification"""
+
+    name = "test_custom_field_hash_verification"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    # Sanity check
+    assert client._files_exist([Root.type,
+                               Timestamp.type,
+                               Snapshot.type,
+                               Targets.type])
+    # Bump so that client should update
+    repo.bump_version_by_one(Snapshot.type) # v2
+
+    # Add a custom field without re-calculating hashes
+    new_snapshot_md = json.loads(repo.md_snapshot_json)
+    new_snapshot_md["signed"]["custom_field"] = "custom_field_value"
+    repo.save_metadata_bytes(Snapshot.type, meta_dict_to_bytes(new_snapshot_md))
+
+    # Client updates
+    client.refresh(init_data)
+
+    # Client should not bump to v2 because the repo metadata
+    # has not recalculated the hashes
+    assert client._version_equals(Snapshot.type, 1)
+
+    # Update and also recalculate hashes (update_snapshot
+    # recalculates lengths and hashes)
+    repo.update_snapshot()
+
+    # Client updates
+    client.refresh(init_data)
+
+    # Now the client should update properly
+    assert client._version_equals(Snapshot.type, 3)
 
 
 def test_TestTimestampEqVersionsCheck(client: ClientRunner, server: SimulatorServer) -> None:

@@ -259,6 +259,8 @@ class RepositorySimulator():
         # update repo metadata
         self.save_metadata_bytes(role, new_ss_bytes)
         md_bytes = self.load_metadata_bytes(role)
+
+        # Verify the json is valid
         ss_obj = json.loads(md_bytes)
 
     def add_key(self, delegator: str, role: str, signer: Signer) -> None:
