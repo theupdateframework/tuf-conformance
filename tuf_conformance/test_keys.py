@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 
@@ -19,13 +20,13 @@ def initial_setup_for_key_threshold_edge_cases(client: ClientRunner,
     new_root = repo.load_metadata(Root.type)
     new_root.signed.roles[Snapshot.type].threshold = 3
     repo.save_metadata(Root.type, new_root)
-    repo.bump_root_by_one()
+    repo.bump_root_by_one() # v2
 
     # Add a legitimate key:
     repo.add_key_to_role(Snapshot.type)
     repo.update_timestamp()
     repo.update_snapshot()
-    repo.bump_root_by_one()
+    repo.bump_root_by_one() # v3
 
     assert client.refresh(init_data) == 1
 
@@ -34,7 +35,7 @@ def initial_setup_for_key_threshold_edge_cases(client: ClientRunner,
     repo.add_key_to_role(Snapshot.type)
     repo.update_timestamp()
     repo.update_snapshot()
-    repo.bump_root_by_one()
+    repo.bump_root_by_one() # v4
 
     assert len(json.loads(repo.md_root_json)["signed"]["roles"][Snapshot.type]["keyids"]) == 4
     assert len(json.loads(repo.md_snapshot_json)["signatures"]) == 3
@@ -71,7 +72,7 @@ def test_root_has_keys_but_not_snapshot(client: ClientRunner,
     new_root = repo.load_metadata(Root.type)
     new_root.signed.roles[Snapshot.type].threshold = 5
     repo.save_metadata(Root.type, new_root)
-    repo.bump_root_by_one()
+    repo.bump_root_by_one() # v5
 
     # Updating should fail. Root should bump, but not snapshot
     assert client.refresh(init_data) == 1
@@ -135,12 +136,12 @@ def Ttest_wrong_keytype_and_scheme(client: ClientRunner,
     new_root = repo.load_metadata(Root.type)
     new_root.signed.roles[Snapshot.type].threshold = 5
     repo.save_metadata(Root.type, new_root)
-    repo.bump_root_by_one()
+    repo.bump_root_by_one() # v5
 
     repo.add_key_to_role(Snapshot.type)
     repo.update_timestamp()
     repo.update_snapshot()
-    repo.bump_root_by_one()
+    repo.bump_root_by_one() # v6
 
     # Sanity check that we have 5 keys. They are all
     # valid at this point
@@ -239,7 +240,7 @@ def Ttest_wrong_keytype_and_scheme(client: ClientRunner,
     # there are enough valid keys but a single invalid that
     # will fail key validation. 
     assert client.refresh(init_data) == 0
-    assert client._version_equals(Root.type, 8)
+    assert client._version_equals(Root.type, 9)
     assert client._version_equals(Snapshot.type, 4)
 
 # prefixed with "T" to not run in CI.
