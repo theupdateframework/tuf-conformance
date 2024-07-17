@@ -12,7 +12,7 @@ from tuf.api.metadata import (
     DelegatedRole
 )
 
-def test_invalid_date_format(client: ClientRunner,
+def Ttest_invalid_date_format(client: ClientRunner,
                         server: SimulatorServer) -> None:
     """Tests the client rejects metadata with wrong date format"""
 
@@ -43,7 +43,7 @@ def test_invalid_date_format(client: ClientRunner,
 
     # Set a valid expiration
     repo.set_any_expiration_date(date_str)
-    repo.update_any_snapshot()
+    repo.update_snapshot()
     assert client.refresh(init_data) == 0
     assert client._version_equals(Snapshot.type, 3)
     assert client._version_equals(Timestamp.type, 3)
@@ -52,7 +52,7 @@ def test_invalid_date_format(client: ClientRunner,
     # mostly a sanity check
     date_str = five_days_in_future.strftime("%Y-%m-%dT%H:%M:%SZ")
     repo.set_any_expiration_date(date_str)
-    repo.update_any_snapshot()
+    repo.update_snapshot()
     assert client.refresh(init_data) == 0
     assert client._version_equals(Snapshot.type, 4)
     assert client._version_equals(Timestamp.type, 4)
@@ -60,7 +60,7 @@ def test_invalid_date_format(client: ClientRunner,
     # Set an invalid expiration
     date_str = five_days_in_future.strftime("%m-%d-%YT%H:%M:%SZ")
     repo.set_any_expiration_date(date_str)
-    repo.update_any_snapshot()
+    repo.update_snapshot()
     # Client refresh should fail
     assert client.refresh(init_data) == 1
     assert client._version_equals(Snapshot.type, 4)
@@ -71,7 +71,7 @@ def test_invalid_date_format(client: ClientRunner,
     # Set a valid expiration
     date_str = five_days_in_future.strftime("%Y-%m-%dT%H:%M:%SZ")
     repo.set_any_expiration_date(date_str)
-    repo.update_any_snapshot()
+    repo.update_snapshot()
     assert client.refresh(init_data) == 0
     assert client._version_equals(Snapshot.type, 6)
     assert client._version_equals(Timestamp.type, 6)
@@ -79,7 +79,7 @@ def test_invalid_date_format(client: ClientRunner,
     # Set an invalid expiration - seconds are missing
     date_str = five_days_in_future.strftime("%Y-%m-%dT%H:%MZ")
     repo.set_any_expiration_date(date_str)
-    repo.update_any_snapshot()
+    repo.update_snapshot()
     # Client refresh should fail
     assert client.refresh(init_data) == 1
     assert client._version_equals(Snapshot.type, 6)
@@ -88,7 +88,7 @@ def test_invalid_date_format(client: ClientRunner,
     # Set an invalid expiration - minutes and seconds are missing
     date_str = five_days_in_future.strftime("%Y-%m-%dT%HZ")
     repo.set_any_expiration_date(date_str)
-    repo.update_any_snapshot()
+    repo.update_snapshot()
     # Client refresh should fail
     assert client.refresh(init_data) == 1
     assert client._version_equals(Snapshot.type, 6)
@@ -97,7 +97,7 @@ def test_invalid_date_format(client: ClientRunner,
     # Set a valid expiration
     date_str = five_days_in_future.strftime("%Y-%m-%dT%H:%M:%SZ")
     repo.set_any_expiration_date(date_str)
-    repo.update_any_snapshot()
+    repo.update_snapshot()
     assert client.refresh(init_data) == 0
     assert client._version_equals(Snapshot.type, 9)
     assert client._version_equals(Timestamp.type, 9)

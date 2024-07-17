@@ -116,11 +116,11 @@ def test_new_targets_hash_mismatch(client: ClientRunner,
     # Modify targets contents without updating
     # snapshot's targets hashes
     repo.bump_version_by_one(Targets.type)
-    new_ss = repo.load_metadata(Snapshot.type)
     targets_version = repo.load_metadata(Targets.type).signed.version
-    new_ss.signed.meta["targets.json"].version = targets_version
-    new_ss.signed.version += 1
-    repo.save_metadata(Snapshot.type, new_ss)
+    snapshot = Metadata.from_bytes(repo.md_snapshot_json)
+    snapshot.signed.meta["targets.json"].version = targets_version
+    snapshot.signed.version += 1
+    repo.md_snapshot_json = snapshot.to_bytes()
     repo.update_timestamp()
 
     client.refresh(init_data)

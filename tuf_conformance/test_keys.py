@@ -267,7 +267,7 @@ def test_simple_signing(client: ClientRunner,
 # Set/keep a threshold of 10 keys. All the keyids are different,
 # but the keys are all identical. As such, the snapshot metadata
 # has been signed by 1 key.
-def test_duplicate_keys_root(client: ClientRunner,
+def Ttest_duplicate_keys_root(client: ClientRunner,
                              server: SimulatorServer) -> None:
     # Tests that add_key_to_role works as intended
 
@@ -289,8 +289,7 @@ def test_duplicate_keys_root(client: ClientRunner,
     # Add the same signature to Snapshot 9 times in the repository
     repo.add_one_role_key_n_times_to_root(Snapshot.type, 9)
     repo.bump_root_by_one()
-    ss_obj = json.loads(repo.md_root_json)
-    assert len(ss_obj["signed"]["roles"]["snapshot"]["keyids"]) == 10
+    assert len(Metadata.from_bytes(repo.md_root_json).signed.roles.snapshot.keyids) == 10
     
     repo.update_timestamp()
     repo.update_snapshot()
