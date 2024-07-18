@@ -19,15 +19,12 @@ from tuf.api._payload import (
     Targets,
     Timestamp,
 )
-from tuf.api.serialization import (
-    DeserializationError,
-)
 from tuf.api.serialization.json import (
-    JSONDeserializer,
     MetadataDeserializer,
 )
 
-from typing import Dict, Any, cast, List, Optional
+from typing import Dict, Any, cast, List, Optional, Type
+
 
 class MetadataTest(Metadata):
     @classmethod
@@ -58,6 +55,7 @@ class MetadataTest(Metadata):
             # All fields left in the metadata dict are unrecognized.
             unrecognized_fields=metadata,
         )
+
 
 class RootTest(Root):
     def add_key(self, key: Key, role: str) -> None:
@@ -90,8 +88,9 @@ class RootTest(Root):
         # All fields left in the signed_dict are unrecognized.
         return cls(*common_args, keys, roles, consistent_snapshot, signed_dict)
 
+
 class RoleTest(Role):
-    # A copy of https://github.com/theupdateframework/python-tuf/blob/4d2ff8d37d30e94dbc0fe2cfa42bd46d2bb72414/tuf/api/_payload.py#L220
+    # A copy of python-tufs Role class
     # without validation
     def __init__(
         self,
@@ -105,6 +104,7 @@ class RoleTest(Role):
             unrecognized_fields = {}
 
         self.unrecognized_fields = unrecognized_fields
+
 
 class JSONDeserializerTest(MetadataDeserializer):
     """Provides JSON to Metadata deserialize method."""
