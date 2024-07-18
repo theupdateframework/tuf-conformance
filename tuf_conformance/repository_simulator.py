@@ -42,6 +42,7 @@ from urllib import parse
 import securesystemslib.hash as sslib_hash
 from securesystemslib.signer import CryptoSigner, Signer
 from tuf_conformance.utils import meta_dict_to_bytes
+from tuf_conformance.metadata import RootTest, MetadataTest, JSONDeserializerTest
 
 from tuf.api.metadata import (
     SPECIFICATION_VERSION,
@@ -191,11 +192,14 @@ class RepositorySimulator():
             role == Timestamp.type 
             or role == Snapshot.type 
             or role == Targets.type
-            or role == Root.type
             ):
             md = self.load_metadata(role)
             md.signed.version += 1
             self.save_metadata(role, md)
+        elif role == Root.type:
+            md_root = MetadataTest.from_bytes(self.md_root_json, JSONDeserializerTest())
+            md_root.signed.version += 1
+            self.md_root_json = md_root.to_bytes()
 
     def downgrade_version_by_one(self, role: str) -> None:
         # Does not update hashes and signatures
@@ -239,54 +243,11 @@ class RepositorySimulator():
             if signer.public_key.keyid not in root["signed"]["roles"][role]["keyids"]:
                 root["signed"]["roles"][role]["keyids"].append(signer.public_key.keyid)
             root["signed"]["keys"][signer.public_key.keyid] = signer.public_key.to_dict()
-            self.md_root_json = meta_dict_to_bytes(root)
-
-    def add_key_to_role(self, role: str) -> None:
-        """add new key"""
-        signer = CryptoSigner.generate_ecdsa()
-
-        self.add_key(Root.type, role, signer)
-        root = Metadata.from_bytes(self.md_root_json)
-        root.sign(signer, append=True)
-        self.md_root_json = root.to_bytes()
-        self.add_signer(role, signer)
-
-        if (
-            role == Timestamp.type 
-            or role == Snapshot.type 
-            or role == Targets.type
-            ):
-            self.sign_any(role, signer, append=True)
-
-    def add_one_role_key_n_times_to_root(self, role: str, times: int) -> None:
-        """add new key"""
-        if times <= 0:
-            raise ValueError("Cannot add a key 0 or less times")
-
-        signer = CryptoSigner.generate_ecdsa()
-
-        # Update in old way
-
-        self.add_key(Root.type, role, signer)
-        self.sign_any(Root.type, signer)
-        self.add_signer(role, signer)
-
-        if (
-            role == Timestamp.type 
-            or role == Snapshot.type 
-            or role == Targets.type
-            ):
-            self.sign_any(role, signer)
-        
-        # Add one key n times to root
-        for n in range(0, times-1):
-            root = json.loads(self.md_root_json)
-            root["signed"]["roles"]["snapshot"]["keyids"].append(signer.public_key.keyid)
-            self.save_metadata_bytes(Root.type, meta_dict_to_bytes(root))
+            self.md_root_json = meta_dict_to_bytes(root)        
 
     def publish_root(self) -> None:
         """Sign and store a new serialized version of root."""
-        root = Metadata.from_bytes(self.md_root_json)
+        root = MetadataTest.from_bytes(self.md_root_json, JSONDeserializerTest())
         root.signatures.clear()
         for signer in self.signers[Root.type].values():
             root.sign(signer, append=True)
@@ -353,27 +314,6 @@ class RepositorySimulator():
 
         logger.debug("fetched target %s", target_path)
         return repo_target.data
-
-    def save_metadata_bytes(self, role: str, md: bytes) -> None:
-        if role == Targets.type:
-            self.md_targets_json = md
-        elif role == Snapshot.type:
-            self.md_snapshot_json = md
-        elif role == Root.type:
-            self.md_root_json = md
-        elif role == Timestamp.type:
-            self.md_timestamp_json = md
-
-    def load_metadata_bytes(self, role: str) -> None:
-        # Returns a parsed copy of the repositorys metadata
-        if role == Targets.type:
-            return self.md_targets_json
-        elif role == Snapshot.type:
-            return self.md_snapshot_json
-        elif role == Root.type:
-            return self.md_root_json
-        elif role == Timestamp.type:
-            return self.md_timestamp_json
 
     def fetch_metadata(self, role: str, version: Optional[int] = None) -> bytes:
         """Return signed metadata for 'role', using 'version' if it is given.
@@ -656,56 +596,13 @@ class RepositorySimulator():
             with open(os.path.join(dest_dir, f"{quoted_role}.json"), "wb") as f:
                 f.write(self.fetch_metadata(role))
 
-    def set_any_expiration_date(self, date_string: str) -> None:
-        # Set any expiration date of Metadata (Snapshot for now).
-        # The date does not have to be valid. This method is explicitly
-        # for testing wrong dates. Other methods might not be available
-        # after the metadata has been updated with a wrong date.
-        ss_obj = json.loads(self.md_snapshot_json)
-        existing_date = ss_obj["signed"]["expires"]
+    def add_key(self, role: str) -> None:
+        """add new key"""
+        signer = CryptoSigner.generate_ecdsa()
 
-        existing_ss = self.md_snapshot_json.decode()
-        new_ss = existing_ss.replace(existing_date, date_string)
-
-        # check that the json is valid:
-        json.loads(new_ss)
-
-        # update repo metadata
-        self.md_snapshot_json = new_ss.encode()
-
-    def sign_any(self, role: str, signer: Signer, append: bool = False) -> None:
-        # Signs invalid metadata. Currently only used in a few tests.
-        # This is our own implementation for signing and updating keys
-        # in a TUF-compliant manner.
-
-        md_bytes = self.load_metadata_bytes(role)
-        ss_obj = json.loads(md_bytes)
-
-        try:
-            signed_bytes = meta_dict_to_bytes(ss_obj["signed"])
-
-            # At this point, b"\n" may be escaped to the raw bytes
-            # b"\\n". We should not sign the escaped version, so
-            # We change b"\\n" to b"\n":
-            signed_bytes = signed_bytes.replace(b"\\n", b"\n")
-
-            signature = signer.sign(signed_bytes)
-        except Exception as e:
-            raise UnsignedMetadataError(f"Failed to sign: {e}") from e
-
-        if not append:
-            ss_obj["signatures"] = []
-
-        ss_obj["signatures"].append({"keyid": signature.keyid,
-                                     "sig": signature.to_dict()["sig"]})
-
-        new_ss_bytes = json.dumps(ss_obj,
-                                  indent=None,
-                                  separators = (",", ":"),
-                                  sort_keys=True).encode("utf-8")
-        # check that the json is valid:
-        json.loads(new_ss_bytes)
-        # update repo metadata
-        self.save_metadata_bytes(role, new_ss_bytes)
-        md_bytes = self.load_metadata_bytes(role)
-        ss_obj = json.loads(md_bytes)
+        #self.add_key(Root.type, role, signer)
+        root = Metadata.from_bytes(self.md_root_json)
+        root.signed.add_key(signer.public_key, role)
+        root.sign(signer, append=True)
+        self.md_root_json = root.to_bytes()
+        self.add_signer(role, signer)
