@@ -4,6 +4,7 @@ Clients must implement the following command-line interface:
 
 `init`: Initialises the clients local trusted metadata. It has the following command-line arguments:
 - `--metadata-dir`, Required: The localpath where the client stores metadata.
+- `--trusted-root`, Required: The initial root. The conformance tests generate this.
 
 `refresh`: Updates the local metadata from the repository.
 - `--metadata-dir`, Required: The localpath where the client stores metadata.
