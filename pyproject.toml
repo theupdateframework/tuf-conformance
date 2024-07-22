@@ -7,7 +7,7 @@ name = "tuf-conformance"
 dependencies = [
     "securesystemslib[crypto, pynacl]==1.1.0" ,
     "tuf==5.0.0",
-    "pytest==8.2.2"
+    "pytest==8.3.1"
 ]
 dynamic = ["version"]
 
