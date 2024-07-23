@@ -40,7 +40,7 @@ def test_TestTimestampEqVersionsCheck(client: ClientRunner, server: SimulatorSer
     
     client.refresh(init_data)
 
-    assert client._version_equals(Timestamp.type, initial_timestamp_meta_ver)
+    assert client._version(Timestamp.type) == initial_timestamp_meta_ver
 
 def test_max_root_rotations(client: ClientRunner,
                             server: SimulatorServer) -> None:
@@ -88,9 +88,8 @@ def test_max_root_rotations(client: ClientRunner,
 
     # Assert that root version was increased with no more
     # than 'max_root_rotations'
-    assert client._version_equals(
-        Root.type, initial_root_version+3
-    )
+    assert client._version(Root.type) == initial_root_version+3
+
 
 def test_new_targets_hash_mismatch(client: ClientRunner,
                                    server: SimulatorServer) -> None:
@@ -124,8 +123,8 @@ def test_new_targets_hash_mismatch(client: ClientRunner,
     repo.update_timestamp()
 
     client.refresh(init_data)
-    assert client._version_equals(Snapshot.type, 1)
-    assert client._version_equals(Targets.type, 1)
+    assert client._version(Snapshot.type) ==  1
+    assert client._version(Targets.type) == 1
 
 def test_new_targets_version_mismatch(client: ClientRunner,
                                        server: SimulatorServer) -> None:

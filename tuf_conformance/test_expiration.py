@@ -40,7 +40,7 @@ def test_new_snapshot_expired(client: ClientRunner,
     # Check that the client still has the correct metadata files
     # i.e. that it has not updated to the expired metadata
     assert client._files_exist([Root.type, Timestamp.type])
-    assert client._version_equals(Snapshot.type, 1)
+    assert client._version(Snapshot.type) == 1
 
 def test_new_targets_expired(client: ClientRunner,
                              server: SimulatorServer) -> None:
@@ -70,7 +70,7 @@ def test_new_targets_expired(client: ClientRunner,
                                        Targets.type])
 
     # Client should not bump targets version, because it has expired
-    assert client._version_equals(Targets.type, 1)
+    assert client._version(Targets.type) == 1
 
 def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None:
     """Verifies that expired local timestamp/snapshot can be used for

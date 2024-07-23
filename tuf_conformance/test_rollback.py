@@ -27,7 +27,7 @@ def test_new_snapshot_version_rollback(client: ClientRunner,
     client.refresh(init_data)
 
     # Check that client resisted rollback attack
-    assert client._version_equals(Snapshot.type, 2)
+    assert client._version(Snapshot.type) == 2
 
 def test_new_timestamp_version_rollback(client: ClientRunner,
                                         server: SimulatorServer) -> None:
@@ -45,7 +45,7 @@ def test_new_timestamp_version_rollback(client: ClientRunner,
     assert client.refresh(init_data) == 0
 
     # Sanity check that client saw the snapshot update:
-    assert client._version_equals(Timestamp.type, 2)
+    assert client._version(Timestamp.type) == 2
 
     # Repository attempts rollback attack:
     repo.downgrade_timestamp() # v1
@@ -53,7 +53,7 @@ def test_new_timestamp_version_rollback(client: ClientRunner,
     assert client.refresh(init_data) == 1
 
     # Check that client resisted rollback attack
-    assert client._version_equals(Timestamp.type, 2)
+    assert client._version(Timestamp.type) == 2
 
 def test_new_timestamp_snapshot_rollback(client: ClientRunner, 
                                          server: SimulatorServer) -> None:
@@ -82,13 +82,13 @@ def test_new_timestamp_snapshot_rollback(client: ClientRunner,
     repo.save_metadata(Snapshot.type, new_snapshot)
     repo.update_timestamp() # v4
     assert repo._version_equals(Timestamp.type, 4)
-    assert client._version_equals(Timestamp.type, 3)
+    assert client._version(Timestamp.type) == 3
 
     client.refresh(init_data)
 
     # Check that client resisted rollback attack
-    assert client._version_equals(Timestamp.type, 3)
-    assert client._version_equals(Snapshot.type, 2)
+    assert client._version(Timestamp.type) == 3
+    assert client._version(Snapshot.type) == 2
 
 def test_new_targets_fast_forward_recovery(client: ClientRunner,
                                            server: SimulatorServer) -> None:
@@ -116,7 +116,7 @@ def test_new_targets_fast_forward_recovery(client: ClientRunner,
     repo.update_snapshot() # v2
 
     assert client.refresh(init_data) == 0
-    assert client._version_equals(Targets.type, 99999)
+    assert client._version(Targets.type) == 99999
 
     repo.rotate_keys(Snapshot.type)
     repo.bump_root_by_one()
@@ -128,8 +128,8 @@ def test_new_targets_fast_forward_recovery(client: ClientRunner,
     assert repo._version_equals(Snapshot.type, 3)
 
     assert client.refresh(init_data) == 1
-    assert client._version_equals(Targets.type, 99999)
-    assert client._version_equals(Snapshot.type, 2)
+    assert client._version(Targets.type) == 99999
+    assert client._version(Snapshot.type) == 2
 
 def test_new_snapshot_fast_forward_recovery(client: ClientRunner,
                                             server: SimulatorServer) -> None:
@@ -157,7 +157,7 @@ def test_new_snapshot_fast_forward_recovery(client: ClientRunner,
 
     repo.update_timestamp()
     client.refresh(init_data)
-    assert client._version_equals(Snapshot.type, 99999)
+    assert client._version(Snapshot.type) == 99999
 
     repo.rotate_keys(Snapshot.type)
     repo.rotate_keys(Timestamp.type)
@@ -169,7 +169,7 @@ def test_new_snapshot_fast_forward_recovery(client: ClientRunner,
     repo.update_timestamp()
 
     assert client.refresh(init_data) == 1
-    assert client._version_equals(Snapshot.type, 99999)
+    assert client._version(Snapshot.type) == 99999
 
 def test_new_snapshot_version_mismatch(client: ClientRunner,
                                        server: SimulatorServer) -> None:
@@ -220,7 +220,7 @@ def test_new_timestamp_fast_forward_recovery(client: ClientRunner,
 
     # client refreshes the metadata and see the new timestamp version
     client.refresh(init_data)
-    assert client._version_equals(Timestamp.type, 99999)
+    assert client._version(Timestamp.type) == 99999
 
     # repository rotates timestamp keys,
     # rolls back timestamp version
@@ -235,7 +235,7 @@ def test_new_timestamp_fast_forward_recovery(client: ClientRunner,
     # than the version in the clients metadata.
     # The client should not be version 1 after refreshing.
     assert client.refresh(init_data) == 1
-    assert client._version_equals(Timestamp.type, 99999)
+    assert client._version(Timestamp.type) == 99999
 
 def test_snapshot_rollback_with_local_snapshot_hash_mismatch(client: ClientRunner,
                                                              server: SimulatorServer) -> None:
@@ -262,7 +262,7 @@ def test_snapshot_rollback_with_local_snapshot_hash_mismatch(client: ClientRunne
     repo.save_metadata(Targets.type, new_targets)
     repo.update_snapshot()
     client.refresh(init_data)
-    assert client._version_equals(Targets.type, 2)
+    assert client._version(Targets.type) == 2
 
     # By raising this flag on timestamp update the simulator would:
     # 1) compute the hash of the new modified version of snapshot
