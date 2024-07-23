@@ -87,7 +87,10 @@ def test_max_root_rotations(client: ClientRunner,
     # than 'max_root_rotations'
     assert client._version(Root.type) == initial_root_version+3
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 69e805f (change _version_equals to _version)
 
 def test_new_targets_hash_mismatch(client: ClientRunner,
                                    server: SimulatorServer) -> None:
@@ -123,7 +126,10 @@ def test_new_targets_hash_mismatch(client: ClientRunner,
     client.refresh(init_data)
     assert client._version(Snapshot.type) ==  1
     assert client._version(Targets.type) == 1
+<<<<<<< HEAD
 
+=======
+>>>>>>> 69e805f (change _version_equals to _version)
 
 def test_new_targets_version_mismatch(client: ClientRunner,
                                       server: SimulatorServer) -> None:
