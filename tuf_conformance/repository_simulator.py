@@ -213,38 +213,6 @@ class RepositorySimulator():
             new_md.signed.version -= 1
             self.save_metadata(role, new_md)
 
-    def sign(self, role: str, signer: Signer) -> None:
-        # Does not update hashes and signatures
-        if (
-            role == Timestamp.type 
-            or role == Snapshot.type 
-            or role == Targets.type
-            or role == Root.type
-            ):
-            new_md = self.load_metadata(role)
-            new_md.sign(signer, append=True)
-            self.save_metadata(role, new_md)
-
-    def add_key(self, delegator: str, role: str, signer: Signer) -> None:
-        """Add key to Root"""
-        if delegator == Root.type:
-            if not isinstance(role, str):
-                raise ValueError("Role must be a string")
-
-            root = json.loads(self.md_root_json)
-            role_exists = False
-            for r in root["signed"]["roles"]:
-                if r == role:
-                    role_exists = True
-                    break
-            if not role_exists:
-                raise ValueError(f"Role {role} doesn't exist")
-
-            if signer.public_key.keyid not in root["signed"]["roles"][role]["keyids"]:
-                root["signed"]["roles"][role]["keyids"].append(signer.public_key.keyid)
-            root["signed"]["keys"][signer.public_key.keyid] = signer.public_key.to_dict()
-            self.md_root_json = meta_dict_to_bytes(root)        
-
     def publish_root(self) -> None:
         """Sign and store a new serialized version of root."""
         root = MetadataTest.from_bytes(self.md_root_json, JSONDeserializerTest())
