@@ -1,9 +1,5 @@
 # Test runner
-
-import json
 import os
-import tempfile
-import copy
 
 from tuf_conformance.repository_simulator import RepositorySimulator
 from tuf_conformance.simulator_server import SimulatorServer
@@ -14,9 +10,9 @@ from tuf.api.metadata import (
 )
 
 
-
-def test_TestTimestampEqVersionsCheck(client: ClientRunner, server: SimulatorServer) -> None:
-    #https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_top_level_update_test.go#L1058
+def test_TestTimestampEqVersionsCheck(client: ClientRunner,
+                                      server: SimulatorServer) -> None:
+    # https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_top_level_update_test.go#L1058
     name = "test_TestTimestampEqVersionsCheck"
 
     # initialize a simulator with repository content we need
@@ -27,9 +23,9 @@ def test_TestTimestampEqVersionsCheck(client: ClientRunner, server: SimulatorSer
     client.refresh(init_data)
     # Sanity check
     assert client._files_exist([Root.type,
-                                       Timestamp.type,
-                                       Snapshot.type,
-                                       Targets.type])
+                                Timestamp.type,
+                                Snapshot.type,
+                                Targets.type])
 
     initial_timestamp_meta_ver = repo.timestamp.snapshot_meta.version
     # Change timestamp without bumping its version in order to test if a new
@@ -37,10 +33,11 @@ def test_TestTimestampEqVersionsCheck(client: ClientRunner, server: SimulatorSer
     new_timestamp = repo.load_metadata(Timestamp.type)
     new_timestamp.signed.snapshot_meta.version = 100
     repo.save_metadata(Timestamp.type, new_timestamp)
-    
+
     client.refresh(init_data)
 
     assert client._version_equals(Timestamp.type, initial_timestamp_meta_ver)
+
 
 def test_max_root_rotations(client: ClientRunner,
                             server: SimulatorServer) -> None:
@@ -57,9 +54,9 @@ def test_max_root_rotations(client: ClientRunner,
     client.refresh(init_data)
     # Sanity check
     assert client._files_exist([Root.type,
-                                       Timestamp.type,
-                                       Snapshot.type,
-                                       Targets.type])
+                                Timestamp.type,
+                                Snapshot.type,
+                                Targets.type])
 
     updater_max_root_rotations = 3
     client.max_root_rotations = updater_max_root_rotations
@@ -92,6 +89,7 @@ def test_max_root_rotations(client: ClientRunner,
         Root.type, initial_root_version+3
     )
 
+
 def test_new_targets_hash_mismatch(client: ClientRunner,
                                    server: SimulatorServer) -> None:
     # Check against snapshot role's targets hashes
@@ -105,8 +103,8 @@ def test_new_targets_hash_mismatch(client: ClientRunner,
     client.refresh(init_data)
     # Sanity check
     assert client._files_exist([Root.type,
-                                       Timestamp.type,
-                                       Snapshot.type])
+                                Timestamp.type,
+                                Snapshot.type])
 
     repo.compute_metafile_hashes_length = True
     repo.update_snapshot()
@@ -127,8 +125,9 @@ def test_new_targets_hash_mismatch(client: ClientRunner,
     assert client._version_equals(Snapshot.type, 1)
     assert client._version_equals(Targets.type, 1)
 
+
 def test_new_targets_version_mismatch(client: ClientRunner,
-                                       server: SimulatorServer) -> None:
+                                      server: SimulatorServer) -> None:
     # Check against snapshot role's targets version
     name = "test_new_targets_version_mismatch"
 
@@ -139,17 +138,18 @@ def test_new_targets_version_mismatch(client: ClientRunner,
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     assert client._files_exist([Root.type,
-                                       Timestamp.type,
-                                       Snapshot.type,
-                                       Targets.type])
+                                Timestamp.type,
+                                Snapshot.type,
+                                Targets.type])
 
     repo.bump_version_by_one(Targets.type)
     client.refresh(init_data)
     # Check that the client still has the correct metadata files
     assert client._files_exist([Root.type,
-                                       Timestamp.type,
-                                       Snapshot.type,
-                                       Targets.type])
+                                Timestamp.type,
+                                Snapshot.type,
+                                Targets.type])
+
 
 def test_basic_init_and_refresh(client: ClientRunner,
                                 server: SimulatorServer) -> None:
@@ -167,7 +167,7 @@ def test_basic_init_and_refresh(client: ClientRunner,
     # TODO verify success?
     assert client.init_client(init_data) == 0
 
-    # TODO verify that results are correct, see e.g. 
+    # TODO verify that results are correct, see e.g.
     # * repo.metadata_statistics: no requests expected
     # * client metadat cache should contain root v1
 
@@ -181,6 +181,7 @@ def test_basic_init_and_refresh(client: ClientRunner,
                                         ('snapshot', 1),
                                         ('targets', 1)]
     # TODO verify that local metadata cache has the files we expect
+
 
 def test_timestamp_eq_versions_check(client: ClientRunner,
                                      server: SimulatorServer) -> None:
