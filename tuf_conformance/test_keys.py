@@ -92,7 +92,8 @@ def test_root_has_keys_but_not_snapshot(client: ClientRunner,
                                 Snapshot.type,
                                 Targets.type])
     assert client._version(Snapshot.type) == 1
-    assert len(json.loads(repo.md_snapshot_json)["signatures"]) == 0
+    assert len(MetadataTest.from_bytes(repo.md_snapshot_json,
+                                       JSONDeserializerTest()).signatures) == 0
 
     initial_setup_for_key_threshold(client, repo, init_data)
 
@@ -144,18 +145,19 @@ def test_wrong_hashing_algorithm(client: ClientRunner,
                                 Snapshot.type,
                                 Targets.type])
     assert client._version(Snapshot.type) == 1
-    assert len(json.loads(repo.md_snapshot_json)["signatures"]) == 0
+    assert len(MetadataTest.from_bytes(repo.md_snapshot_json,
+                                       JSONDeserializerTest()).signatures) == 0
 
     initial_setup_for_key_threshold(client, repo, init_data)
 
     assert client.refresh(init_data) == 0
     assert client._version(Root.type) == 4
     assert client._version(Snapshot.type) == 3
-
-    assert len(json.loads(repo.md_root_json)["signed"]
-                                            ["roles"]
-                                            [Snapshot.type]
-                                            ["keyids"]) == 4
+    assert len(MetadataTest.from_bytes(repo.md_root_json,
+                                       JSONDeserializerTest())
+                                       .signed
+                                       .roles[Snapshot.type]
+                                       .keyids) == 4
 
     # Increase the threshold
     new_root = repo.load_metadata(Root.type)

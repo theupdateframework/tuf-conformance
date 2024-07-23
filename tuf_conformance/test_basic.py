@@ -88,7 +88,6 @@ def test_max_root_rotations(client: ClientRunner,
     assert client._version(Root.type) == initial_root_version+3
 
 
-
 def test_new_targets_hash_mismatch(client: ClientRunner,
                                    server: SimulatorServer) -> None:
     # Check against snapshot role's targets hashes
