@@ -9,6 +9,10 @@ from typing import Iterable
 from tuf_conformance.simulator_server import ClientInitData, SimulatorServer
 from tuf.api.metadata import Metadata, Snapshot
 
+from tuf_conformance.metadata import (
+    MetadataTest
+)
+
 
 class ClientRunner:
     """Wrapper that executes the client under test
@@ -30,14 +34,11 @@ class ClientRunner:
 
     def get_last_downloaded_target(self) -> str:
         onlyfiles = [f for f in listdir(self._tempdir.name) if isfile(join(self._tempdir.name, f))]
-        print("OF: ", onlyfiles)
         onlyfiles = [f for f in listdir(self._target_dir.name) if isfile(join(self._target_dir.name, f))]
-        print("OF: ", onlyfiles)
         list_of_files = glob.glob(self._target_dir.name+"/*")
         if len(list_of_files) == 0:
             return ""
         latest_file = max(list_of_files, key=os.path.getctime)
-        print("latest_file: ", latest_file)
         return latest_file
 
     def _run(self, cmd: list[str]) -> int:
@@ -71,11 +72,10 @@ class ClientRunner:
                                       "download"]
         return self._run(cmd)
 
-    def _version_equals(self, role: str, expected_version: int) -> None:
-        """Check that local metadata version is the expected"""
-        md = Metadata.from_file(os.path.join(self.metadata_dir, f"{role}.json"))
-        print("md:::::::::::::::::::", md.signed.version, "role:::::::::", role, "expected: ", expected_version)
-        return md.signed.version == expected_version
+    def _version(self, role: str) -> None:
+        """Returns the version of a metadata role"""
+        md = MetadataTest.from_file(os.path.join(self.metadata_dir, f"{role}.json"))
+        return md.signed.version
 
     def _files_exist(self, roles: Iterable[str]) -> None:
         """Check that local metadata files exist for 'roles'.
@@ -83,5 +83,4 @@ class ClientRunner:
            metadata_dir than the expted files"""
         expected_files = sorted([f"{role}.json" for role in roles])
         local_metadata_files = sorted(os.listdir(self.metadata_dir))
-        print("expected_files: ", expected_files, "local_metadata_files: ", local_metadata_files)
         return all(x in local_metadata_files for x in expected_files)

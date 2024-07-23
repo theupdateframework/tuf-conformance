@@ -68,8 +68,8 @@ def initial_setup_for_key_threshold(client: ClientRunner,
     assert len(md_root.signed.roles[Snapshot.type].keyids) == 4
 
     assert client.refresh(init_data) == 0
-    assert client._version_equals(Snapshot.type, 3)
-    assert client._version_equals(Root.type, 4)
+    assert client._version(Snapshot.type) == 3
+    assert client._version(Root.type) == 4
 
 
 def test_root_has_keys_but_not_snapshot(client: ClientRunner,
@@ -91,7 +91,7 @@ def test_root_has_keys_but_not_snapshot(client: ClientRunner,
                                 Timestamp.type,
                                 Snapshot.type,
                                 Targets.type])
-    assert client._version_equals(Snapshot.type, 1)
+    assert client._version(Snapshot.type) == 1
     assert len(json.loads(repo.md_snapshot_json)["signatures"]) == 0
 
     initial_setup_for_key_threshold(client, repo, init_data)
@@ -104,8 +104,8 @@ def test_root_has_keys_but_not_snapshot(client: ClientRunner,
 
     # Updating should fail. Root should bump, but not snapshot
     assert client.refresh(init_data) == 1
-    assert client._version_equals(Root.type, 5)
-    assert client._version_equals(Snapshot.type, 3)
+    assert client._version(Root.type) == 5
+    assert client._version(Snapshot.type) == 3
 
     # Add two invalid keys only to root and expect the client
     # to fail updating
@@ -121,8 +121,8 @@ def test_root_has_keys_but_not_snapshot(client: ClientRunner,
 
     # Updating should fail. Root should bump, but not snapshot
     assert client.refresh(init_data) == 1
-    assert client._version_equals(Root.type, 5)
-    assert client._version_equals(Snapshot.type, 3)
+    assert client._version(Root.type) == 5
+    assert client._version(Snapshot.type) == 3
 
 
 def test_wrong_hashing_algorithm(client: ClientRunner,
@@ -143,14 +143,14 @@ def test_wrong_hashing_algorithm(client: ClientRunner,
                                 Timestamp.type,
                                 Snapshot.type,
                                 Targets.type])
-    assert client._version_equals(Snapshot.type, 1)
+    assert client._version(Snapshot.type) == 1
     assert len(json.loads(repo.md_snapshot_json)["signatures"]) == 0
 
     initial_setup_for_key_threshold(client, repo, init_data)
 
     assert client.refresh(init_data) == 0
-    assert client._version_equals(Root.type, 4)
-    assert client._version_equals(Snapshot.type, 3)
+    assert client._version(Root.type) == 4
+    assert client._version(Snapshot.type) == 3
 
     assert len(json.loads(repo.md_root_json)["signed"]
                                             ["roles"]
@@ -167,8 +167,8 @@ def test_wrong_hashing_algorithm(client: ClientRunner,
     # because it has 4 keys and the threshold is 5.
     # This is mostly a sanity check.
     assert client.refresh(init_data) == 1
-    assert client._version_equals(Root.type, 5)
-    assert client._version_equals(Snapshot.type, 3)
+    assert client._version(Root.type) == 5
+    assert client._version(Snapshot.type) == 3
 
     # Add a valid key and bump
     repo.add_key(Snapshot.type)
@@ -179,8 +179,8 @@ def test_wrong_hashing_algorithm(client: ClientRunner,
     # Verify that the client can update before making
     # the metadata faulty
     assert client.refresh(init_data) == 0
-    assert client._version_equals(Root.type, 6)
-    assert client._version_equals(Snapshot.type, 4)
+    assert client._version(Root.type) == 6
+    assert client._version(Snapshot.type) == 4
 
     # Change hashing algorithm of a valid key
     # Let's bump so that the client sees there are updates.
@@ -206,8 +206,8 @@ def test_wrong_hashing_algorithm(client: ClientRunner,
     # All metadata should update; even though "keyid_hash_algorithms"
     # is wrong, it is not a part of the TUF spec.
     assert client.refresh(init_data) == 0
-    assert client._version_equals(Root.type, 8)
-    assert client._version_equals(Snapshot.type, 5)
+    assert client._version(Root.type) == 8
+    assert client._version(Snapshot.type) == 5
 
 
 def test_simple_signing(client: ClientRunner,
@@ -227,7 +227,7 @@ def test_simple_signing(client: ClientRunner,
                                 Timestamp.type,
                                 Snapshot.type,
                                 Targets.type])
-    assert client._version_equals(Snapshot.type, 1)
+    assert client._version(Snapshot.type) == 1
 
     # Add signature to Snapshot
     repo.add_key(Snapshot.type)
@@ -284,7 +284,7 @@ def test_simple_signing(client: ClientRunner,
 
     # Ensure that client does not refresh
     assert client.refresh(init_data) == 1
-    assert client._version_equals(Snapshot.type, initial_root_version)
+    assert client._version(Snapshot.type) == initial_root_version
 
 
 # Set/keep a threshold of 10 keys. All the keyids are different,
@@ -307,7 +307,7 @@ def test_duplicate_keys_root(client: ClientRunner,
                                 Timestamp.type,
                                 Snapshot.type,
                                 Targets.type])
-    assert client._version_equals(Snapshot.type, 1)
+    assert client._version(Snapshot.type) == 1
 
     # Add the same signature to Snapshot 9 times in the repository
 
