@@ -160,16 +160,10 @@ def test_expired_metadata(client: ClientRunner,
     # Assert that the final version of timestamp/snapshot is version 2
     # which means a successful refresh is performed
     # with expired local metadata.
-    for role in ["timestamp", "snapshot", "targets"]:
-        md = Metadata.from_file(
-            os.path.join(client.metadata_dir, f"{role}.json")
-        )
-        if role == "targets":
-            assert md.signed.version == 2
-        elif role == "snapshot":
-            assert md.signed.version == 2
-        else:
-            assert md.signed.version == 3
+
+    assert client._version(Targets.type)   == 2
+    assert client._version(Timestamp.type) == 3
+    assert client._version(Snapshot.type)  == 2
 
 
 def test_timestamp_expired(client: ClientRunner,
