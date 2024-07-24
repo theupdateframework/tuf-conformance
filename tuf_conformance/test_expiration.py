@@ -45,10 +45,10 @@ def test_root_expired(client: ClientRunner,
     assert client._version(Snapshot.type) == 1
 
 
-def test_new_snapshot_expired(client: ClientRunner,
+def test_snapshot_expired(client: ClientRunner,
                               server: SimulatorServer) -> None:
     # Check for a freeze attack
-    name = "test_new_snapshot_expired"
+    name = "test_snapshot_expired"
 
     # initialize a simulator with repository content we need
     repo = RepositorySimulator()
@@ -75,10 +75,10 @@ def test_new_snapshot_expired(client: ClientRunner,
     assert client._version(Snapshot.type) == 1
 
 
-def test_new_targets_expired(client: ClientRunner,
+def test_targets_expired(client: ClientRunner,
                              server: SimulatorServer) -> None:
     # Check against snapshot role's targets version
-    name = "test_new_targets_expired"
+    name = "test_targets_expired"
 
     # initialize a simulator with repository content we need
     repo = RepositorySimulator()
@@ -168,12 +168,12 @@ def test_expired_metadata(client: ClientRunner,
             assert md.signed.version == 3
 
 
-def test_new_timestamp_expired(client: ClientRunner,
+def test_timestamp_expired(client: ClientRunner,
                                server: SimulatorServer) -> None:
     """This is an example of a test method:
     it should likely be a e.g. a unittest.TestCase"""
 
-    name = "test_new_timestamp_expired"
+    name = "test_timestamp_expired"
 
     # initialize a simulator with repository content we need
     repo = RepositorySimulator()
