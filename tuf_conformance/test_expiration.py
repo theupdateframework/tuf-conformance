@@ -26,9 +26,9 @@ def test_new_snapshot_expired(client: ClientRunner,
     client.refresh(init_data)
     # Sanity check
     assert client._files_exist([Root.type,
-                                       Timestamp.type,
-                                       Snapshot.type,
-                                       Targets.type])
+                                Timestamp.type,
+                                Snapshot.type,
+                                Targets.type])
 
     new_snapshot = repo.load_metadata(Snapshot.type)
     new_snapshot.signed.expires = utils.get_date_n_days_in_past(5)
@@ -42,6 +42,7 @@ def test_new_snapshot_expired(client: ClientRunner,
     assert client._files_exist([Root.type, Timestamp.type])
     assert client._version(Snapshot.type) == 1
 
+
 def test_new_targets_expired(client: ClientRunner,
                              server: SimulatorServer) -> None:
     # Check against snapshot role's targets version
@@ -54,9 +55,9 @@ def test_new_targets_expired(client: ClientRunner,
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     assert client._files_exist([Root.type,
-                                       Timestamp.type,
-                                       Snapshot.type,
-                                       Targets.type])
+                                Timestamp.type,
+                                Snapshot.type,
+                                Targets.type])
 
     repo.targets.expires = utils.get_date_n_days_in_past(5)
     repo.update_snapshot()
@@ -65,14 +66,16 @@ def test_new_targets_expired(client: ClientRunner,
 
     # Check that the client still has the correct metadata files
     assert client._files_exist([Root.type,
-                                       Timestamp.type,
-                                       Snapshot.type,
-                                       Targets.type])
+                                Timestamp.type,
+                                Snapshot.type,
+                                Targets.type])
 
     # Client should not bump targets version, because it has expired
     assert client._version(Targets.type) == 1
 
-def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None:
+
+def test_expired_metadata(client: ClientRunner,
+                          server: SimulatorServer) -> None:
     """Verifies that expired local timestamp/snapshot can be used for
     updating from remote.
 
@@ -99,12 +102,10 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
     # Refresh and perform sanity check
     client.refresh(init_data)
     for role in ["timestamp", "snapshot", "targets"]:
-        print("Current role: ", role)
         md = Metadata.from_file(
             os.path.join(client.metadata_dir, f"{role}.json")
         )
         assert md.signed.version == 1
-    
 
     new_targets = repo.load_metadata(Targets.type)
     new_targets.signed.version += 1
@@ -124,7 +125,6 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
     # which means a successful refresh is performed
     # with expired local metadata.
     for role in ["timestamp", "snapshot", "targets"]:
-        print("Current role: ", role)
         md = Metadata.from_file(
             os.path.join(client.metadata_dir, f"{role}.json")
         )
@@ -134,6 +134,7 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
             assert md.signed.version == 2
         else:
             assert md.signed.version == 3
+
 
 def test_new_timestamp_expired(client: ClientRunner,
                                server: SimulatorServer) -> None:
@@ -156,9 +157,10 @@ def test_new_timestamp_expired(client: ClientRunner,
     # Check that client resisted rollback attack
     assert client._files_exist([Root.type])
 
-def test_TestDelegatesRolesUpdateWithConsistentSnapshotDisabled(client: ClientRunner,
-                                                                server: SimulatorServer) -> None:
-    #https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_consistent_snapshot_test.go#L97C6-L97C60
+
+def test_TestDelegateConsistentSnapshotDisabled(client: ClientRunner,
+                                                server: SimulatorServer) -> None:
+    # https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_consistent_snapshot_test.go#L97C6-L97C60
     name = "test_TestDelegatesRolesUpdateWithConsistentSnapshotDisabled"
 
     # initialize a simulator with repository content we need
@@ -169,9 +171,9 @@ def test_TestDelegatesRolesUpdateWithConsistentSnapshotDisabled(client: ClientRu
     client.refresh(init_data)
     # Sanity check
     assert client._files_exist([Root.type,
-                                       Timestamp.type,
-                                       Snapshot.type,
-                                       Targets.type])
+                                Timestamp.type,
+                                Snapshot.type,
+                                Targets.type])
 
     repo.set_root_consistent_snapshot(False)
     repo.bump_root_by_one()
