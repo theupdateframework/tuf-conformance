@@ -47,7 +47,9 @@ def test_root_expired(client: ClientRunner,
 
 def test_snapshot_expired(client: ClientRunner,
                               server: SimulatorServer) -> None:
-    # Check for a freeze attack
+    """Tests a case where the snapshot metadata is expired.
+    Checks whether the clients updates the snapshot metadata
+    if the repo has a newer version, but it is expired"""
     name = "test_snapshot_expired"
 
     # initialize a simulator with repository content we need
@@ -77,7 +79,9 @@ def test_snapshot_expired(client: ClientRunner,
 
 def test_targets_expired(client: ClientRunner,
                              server: SimulatorServer) -> None:
-    # Check against snapshot role's targets version
+    """Tests a case where the targets metadata is expired.
+    Checks whether the clients updates the targets metadata
+    if the repo has a newer version, but it is expired"""
     name = "test_targets_expired"
 
     # initialize a simulator with repository content we need
@@ -170,8 +174,9 @@ def test_expired_metadata(client: ClientRunner,
 
 def test_timestamp_expired(client: ClientRunner,
                                server: SimulatorServer) -> None:
-    """This is an example of a test method:
-    it should likely be a e.g. a unittest.TestCase"""
+    """Tests a case where the timestamp metadata is expired.
+    Checks whether the clients updates the timestamp metadata
+    if the repo has a newer version, but it is expired"""
 
     name = "test_timestamp_expired"
 
@@ -179,15 +184,20 @@ def test_timestamp_expired(client: ClientRunner,
     repo = RepositorySimulator()
     server.repos[name] = repo
     init_data = server.get_client_init_data(name)
-
     assert client.init_client(init_data) == 0
-    repo.timestamp.expires = utils.get_date_n_days_in_past(5)
-    repo.update_timestamp()
+    client.refresh(init_data)
+    assert client._version(Timestamp.type) == 1
+
+    timestamp = repo.load_metadata(Timestamp.type)
+    timestamp.signed.expires = utils.get_date_n_days_in_past(5)
+    repo.save_metadata(Timestamp.type, timestamp)
+    repo.update_timestamp() # v2
 
     client.refresh(init_data)
 
     # Check that client resisted rollback attack
     assert client._files_exist([Root.type])
+    assert client._version(Timestamp.type) == 1
 
 
 def test_TestDelegateConsistentSnapshotDisabled(client: ClientRunner,
