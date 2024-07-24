@@ -11,6 +11,38 @@ from tuf.api.metadata import (
     Timestamp, Snapshot, Root, Targets, Metadata,
     DelegatedRole
 )
+from tuf_conformance.metadata import RootTest, MetadataTest
+
+def test_root_expired(client: ClientRunner,
+                      server: SimulatorServer) -> None:
+    """Tests a case where root is expired. The spec (5.3.10)
+    says that the root should update, so at the end, this
+    test asserts that root updates but no other metadata does"""
+    name = "test_root_expired"
+
+    # initialize a simulator with repository content we need
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+
+    repo.bump_root_by_one() # v2
+    client.refresh(init_data)
+
+    root = repo.load_metadata(Root.type)
+    root.signed.expires = utils.get_date_n_days_in_past(1)
+    repo.save_metadata(Root.type, root)
+    repo.bump_root_by_one() # v3
+    repo.bump_version_by_one(Timestamp.type) # v2
+
+    client.refresh(init_data)
+
+    # Clients should check for a freeze attack after persisting (5.3.10),
+    # so root should update, but no other MD should update 
+    assert client._version(Root.type) == 3
+    assert client._version(Timestamp.type) == 1
+    assert client._version(Snapshot.type) == 1
 
 
 def test_new_snapshot_expired(client: ClientRunner,
