@@ -7,8 +7,9 @@ from tuf_conformance import utils
 from tuf_conformance.utils import TestTarget
 
 from tuf.api.metadata import (
-    Targets, Snapshot
+    Snapshot
 )
+
 
 def get_url_prefix(server_process_handler: utils.TestServerProcess,
                    client: ClientRunner) -> str:
@@ -18,11 +19,14 @@ def get_url_prefix(server_process_handler: utils.TestServerProcess,
     )
     return url_prefix
 
+
 # TODO: Needs work
-def test_downloaded_file_is_correct(client: ClientRunner,
-                                    server: SimulatorServer) -> None:
-    # A test that upgrades the version of one of the files in snapshot.json only
-    # but does does not upgrade in the file itself.
+def test_downloaded_file_is_correct(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    """ A test that upgrades the version of one of the
+    files in snapshot.json only but does does not upgrade
+    in the file itself."""
     name = "test_downloaded_file_is_correct"
 
     # initialize a simulator with repository content we need
@@ -54,7 +58,7 @@ def test_downloaded_file_is_correct(client: ClientRunner,
 
     # Add target to repository
     repo.add_target_with_length("targets", target)
-    repo.bump_version_by_one(Targets.type)
+    repo.targets.version += 1
     repo.update_snapshot()
     client.refresh(init_data)
 
@@ -113,7 +117,7 @@ def test_downloaded_file_is_correct2(client: ClientRunner,
 
     # Add target to repository
     repo.add_target_with_length("targets", target)
-    repo.bump_version_by_one(Targets.type)
+    repo.targets.version += 1
     repo.update_snapshot()
     client.refresh(init_data)
 
@@ -153,7 +157,7 @@ def test_downloaded_file_is_correct2(client: ClientRunner,
 
     # Update target version target to repository without
     # updating the target in the metadata
-    repo.bump_version_by_one(Targets.type)
+    repo.targets.version += 1
     repo.update_snapshot()
     client.refresh(init_data)
 
@@ -199,7 +203,7 @@ def test_downloaded_file_is_correct3(client: ClientRunner,
 
     # Add target to repository
     repo.add_target_with_length("targets", target)
-    repo.bump_version_by_one(Targets.type)
+    repo.targets.version += 1
     repo.update_snapshot()
     client.refresh(init_data)
 
@@ -242,7 +246,7 @@ def test_downloaded_file_is_correct3(client: ClientRunner,
         repo.update_timestamp()
         repo.rotate_keys(Snapshot.type)
         repo.bump_root_by_one()
-        repo.bump_version_by_one(Targets.type)
+        repo.targets.version += 1
         repo.update_snapshot()
         client.refresh(init_data)
         # Sanity checks
@@ -281,7 +285,7 @@ def test_multiple_changes_to_target(client: ClientRunner,
     target.content = file_contents
 
     # Add target to repository
-    repo.bump_version_by_one(Targets.type)
+    repo.targets.version += 1
     repo.add_target_with_length("targets", target)
     repo.update_snapshot()
     client.refresh(init_data)
@@ -316,7 +320,7 @@ def test_multiple_changes_to_target(client: ClientRunner,
         target_file.write(new_file_contents)
         target_file.close()
 
-        repo.bump_version_by_one(Targets.type)
+        repo.targets.version += 1
 
         target = TestTarget()
         target.path = target_base_name

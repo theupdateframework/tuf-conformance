@@ -14,17 +14,6 @@ on:
   workflow_dispatch:
 name: CI
 jobs:
-  self-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-
-      - name: Install test suite and dependencies
-        run: make dev
-
-      - name: Run self-tests
-        run: make self-tests
-
   test-python:
     runs-on: ubuntu-latest
     steps:

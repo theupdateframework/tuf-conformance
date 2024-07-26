@@ -1,8 +1,8 @@
-from logging import warn, warning
-from typing import Dict, List
+from typing import Dict
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from tuf_conformance.repository_simulator import RepositorySimulator
+
 
 @dataclass
 class ClientInitData:
@@ -22,7 +22,7 @@ class _ReqHandler(BaseHTTPRequestHandler):
         test, _, path = self.path.lstrip("/").partition("/")
 
         try:
-            repo:RepositorySimulator = self.server.repos[test]
+            repo: RepositorySimulator = self.server.repos[test]
         except KeyError:
             self.send_error(404, f"Did not find repository for {test}")
             return
@@ -44,6 +44,7 @@ class _ReqHandler(BaseHTTPRequestHandler):
         """
         pass
 
+
 class SimulatorServer(ThreadingHTTPServer):
     """Web server to serve a number of repositories"""
     def __init__(self):
@@ -53,11 +54,8 @@ class SimulatorServer(ThreadingHTTPServer):
         # key is test name, value is the repository sim for that test
         self.repos: Dict[str, RepositorySimulator] = {}
 
-
     def get_client_init_data(self, repo: str) -> ClientInitData:
         return ClientInitData(
             f"http://{self.server_address[0]}:{self.server_address[1]}/{repo}/metadata/",
             self.repos[repo].fetch_metadata("root", 1)
         )
-        
-

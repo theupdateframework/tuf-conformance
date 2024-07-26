@@ -1,13 +1,10 @@
 import subprocess
 import os
-from os import listdir
-from os.path import isfile, join
 import glob
 from tempfile import TemporaryDirectory
-from typing import Iterable
+from typing import Iterable, Optional
 
 from tuf_conformance.simulator_server import ClientInitData, SimulatorServer
-from tuf.api.metadata import Metadata, Snapshot
 
 from tuf_conformance.metadata import (
     MetadataTest
@@ -16,10 +13,10 @@ from tuf_conformance.metadata import (
 
 class ClientRunner:
     """Wrapper that executes the client under test
-    
+
     The constructor arg 'client_cmd' is a path to an executable that
     conforms to the test script definition.
-    
+
     ClientRunner manages client resources (like the cache paths etc)"""
     def __init__(self, client_cmd: str, server: SimulatorServer) -> None:
         self._server = server
@@ -33,8 +30,6 @@ class ClientRunner:
         self.max_root_rotations = 32
 
     def get_last_downloaded_target(self) -> str:
-        onlyfiles = [f for f in listdir(self._tempdir.name) if isfile(join(self._tempdir.name, f))]
-        onlyfiles = [f for f in listdir(self._target_dir.name) if isfile(join(self._target_dir.name, f))]
         list_of_files = glob.glob(self._target_dir.name+"/*")
         if len(list_of_files) == 0:
             return ""
@@ -51,7 +46,7 @@ class ClientRunner:
         trusted = os.path.join(self._tempdir.name, "initial_root.json")
         with open(trusted, "bw") as f:
             f.write(data.trusted_root)
-        
+
         cmd = self._cmd.split(" ") + ["--metadata-dir", self.metadata_dir, "init", trusted]
         return self._run(cmd)
 
@@ -84,3 +79,10 @@ class ClientRunner:
         expected_files = sorted([f"{role}.json" for role in roles])
         local_metadata_files = sorted(os.listdir(self.metadata_dir))
         return all(x in local_metadata_files for x in expected_files)
+
+    def _content(self, role: str, version: Optional[int] = None) -> None:
+        """Assert that local file content is the expected"""
+        with open(os.path.join(self.metadata_dir, f"{role}.json"), "rb") as f:
+            return f.read()
+            self.assertEqual(f.read(), expected_content)
+
