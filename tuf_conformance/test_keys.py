@@ -98,61 +98,32 @@ def test_wrong_hashing_algorithm(client: ClientRunner,
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    # Sanity checks
-    assert client._files_exist([Root.type,
-                                Timestamp.type,
-                                Snapshot.type,
-                                Targets.type])
-    assert client._version(Snapshot.type) == 1
-    assert len(repo.md_snapshot.signatures) == 1
 
     initial_setup_for_key_threshold(client, repo, init_data)
-
-    assert client.refresh(init_data) == 0
-    assert client._version(Root.type) == 4
-    assert client._version(Snapshot.type) == 3
-    assert len(repo.root.roles[Snapshot.type].keyids) == 4
-
-    # Increase the threshold
-    repo.md_root.signed.roles[Snapshot.type].threshold = 5
-    repo.bump_root_by_one()  # v5
-
-    # Verify that the client cannot update snapshot
-    # because it has 4 keys and the threshold is 5.
-    # This is mostly a sanity check.
-    assert client.refresh(init_data) == 1
-    assert client._version(Root.type) == 5
-    assert client._version(Snapshot.type) == 3
-
-    # Add a valid key and bump
     repo.add_key(Snapshot.type)
-    repo.update_timestamp()
-    repo.update_snapshot()  # v4
-    repo.bump_root_by_one()  # v6
 
-    # Verify that the client can update before making
-    # the metadata faulty
-    assert client.refresh(init_data) == 0
-    assert client._version(Root.type) == 6
-    assert client._version(Snapshot.type) == 4
+    # Increase the threshold but it is met
+    assert len(repo.root.roles[Snapshot.type].keyids) == 5
+    repo.md_root.signed.roles[Snapshot.type].threshold = 5
 
-    # Change hashing algorithm of a valid key
-    # Let's bump so that the client sees there are updates.
-    # Note that we change the hashing algorithm after bumping
-    repo.update_timestamp()
-    repo.update_snapshot()  # v5
-    repo.bump_root_by_one()  # v7
+    # Set one of the keys' "keyid_hash_algorithms" to an
+    # incorrect algorithm.
     valid_key = repo.root.roles[Snapshot.type].keyids[0]
     repo.root.keys[valid_key].unrecognized_fields = dict()
     alg_key = "keyid_hash_algorithms"
     repo.root.keys[valid_key].unrecognized_fields[alg_key] = ["md5"]
-    repo.bump_root_by_one()  # v8
+    repo.bump_root_by_one()  # v5
+    repo.update_snapshot()  # v4
+    assert repo._version(Root.type) == 5
+    assert repo._version(Snapshot.type) == 4
 
     # All metadata should update; even though "keyid_hash_algorithms"
-    # is wrong, it is not a part of the TUF spec.
+    # is wrong, it is not a part of the TUF spec. This is the tests
+    # main assertion: That the client updates so that it has the
+    # same metadata as the repository.
     assert client.refresh(init_data) == 0
-    assert client._version(Root.type) == 8
-    assert client._version(Snapshot.type) == 5
+    assert client._version(Root.type) == repo._version(Root.type)
+    assert client._version(Snapshot.type) == repo._version(Snapshot.type)
 
 
 def test_snapshot_threshold(
