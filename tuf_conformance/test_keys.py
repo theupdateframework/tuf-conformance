@@ -37,6 +37,34 @@ def initial_setup_for_key_threshold(client: ClientRunner,
     assert client._version(Root.type) == 4
 
 
+def test_snapshot_threshold_simple(
+    client: ClientRunner,
+    server: SimulatorServer
+) -> None:
+    """Creates a state where the repositorys root metadata
+    version 2 doe snot have sufficient keys to meet the
+    threshold but version 3 does"""
+    name = "test_snapshot_threshold_simple"
+
+    repo = RepositorySimulator()
+    server.repos[name] = repo
+    init_data = server.get_client_init_data(name)
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+
+    initial_setup_for_key_threshold(client, repo, init_data)
+    assert client.refresh(init_data) == 0
+
+    signer = CryptoSigner.generate_ecdsa()
+    repo.root.roles[Snapshot.type].keyids.append(signer.public_key.keyid)
+    repo.bump_root_by_one()
+    repo.update_snapshot()
+    assert len(repo.root.roles[Snapshot.type].keyids) == 5
+    assert client.refresh(init_data) == 0
+    assert client._version(Root.type) == 5
+    assert client._version(Snapshot.type) == 4
+
+
 def test_root_has_keys_but_not_snapshot(client: ClientRunner,
                                         server: SimulatorServer) -> None:
     """This test adds keys to the repo root MD to test for cases
