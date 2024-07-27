@@ -30,9 +30,7 @@ def test_TestTimestampEqVersionsCheck(client: ClientRunner,
     initial_timestamp_meta_ver = repo.timestamp.snapshot_meta.version
     # Change timestamp without bumping its version in order to test if a new
     # timestamp with the same version will be persisted.
-    new_timestamp = repo.load_metadata(Timestamp.type)
-    new_timestamp.signed.snapshot_meta.version = 100
-    repo.save_metadata(Timestamp.type, new_timestamp)
+    repo.md_timestamp.signed.snapshot_meta.version = 100
 
     client.refresh(init_data)
 
@@ -68,13 +66,12 @@ def test_max_root_rotations(client: ClientRunner,
             # Sanity check. This should not happen but
             # it prevents a potential infinite loop
             assert False
-        root = repo.load_metadata(Root.type)
-        if root.signed.version >= updater_max_root_rotations+10:
+        if repo.md_root.signed.version >= updater_max_root_rotations+10:
             break
         repo.bump_root_by_one()
 
     # The repositorys root version is now 13.
-    assert repo._version_equals(Root.type, 13)
+    assert repo._version(Root.type) == 13
 
     # Check that the client does not upgrade by more than its max
     md_root = Metadata.from_file(
@@ -111,16 +108,14 @@ def test_new_targets_hash_mismatch(client: ClientRunner,
 
     # Modify targets contents without updating
     # snapshot's targets hashes
-    repo.bump_version_by_one(Targets.type)
-    targets_version = repo.load_metadata(Targets.type).signed.version
-    snapshot = Metadata.from_bytes(repo.md_snapshot_json)
-    snapshot.signed.meta["targets.json"].version = targets_version
-    snapshot.signed.version += 1
-    repo.md_snapshot_json = snapshot.to_bytes()
+    repo.targets.version += 1
+    targets_version = repo.md_targets.signed.version
+    repo.snapshot.meta["targets.json"].version = targets_version
+    repo.snapshot.version += 1
     repo.update_timestamp()
 
     client.refresh(init_data)
-    assert client._version(Snapshot.type) ==  1
+    assert client._version(Snapshot.type) == 1
     assert client._version(Targets.type) == 1
 
 
@@ -140,7 +135,7 @@ def test_new_targets_version_mismatch(client: ClientRunner,
                                 Snapshot.type,
                                 Targets.type])
 
-    repo.bump_version_by_one(Targets.type)
+    repo.targets.version += 1
     client.refresh(init_data)
     # Check that the client still has the correct metadata files
     assert client._files_exist([Root.type,
