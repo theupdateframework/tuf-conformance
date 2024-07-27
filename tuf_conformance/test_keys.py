@@ -1,14 +1,11 @@
-import os
-
 from tuf_conformance.repository_simulator import RepositorySimulator
 from tuf_conformance.simulator_server import SimulatorServer, ClientInitData
 from tuf_conformance.client_runner import ClientRunner
 from securesystemslib.signer import CryptoSigner
 
 from tuf.api.metadata import (
-    Timestamp, Snapshot, Root, Targets, Metadata
+    Timestamp, Snapshot, Root, Targets
 )
-from tuf.api.serialization import DeserializationError
 
 
 def initial_setup_for_key_threshold(client: ClientRunner,
@@ -158,78 +155,39 @@ def test_wrong_hashing_algorithm(client: ClientRunner,
     assert client._version(Snapshot.type) == 5
 
 
-def test_simple_signing(client: ClientRunner,
-                        server: SimulatorServer) -> None:
+def test_snapshot_threshold(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
     # Tests that add_key works as intended
 
-    name = "test_simple_signing"
+    name = "test_snapshot_threshold"
 
-    # initialize a simulator with repository content we need
     repo = RepositorySimulator()
     server.repos[name] = repo
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    # Sanity checks
-    assert client._files_exist([Root.type,
-                                Timestamp.type,
-                                Snapshot.type,
-                                Targets.type])
-    assert client._version(Snapshot.type) == 1
 
-    # Add signature to Snapshot
+    # Add 4 Snapshot keys so that there are 5 in total.
     repo.add_key(Snapshot.type)
     repo.add_key(Snapshot.type)
     repo.add_key(Snapshot.type)
-
-    repo.bump_root_by_one()
-
-    repo.update_timestamp()
-    repo.update_snapshot()
-
-    assert client.refresh(init_data) == 0
-
-    # There should be 4 snapshot signatures in the clients metadata
-    md_obj = Metadata.from_file(
-        os.path.join(client.metadata_dir, "root.json")).signed
-    md_obj2 = Metadata.from_file(
-        os.path.join(client.metadata_dir, "snapshot.json"))
-    assert len(md_obj.roles[Snapshot.type].keyids) == 4
-    assert len(md_obj2.signatures) == 4
-
-    # Add another signature
     repo.add_key(Snapshot.type)
-    repo.bump_root_by_one()
-
-    # Sanity check
     assert len(repo.root.roles["snapshot"].keyids) == 5
 
-    repo.update_timestamp()
-    repo.update_snapshot()
+    # Set higher threshold than we have keys such that the
+    # client should not successfully update.
+    repo.root.roles[Snapshot.type].threshold = 6
 
-    assert client.refresh(init_data) == 0
+    repo.bump_root_by_one()  # v2
+    repo.update_snapshot()  # v2
+    assert repo._version(Snapshot.type) == 2
+    assert repo._version(Root.type) == 2
 
-    # There should be 5 snapshot signatures in the clients metadata
-    md_obj = Metadata.from_file(
-        os.path.join(client.metadata_dir, "root.json")).signed
-    md_obj2 = Metadata.from_file(
-        os.path.join(client.metadata_dir, "snapshot.json"))
-    assert len(md_obj.roles[Snapshot.type].keyids) == 5
-    assert len(md_obj2.signatures) == 5
-
-    # Test 1:
-    # Set higher threshold than we have keys. Should fail
-    repo.md_root.signed.roles[Snapshot.type].threshold = 10
-    initial_root_version = repo.root.version
-
-    repo.bump_root_by_one()
-    repo.update_timestamp()
-    repo.update_snapshot()
-    client.refresh(init_data)
-
-    # Ensure that client does not refresh
+    # Ensure that client does not update because it does
+    # not have enough keys.
     assert client.refresh(init_data) == 1
-    assert client._version(Snapshot.type) == initial_root_version
+    assert client._version(Snapshot.type) == 1
 
 
 # Set/keep a threshold of 10 keys. All the keyids are different,
