@@ -37,13 +37,13 @@ def initial_setup_for_key_threshold(client: ClientRunner,
     assert client._version(Root.type) == 4
 
 
-def test_root_has_keys_but_not_snapshot(client: ClientRunner,
-                                        server: SimulatorServer) -> None:
-    """This test adds keys to the repo root MD to test for cases
-    where are client might calculate the threshold from only the
-    roots keys and not check that the snapshot MD has the same
-    keys"""
-    name = "test_root_has_keys_but_not_snapshot"
+def test_root_two_duplicate_snapshot_public_keys(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    """This tests adds two identical public keys for the snapshot
+    metadata to the root metadata. It expects the client to fail
+    the update because there are two identical keys."""
+    name = "test_root_two_duplicate_snapshot_public_keys"
 
     # initialize a simulator with repository content we need
     repo = RepositorySimulator()
@@ -51,38 +51,44 @@ def test_root_has_keys_but_not_snapshot(client: ClientRunner,
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    # Sanity checks
-    assert client._files_exist([Root.type,
-                                Timestamp.type,
-                                Snapshot.type,
-                                Targets.type])
-    assert client._version(Snapshot.type) == 1
-    assert len(repo.md_snapshot.signatures) == 1
-
     initial_setup_for_key_threshold(client, repo, init_data)
 
-    # Increase the threshold
-    repo.root.roles[Snapshot.type].threshold = 5
-    repo.bump_root_by_one()  # v5
-
-    # Updating should fail. Root should bump, but not snapshot
-    assert client.refresh(init_data) == 1
-    assert client._version(Root.type) == 5
-    assert client._version(Snapshot.type) == 3
-
-    # Add two invalid keys only to root and expect the client
-    # to fail updating
+    # The test will now test that two identical public keys
+    # will fail the update. It does this over two steps to
+    # be explicit: It first adds the public key so that
+    # there are no duplicates. This should succeed. After
+    # demonstating that it does succeed, we add the same
+    # public key once more and demonstrate that the update
+    # fails.
     signer = CryptoSigner.generate_ecdsa()
-
     repo.root.roles[Snapshot.type].keyids.append(signer.public_key.keyid)
+    repo.bump_root_by_one()  # v5
+    repo.update_snapshot()
 
     # Sanity check
+    # The root metadata has 5 public keys for snapshots
+    # with no duplicate
     assert len(repo.root.roles[Snapshot.type].keyids) == 5
 
-    # Updating should fail. Root should bump, but not snapshot
+    # Updating should succeed.
+    assert client.refresh(init_data) == 0
+    assert client._version(Root.type) == 5
+    assert client._version(Snapshot.type) == 4
+
+    # Here we add the public key once more. Add this point,
+    # the root metadata has two identical public keys.
+    # We then carry the exact same steps as after adding the
+    # public key the first time.
+    repo.root.roles[Snapshot.type].keyids.append(signer.public_key.keyid)
+    repo.bump_root_by_one()  # v6
+    repo.update_snapshot()  # v5
+    # The root metadata has 6 public keys for snapshots
+    # of which 2 are identical.
+    assert len(repo.root.roles[Snapshot.type].keyids) == 6
+    # Update should now fail
     assert client.refresh(init_data) == 1
     assert client._version(Root.type) == 5
-    assert client._version(Snapshot.type) == 3
+    assert client._version(Snapshot.type) == 4
 
 
 def test_wrong_hashing_algorithm(client: ClientRunner,
