@@ -235,7 +235,7 @@ def test_simple_signing(client: ClientRunner,
 # Set/keep a threshold of 10 keys. All the keyids are different,
 # but the keys are all identical. As such, the snapshot metadata
 # has been signed by 1 key.
-def Ttest_duplicate_keys_root(client: ClientRunner,
+def test_duplicate_keys_root(client: ClientRunner,
                              server: SimulatorServer) -> None:
     # Tests that add_key works as intended
 
@@ -266,34 +266,24 @@ def Ttest_duplicate_keys_root(client: ClientRunner,
     repo.bump_root_by_one()
     assert len(repo.root.roles["snapshot"].keyids) == 10
 
+    # Set a threshold that will be covered but only by
+    # the same key multiple times and not separate keys.
+    repo.root.roles[Snapshot.type].threshold = 6
+    repo.bump_root_by_one()
+
     repo.update_timestamp()
-    repo.update_snapshot()
+    repo.update_snapshot()  # v2
+
+    # Sanity check that the clients snapshot
+    # metadata is version 1
+    assert client._version(Snapshot.type) == 1
 
     # This should fail because the metadata should not have
     # the same key in more than 1 keyids. We check failure
     # here, and further down we check that the clients
     # metadata has not been updated.
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 1
 
-    # Verify that the client has not updated its metadata
-    try:
-        md_root = Metadata.from_file(
-            os.path.join(client.metadata_dir, "root.json")).signed
-    except DeserializationError:
-        assert False, "The client has updated with corrupted data"
-
-    try:
-        md_snapshot = Metadata.from_file(
-            os.path.join(client.metadata_dir, "snapshot.json"))
-    except DeserializationError:
-        assert False, "The client has updated with corrupted data"
-
-    md_root = Metadata.from_file(
-            os.path.join(client.metadata_dir, "root.json")).signed
-    md_snapshot = Metadata.from_file(
-        os.path.join(client.metadata_dir, "snapshot.json"))
-
-    # TODO: Double check that "1" is correct here:
-    assert len(md_root.roles[Snapshot.type].keyids) == 1
-    # TODO: Double check that "1" is correct here:
-    assert len(md_snapshot.signatures) == 1
+    # The clients snapshot metadata should still
+    # be version 1
+    assert client._version(Snapshot.type) == 1
