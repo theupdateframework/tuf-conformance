@@ -51,7 +51,18 @@ def test_root_two_duplicate_snapshot_public_keys(
     init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    initial_setup_for_key_threshold(client, repo, init_data)
+    # Add keys
+    repo.add_key(Snapshot.type)
+    repo.add_key(Snapshot.type)
+    repo.add_key(Snapshot.type)
+    repo.update_snapshot()  # v2
+    repo.bump_root_by_one()  # v2
+
+    assert len(repo.root.roles[Snapshot.type].keyids) == 4
+    assert client.refresh(init_data) == 0
+
+    # Set the threshold to 1 to prevent threshold being a blocker.
+    repo.md_root.signed.roles[Snapshot.type].threshold = 1 
 
     # The test will now test that two identical public keys
     # will fail the update. It does this over two steps to
@@ -62,8 +73,8 @@ def test_root_two_duplicate_snapshot_public_keys(
     # fails.
     signer = CryptoSigner.generate_ecdsa()
     repo.root.roles[Snapshot.type].keyids.append(signer.public_key.keyid)
-    repo.bump_root_by_one()  # v5
-    repo.update_snapshot()
+    repo.bump_root_by_one()  # v3
+    repo.update_snapshot()  # v3
 
     # Sanity check
     # The root metadata has 5 public keys for snapshots
@@ -72,23 +83,23 @@ def test_root_two_duplicate_snapshot_public_keys(
 
     # Updating should succeed.
     assert client.refresh(init_data) == 0
-    assert client._version(Root.type) == 5
-    assert client._version(Snapshot.type) == 4
+    assert client._version(Root.type) == 3
+    assert client._version(Snapshot.type) == 3
 
     # Here we add the public key once more. Add this point,
     # the root metadata has two identical public keys.
     # We then carry the exact same steps as after adding the
     # public key the first time.
     repo.root.roles[Snapshot.type].keyids.append(signer.public_key.keyid)
-    repo.bump_root_by_one()  # v6
-    repo.update_snapshot()  # v5
+    repo.bump_root_by_one()  # v4
+    repo.update_snapshot()  # v4
     # The root metadata has 6 public keys for snapshots
     # of which 2 are identical.
     assert len(repo.root.roles[Snapshot.type].keyids) == 6
     # Update should now fail
     assert client.refresh(init_data) == 1
-    assert client._version(Root.type) == 5
-    assert client._version(Snapshot.type) == 4
+    assert client._version(Root.type) == 3
+    assert client._version(Snapshot.type) == 3
 
 
 def test_wrong_hashing_algorithm(client: ClientRunner,
