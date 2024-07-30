@@ -1,8 +1,6 @@
 # Test runner
 import os
 
-from pytest import FixtureRequest
-
 from tuf_conformance.repository_simulator import RepositorySimulator
 from tuf_conformance.simulator_server import SimulatorServer
 from tuf_conformance.client_runner import ClientRunner
@@ -13,10 +11,10 @@ from tuf.api.metadata import (
 
 
 def test_TestTimestampEqVersionsCheck(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     # https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_top_level_update_test.go#L1058
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
@@ -37,11 +35,11 @@ def test_TestTimestampEqVersionsCheck(
 
 
 def test_max_root_rotations(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     # Root must stop looking for new versions after Y number of
     # intermediate files were downloaded.
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
@@ -81,10 +79,10 @@ def test_max_root_rotations(
 
 
 def test_new_targets_hash_mismatch(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     # Check against snapshot role's targets hashes
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
@@ -112,10 +110,10 @@ def test_new_targets_hash_mismatch(
 
 
 def test_new_targets_version_mismatch(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     # Check against snapshot role's targets version
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
@@ -134,9 +132,9 @@ def test_new_targets_version_mismatch(
 
 
 def test_basic_init_and_refresh(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     # Run the test: step 1:  initialize client
     # TODO verify success?
@@ -159,11 +157,11 @@ def test_basic_init_and_refresh(
 
 
 def test_timestamp_eq_versions_check(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     # Test that a modified timestamp with different content, but the same
     # version doesn't replace the valid locally stored one.
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
 

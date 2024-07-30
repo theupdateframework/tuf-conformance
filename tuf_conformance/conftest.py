@@ -32,7 +32,7 @@ def server():
     server.server_close()
 
 @pytest.fixture
-def client(pytestconfig, server):
+def client(pytestconfig, server, request):
     """
     Parametrize each test with the client under test.
     """
@@ -40,7 +40,7 @@ def client(pytestconfig, server):
     if not os.path.isabs(entrypoint):
         entrypoint = os.path.join(pytestconfig.invocation_params.dir, entrypoint)
 
-    return ClientRunner(entrypoint, server)
+    return ClientRunner(entrypoint, server, request.node.originalname)
 
 
 @pytest.fixture(autouse=True)

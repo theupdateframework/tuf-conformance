@@ -1,4 +1,3 @@
-from pytest import FixtureRequest
 from securesystemslib.signer import CryptoSigner
 from tuf.api.metadata import (
     Timestamp, Snapshot, Root, Targets
@@ -39,13 +38,13 @@ def initial_setup_for_key_threshold(client: ClientRunner,
 
 
 def test_root_has_keys_but_not_snapshot(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     """This test adds keys to the repo root MD to test for cases
     where are client might calculate the threshold from only the
     roots keys and not check that the snapshot MD has the same
     keys"""
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
@@ -84,11 +83,11 @@ def test_root_has_keys_but_not_snapshot(
 
 
 def test_wrong_hashing_algorithm(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     """This test sets a wrong but valid hashing algorithm for a key
     in the root MD. The client should not care and still update"""
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
@@ -121,10 +120,10 @@ def test_wrong_hashing_algorithm(
 
 
 def test_snapshot_threshold(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     # Test basic failure to reach signature threshold
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
@@ -152,12 +151,12 @@ def test_snapshot_threshold(
 
 
 def test_duplicate_keys_root(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     # Set/keep a threshold of 10 keys. All the keyids are different,
     # but the keys are all identical. As such, the snapshot metadata
     # has been signed by 1 key.
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)

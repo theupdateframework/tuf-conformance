@@ -1,7 +1,6 @@
 import datetime
 import os
 from datetime import timezone
-from pytest import FixtureRequest
 from tuf.api.metadata import (
     Timestamp, Snapshot, Root, Targets, Metadata,
     DelegatedRole
@@ -13,12 +12,12 @@ from tuf_conformance import utils
 
 
 def test_root_expired(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     """Tests a case where root is expired. The spec (5.3.10)
     says that the root should update, so at the end, this
     test asserts that root updates but no other metadata does"""
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
@@ -40,12 +39,12 @@ def test_root_expired(
 
 
 def test_snapshot_expired(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     """Tests a case where the snapshot metadata is expired.
     Checks whether the clients updates the snapshot metadata
     if the repo has a newer version, but it is expired"""
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
@@ -67,12 +66,12 @@ def test_snapshot_expired(
 
 
 def test_targets_expired(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     """Tests a case where the targets metadata is expired.
     Checks whether the clients updates the targets metadata
     if the repo has a newer version, but it is expired"""
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
@@ -97,7 +96,7 @@ def test_targets_expired(
 
 
 def test_expired_metadata(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     """Verifies that expired local timestamp/snapshot can be used for
     updating from remote.
@@ -109,7 +108,7 @@ def test_expired_metadata(
      - Timestamp v2 expiry set to day 21
      - Second updater refresh performed on day 18,
        it is successful and timestamp/snaphot final versions are v2"""
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
 
@@ -144,12 +143,12 @@ def test_expired_metadata(
 
 
 def test_timestamp_expired(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     """Tests a case where the timestamp metadata is expired.
     Checks whether the clients updates the timestamp metadata
     if the repo has a newer version, but it is expired"""
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
@@ -166,10 +165,10 @@ def test_timestamp_expired(
 
 
 def test_TestDelegateConsistentSnapshotDisabled(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     # https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_consistent_snapshot_test.go#L97C6-L97C60
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)

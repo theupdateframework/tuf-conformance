@@ -1,5 +1,4 @@
 import os
-from pytest import FixtureRequest
 from tuf.api.metadata import Snapshot
 
 from tuf_conformance.repository_simulator import RepositorySimulator
@@ -20,12 +19,12 @@ def get_url_prefix(server_process_handler: utils.TestServerProcess,
 
 # TODO: Needs work
 def test_downloaded_file_is_correct(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     """ A test that upgrades the version of one of the
     files in snapshot.json only but does does not upgrade
     in the file itself."""
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     server_process_handler = utils.TestServerProcess(log=utils.logger)
@@ -80,11 +79,11 @@ def test_downloaded_file_is_correct(
 
 # TODO: Needs work
 def test_downloaded_file_is_correct2(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     # A test that upgrades the version of one of the files in
     # snapshot.json only but does does not upgrade in the file itself.
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     server_process_handler = utils.TestServerProcess(log=utils.logger)
@@ -165,11 +164,11 @@ def test_downloaded_file_is_correct2(
 
 # TODO: Needs work
 def test_downloaded_file_is_correct3(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     """A test that upgrades the version of one of the files in 
     snapshot.json only but does does not upgrade in the file itself."""
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     server_process_handler = utils.TestServerProcess(log=utils.logger)
@@ -247,9 +246,9 @@ def test_downloaded_file_is_correct3(
             assert last_download_file.read() == file_contents.decode()
 
 def test_multiple_changes_to_target(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     server_process_handler = utils.TestServerProcess(log=utils.logger)

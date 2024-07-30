@@ -1,4 +1,3 @@
-from pytest import FixtureRequest
 from tuf.api.metadata import (
     Timestamp, Snapshot, Root, Targets
 )
@@ -9,9 +8,9 @@ from tuf_conformance.simulator_server import SimulatorServer
 
 
 def test_new_snapshot_version_rollback(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
 
@@ -28,9 +27,9 @@ def test_new_snapshot_version_rollback(
 
 
 def test_new_timestamp_version_rollback(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
 
@@ -51,9 +50,9 @@ def test_new_timestamp_version_rollback(
 
 
 def test_new_timestamp_snapshot_rollback(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
 
@@ -79,7 +78,7 @@ def test_new_timestamp_snapshot_rollback(
 
 
 def test_new_targets_fast_forward_recovery(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     """Test targets fast-forward recovery using key rotation.
 
@@ -91,7 +90,7 @@ def test_new_targets_fast_forward_recovery(
         - Rollback the target version
     """
 
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
     assert client.init_client(init_data) == 0
 
     repo.md_targets.signed.version = 99999
@@ -111,7 +110,7 @@ def test_new_targets_fast_forward_recovery(
 
 
 def test_new_snapshot_fast_forward_recovery(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     """Test snapshot fast-forward recovery using key rotation.
 
@@ -123,7 +122,7 @@ def test_new_snapshot_fast_forward_recovery(
     - Bump and publish root
     - Bump the timestamp
     """
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     repo.snapshot.version = 99999
@@ -146,11 +145,11 @@ def test_new_snapshot_fast_forward_recovery(
 
 
 def test_new_snapshot_version_mismatch(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     # Check against timestamp role's snapshot version
 
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
 
@@ -163,7 +162,7 @@ def test_new_snapshot_version_mismatch(
 
 
 def test_new_timestamp_fast_forward_recovery(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     """The timestamp recovery is made by the following steps
      - Remove the timestamp key
@@ -172,7 +171,7 @@ def test_new_timestamp_fast_forward_recovery(
      - Rollback the timestamp version
     """
 
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
 
@@ -195,12 +194,12 @@ def test_new_timestamp_fast_forward_recovery(
 
 
 def test_snapshot_rollback_with_local_snapshot_hash_mismatch(
-    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+    client: ClientRunner, server: SimulatorServer
 ) -> None:
     # Test triggering snapshot rollback check on a newly downloaded snapshot
     # when the local snapshot is loaded even when there is a hash mismatch
     # with timestamp.snapshot_meta.
-    init_data, repo = server.new_test(request.node.originalname)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
