@@ -93,14 +93,9 @@ def test_basic_init_and_refresh(
     init_data, repo = server.new_test(client.test_name)
 
     # Run the test: step 1:  initialize client
-    # TODO verify success?
     assert client.init_client(init_data) == 0
 
-    # TODO verify that results are correct, see e.g.
-    # * repo.metadata_statistics: no requests expected
-    # * client metadat cache should contain root v1
-
-    # Run the test: step 1: Refresh
+    # Run the test: step 2: Refresh
     assert client.refresh(init_data) == 0
 
     # Verify that expected requests were made
@@ -108,8 +103,12 @@ def test_basic_init_and_refresh(
                                         ('timestamp', None),
                                         ('snapshot', 1),
                                         ('targets', 1)]
-    # TODO verify that local metadata cache has the files we expect
 
+    #verify client metadata looks as expected
+    assert client.version(Root.type) == 1
+    assert client.version(Timestamp.type) == 1
+    assert client.version(Snapshot.type) == 1
+    assert client.version(Targets.type) == 1
 
 def test_timestamp_eq_versions_check(
     client: ClientRunner, server: SimulatorServer
