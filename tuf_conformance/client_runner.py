@@ -74,7 +74,7 @@ class ClientRunner:
                                       "download"]
         return self._run(cmd)
 
-    def _version(self, role: str) -> None:
+    def version(self, role: str) -> None:
         """Returns the version of a metadata role"""
         md = MetadataTest.from_file(os.path.join(self.metadata_dir, f"{role}.json"))
         return md.signed.version

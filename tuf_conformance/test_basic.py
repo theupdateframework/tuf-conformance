@@ -31,7 +31,7 @@ def test_TestTimestampEqVersionsCheck(
 
     client.refresh(init_data)
 
-    assert client._version(Timestamp.type) == initial_timestamp_meta_ver
+    assert client.version(Timestamp.type) == initial_timestamp_meta_ver
 
 
 def test_new_targets_hash_mismatch(
@@ -61,8 +61,8 @@ def test_new_targets_hash_mismatch(
     repo.update_timestamp()
 
     client.refresh(init_data)
-    assert client._version(Snapshot.type) == 1
-    assert client._version(Targets.type) == 1
+    assert client.version(Snapshot.type) == 1
+    assert client.version(Targets.type) == 1
 
 
 def test_new_targets_version_mismatch(
@@ -159,4 +159,4 @@ def test_custom_fields(
 
     # client should accept new root: The signed content contains the unknown fields
     assert client.refresh(init_data) == 0
-    assert client._version(Root.type) == 2
+    assert client.version(Root.type) == 2
