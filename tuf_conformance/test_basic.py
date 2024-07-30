@@ -1,6 +1,8 @@
 # Test runner
 import os
 
+from pytest import FixtureRequest
+
 from tuf_conformance.repository_simulator import RepositorySimulator
 from tuf_conformance.simulator_server import SimulatorServer
 from tuf_conformance.client_runner import ClientRunner
@@ -10,15 +12,12 @@ from tuf.api.metadata import (
 )
 
 
-def test_TestTimestampEqVersionsCheck(client: ClientRunner,
-                                      server: SimulatorServer) -> None:
+def test_TestTimestampEqVersionsCheck(
+    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+) -> None:
     # https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_top_level_update_test.go#L1058
-    name = "test_TestTimestampEqVersionsCheck"
+    init_data, repo = server.new_test(request.node.originalname)
 
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity check
@@ -37,17 +36,13 @@ def test_TestTimestampEqVersionsCheck(client: ClientRunner,
     assert client._version(Timestamp.type) == initial_timestamp_meta_ver
 
 
-def test_max_root_rotations(client: ClientRunner,
-                            server: SimulatorServer) -> None:
+def test_max_root_rotations(
+    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+) -> None:
     # Root must stop looking for new versions after Y number of
     # intermediate files were downloaded.
+    init_data, repo = server.new_test(request.node.originalname)
 
-    name = "test_max_root_rotations"
-
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity check
@@ -85,15 +80,12 @@ def test_max_root_rotations(client: ClientRunner,
     assert client._version(Root.type) == initial_root_version+3
 
 
-def test_new_targets_hash_mismatch(client: ClientRunner,
-                                   server: SimulatorServer) -> None:
+def test_new_targets_hash_mismatch(
+    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+) -> None:
     # Check against snapshot role's targets hashes
-    name = "test_new_targets_hash_mismatch"
+    init_data, repo = server.new_test(request.node.originalname)
 
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity check
@@ -119,15 +111,12 @@ def test_new_targets_hash_mismatch(client: ClientRunner,
     assert client._version(Targets.type) == 1
 
 
-def test_new_targets_version_mismatch(client: ClientRunner,
-                                      server: SimulatorServer) -> None:
+def test_new_targets_version_mismatch(
+    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+) -> None:
     # Check against snapshot role's targets version
-    name = "test_new_targets_version_mismatch"
+    init_data, repo = server.new_test(request.node.originalname)
 
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     assert client._files_exist([Root.type,
@@ -144,17 +133,10 @@ def test_new_targets_version_mismatch(client: ClientRunner,
                                 Targets.type])
 
 
-def test_basic_init_and_refresh(client: ClientRunner,
-                                server: SimulatorServer) -> None:
-    """This is an example of a test method:
-    it should likely be a e.g. a unittest.TestCase"""
-
-    name = "test_init"
-
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
+def test_basic_init_and_refresh(
+    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+) -> None:
+    init_data, repo = server.new_test(request.node.originalname)
 
     # Run the test: step 1:  initialize client
     # TODO verify success?
@@ -176,16 +158,13 @@ def test_basic_init_and_refresh(client: ClientRunner,
     # TODO verify that local metadata cache has the files we expect
 
 
-def test_timestamp_eq_versions_check(client: ClientRunner,
-                                     server: SimulatorServer) -> None:
+def test_timestamp_eq_versions_check(
+    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+) -> None:
     # Test that a modified timestamp with different content, but the same
     # version doesn't replace the valid locally stored one.
-    name = "test_timestamp_eq_versions_check"
+    init_data, repo = server.new_test(request.node.originalname)
 
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
 
     # Make a successful update of valid metadata which stores it in cache

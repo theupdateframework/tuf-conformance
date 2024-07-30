@@ -1,14 +1,12 @@
 import os
+from pytest import FixtureRequest
+from tuf.api.metadata import Snapshot
 
 from tuf_conformance.repository_simulator import RepositorySimulator
 from tuf_conformance.simulator_server import SimulatorServer
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance import utils
 from tuf_conformance.utils import TestTarget
-
-from tuf.api.metadata import (
-    Snapshot
-)
 
 
 def get_url_prefix(server_process_handler: utils.TestServerProcess,
@@ -22,17 +20,12 @@ def get_url_prefix(server_process_handler: utils.TestServerProcess,
 
 # TODO: Needs work
 def test_downloaded_file_is_correct(
-    client: ClientRunner, server: SimulatorServer
+    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
 ) -> None:
     """ A test that upgrades the version of one of the
     files in snapshot.json only but does does not upgrade
     in the file itself."""
-    name = "test_downloaded_file_is_correct"
-
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
+    init_data, repo = server.new_test(request.node.originalname)
 
     assert client.init_client(init_data) == 0
     server_process_handler = utils.TestServerProcess(log=utils.logger)
@@ -86,16 +79,13 @@ def test_downloaded_file_is_correct(
         assert donwloaded_file_contents == file_contents_str
 
 # TODO: Needs work
-def test_downloaded_file_is_correct2(client: ClientRunner,
-                                     server: SimulatorServer) -> None:
+def test_downloaded_file_is_correct2(
+    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+) -> None:
     # A test that upgrades the version of one of the files in
     # snapshot.json only but does does not upgrade in the file itself.
-    name = "test_downloaded_file_is_correct2"
+    init_data, repo = server.new_test(request.node.originalname)
 
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     server_process_handler = utils.TestServerProcess(log=utils.logger)
 
@@ -174,16 +164,13 @@ def test_downloaded_file_is_correct2(client: ClientRunner,
         assert last_download_file.read() == file_contents_str
 
 # TODO: Needs work
-def test_downloaded_file_is_correct3(client: ClientRunner,
-                                     server: SimulatorServer) -> None:
+def test_downloaded_file_is_correct3(
+    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+) -> None:
     """A test that upgrades the version of one of the files in 
     snapshot.json only but does does not upgrade in the file itself."""
-    name = "test_downloaded_file_is_correct3"
+    init_data, repo = server.new_test(request.node.originalname)
 
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     server_process_handler = utils.TestServerProcess(log=utils.logger)
 
@@ -259,14 +246,11 @@ def test_downloaded_file_is_correct3(client: ClientRunner,
         with open(client.get_last_downloaded_target(), "r") as last_download_file:
             assert last_download_file.read() == file_contents.decode()
 
-def test_multiple_changes_to_target(client: ClientRunner,
-                                    server: SimulatorServer) -> None:
-    name = "test_multiple_changes_to_target"
+def test_multiple_changes_to_target(
+    client: ClientRunner, request: FixtureRequest, server: SimulatorServer
+) -> None:
+    init_data, repo = server.new_test(request.node.originalname)
 
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     server_process_handler = utils.TestServerProcess(log=utils.logger)
 
