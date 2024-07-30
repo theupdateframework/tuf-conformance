@@ -53,12 +53,95 @@ make test-python-tuf
 make test-go-tuf
 ```
 
-It's also possible to locally run the test suite with a client-under-test CLI from another location:
+It's also possible to locally run the test suite with a client-under-test CLI that is locally installed elsewhere:
 
 ```bash
-pip install -e $CONFORMANCE_SUITE_DIR
-pytest "$CONFORMANCE_SUITE_DIR/tuf_conformance" --entrypoint path/to/my/client-under-test/cli
+make dev
+./env/bin/pytest tuf_conformance --entrypoint path/to/my/client-under-test/cli
 ```
+
+### Creating (and debugging) tests
+
+Let's say we want to test that clients will not accept a decreasing targets version. We start with a simple skeleton
+test that doesn't assert anything but sets up a repository and runs client refresh against it:
+
+```python
+def test_targets_version(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    # Initialize our repository: modify targets version and make sure the version is included in snapshot
+    init_data, repo = server.new_test(client.test_name)
+    repo.targets.version = 7
+    repo.update_snapshot()  # snapshot v2
+
+    # initialize client-under-test, run refresh
+    client.init_client(init_data)
+    client.refresh(init_data)
+```
+
+we can now run the test:
+```bash
+./env/bin/pytest tuf_conformance \
+    -k test_targets_version                 # run a specific test only
+    --entrypoint "./clients/go-tuf/go-tuf"  # use the included go-tuf client as client-under-test
+    --repository-dump-dir /tmp/test-repos   # dump repository contents
+
+# take a look at the repository targets.json that got debug dumped
+cat /tmp/test-repos/test_targets_version/1/targets.json
+cat /tmp/test-repos/test_targets_version/1/snapshot.json
+```
+
+The metadata looks as expected (targets version is 7) so we can add a modification to the end of the test:
+
+```python
+    # Make an non-compliant change in repository
+    repo.targets.version = 6
+    repo.update_snapshot() # snapshot v3
+
+    # refresh client again
+    client.refresh(init_data)
+```
+
+Running the test again results in a second repository version being dumped (each client refresh leads to a dump): 
+```bash
+./env/bin/pytest tuf_conformance \
+    -k test_targets_version                 # run a specific test only
+    --entrypoint "./clients/go-tuf/go-tuf"  # use the included go-tuf client as client-under-test
+    --repository-dump-dir /tmp/test-repos   # dump repository contents
+
+# take a look at targets versions in both snapshot versions that got debug dumped
+cat /tmp/test-repos/test_targets_version/1/snapshot.json
+cat /tmp/test-repos/test_targets_version/2/snapshot.json
+```
+
+The repository metadata looks as expected (but not spec-compliant) so we can add some asserts for client behaviour now.
+The final test looks like this:
+
+```python
+def test_targets_version(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    # Initialize our repository: modify targets version and make sure it's included in snapshot
+    init_data, repo = server.new_test(client.test_name)
+    repo.targets.version = 7
+    repo.update_snapshot()  # snapshot v2
+
+    # initialize client-under-test
+    client.init_client(init_data)
+
+    # Run refresh on client-under-test, expect success
+    assert client.refresh(init_data) == 0
+
+    # Make a non-compliant change in repository
+    repo.targets.version = 6
+    repo.update_snapshot() # snapshot v3
+
+    # refresh client again, expect failure and refusal to accept snapshot and targets
+    assert client.refresh(init_data) == 1
+    assert client.version(Snapshot.type) == 2
+    assert client.version(Targets.type) == 7
+```
+
 
 ### Some design notes
 
