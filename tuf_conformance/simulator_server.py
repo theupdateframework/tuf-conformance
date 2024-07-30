@@ -1,6 +1,8 @@
+from os import path
 from typing import Dict
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
 from tuf_conformance.repository_simulator import RepositorySimulator
 
 
@@ -47,9 +49,10 @@ class _ReqHandler(BaseHTTPRequestHandler):
 
 class SimulatorServer(ThreadingHTTPServer):
     """Web server to serve a number of repositories"""
-    def __init__(self):
+    def __init__(self, dump_dir: str | None):
         super().__init__(("127.0.0.1", 0), _ReqHandler)
         self.timeout = 0
+        self._dump_dir = dump_dir
 
         # key is test name, value is the repository sim for that test
         self.repos: Dict[str, RepositorySimulator] = {}
@@ -59,7 +62,8 @@ class SimulatorServer(ThreadingHTTPServer):
         * A new repository simulator (for test case to control)
         * client initialization parameters (so client can find the simulated repo)
         """
-        repo = RepositorySimulator()
+        dump_dir = path.join(self._dump_dir, name) if self._dump_dir else None
+        repo = RepositorySimulator(dump_dir)
         self.repos[name] = repo
 
         client_data = ClientInitData(
@@ -68,3 +72,6 @@ class SimulatorServer(ThreadingHTTPServer):
         )
 
         return client_data, repo
+
+    def debug_dump(self, test_name):
+        self.repos[test_name].debug_dump()

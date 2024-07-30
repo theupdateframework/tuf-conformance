@@ -104,8 +104,7 @@ def test_basic_init_and_refresh(
     assert client.refresh(init_data) == 0
 
     # Verify that expected requests were made
-    assert repo.metadata_statistics == [('root', 1),
-                                        ('root', 2),
+    assert repo.metadata_statistics == [('root', 2),
                                         ('timestamp', None),
                                         ('snapshot', 1),
                                         ('targets', 1)]

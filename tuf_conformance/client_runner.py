@@ -51,6 +51,9 @@ class ClientRunner:
         return self._run(cmd)
 
     def refresh(self, data: ClientInitData, days_in_future=0) -> int:
+        # dump a repository version for each client refresh (if configured to)
+        self._server.debug_dump(self.test_name)
+
         cmd = self._cmd
         if days_in_future:
             cmd = ["faketime", "-f", f"+{days_in_future}d"] + cmd
