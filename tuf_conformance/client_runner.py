@@ -51,11 +51,16 @@ class ClientRunner:
         return self._run(cmd)
 
     def refresh(self, data: ClientInitData, days_in_future=0) -> int:
-        cmd = self._cmd + ["--metadata-url", data.metadata_url,
-                                      "--metadata-dir", self.metadata_dir,
-                                      "--days-in-future", str(days_in_future),
-                                      "--max-root-rotations", str(self.max_root_rotations),
-                                      "refresh"]
+        cmd = self._cmd
+        if days_in_future:
+            cmd = ["faketime", "-f", f"+{days_in_future}d"] + cmd
+
+        cmd = cmd + [
+            "--metadata-url", data.metadata_url,
+            "--metadata-dir", self.metadata_dir,
+            "--max-root-rotations", str(self.max_root_rotations),
+            "refresh"
+        ]
         return self._run(cmd)
 
     def download_target(self, data: ClientInitData, target_name: str, target_base_url: str) -> int:
