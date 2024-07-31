@@ -145,7 +145,7 @@ def test_expired_metadata(client: ClientRunner,
 
     # Mocking time so that local timestamp has expired
     # but the new timestamp has not
-    client.refresh(init_data, days_in_future="18")
+    client.refresh(init_data, days_in_future=18)
 
     # Assert that the final version of timestamp/snapshot is version 2
     # which means a successful refresh is performed

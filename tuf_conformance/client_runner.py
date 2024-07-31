@@ -20,7 +20,7 @@ class ClientRunner:
     ClientRunner manages client resources (like the cache paths etc)"""
     def __init__(self, client_cmd: str, server: SimulatorServer) -> None:
         self._server = server
-        self._cmd = client_cmd
+        self._cmd = client_cmd.split(" ")
         self._tempdir = TemporaryDirectory()
         self._target_dir = TemporaryDirectory()
         self._remote_target_dir = TemporaryDirectory(dir=os.getcwd())
@@ -47,19 +47,19 @@ class ClientRunner:
         with open(trusted, "bw") as f:
             f.write(data.trusted_root)
 
-        cmd = self._cmd.split(" ") + ["--metadata-dir", self.metadata_dir, "init", trusted]
+        cmd = self._cmd + ["--metadata-dir", self.metadata_dir, "init", trusted]
         return self._run(cmd)
 
-    def refresh(self, data: ClientInitData, days_in_future="0") -> int:
-        cmd = self._cmd.split(" ") + ["--metadata-url", data.metadata_url,
+    def refresh(self, data: ClientInitData, days_in_future=0) -> int:
+        cmd = self._cmd + ["--metadata-url", data.metadata_url,
                                       "--metadata-dir", self.metadata_dir,
-                                      "--days-in-future", days_in_future,
+                                      "--days-in-future", str(days_in_future),
                                       "--max-root-rotations", str(self.max_root_rotations),
                                       "refresh"]
         return self._run(cmd)
 
     def download_target(self, data: ClientInitData, target_name: str, target_base_url: str) -> int:
-        cmd = self._cmd.split(" ") + ["--metadata-url", data.metadata_url,
+        cmd = self._cmd + ["--metadata-url", data.metadata_url,
                                       "--metadata-dir", self.metadata_dir,
                                       "--target-name",target_name,
                                       "--target-dir", self._target_dir.name, 
