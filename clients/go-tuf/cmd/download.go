@@ -15,13 +15,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
-	"time"
 
-	"github.com/theupdateframework/go-tuf/v2/metadata/config"
-	"github.com/theupdateframework/go-tuf/v2/metadata/updater"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/theupdateframework/go-tuf/v2/metadata/config"
+	"github.com/theupdateframework/go-tuf/v2/metadata/updater"
 )
 
 var downloadCmd = &cobra.Command{
@@ -48,7 +46,7 @@ var downloadCmd = &cobra.Command{
 
 		// refresh metadata and try to download the desired target
 		// first arg means the name of the target file to download
-		return RefreshAndDownloadCmd(targetInfoName, targetBaseUrl, targetDownloadDir, "0", 32, false)
+		return RefreshAndDownloadCmd(targetInfoName, targetBaseUrl, targetDownloadDir, 32, false)
 	},
 }
 
@@ -56,11 +54,10 @@ func init() {
 	rootCmd.AddCommand(downloadCmd)
 }
 
-func RefreshAndDownloadCmd(targetName,
-						   targetBaseUrl,
-						   targetDownloadDir,
-						   daysInFuture string, 
-						   maxRootRotations int, refreshOnly bool) error {
+func RefreshAndDownloadCmd(targetName string,
+	targetBaseUrl string,
+	targetDownloadDir string,
+	maxRootRotations int, refreshOnly bool) error {
 	// handle verbosity level
 	if FlagVerbosity {
 		log.SetLevel(log.DebugLevel)
@@ -87,12 +84,6 @@ func RefreshAndDownloadCmd(targetName,
 	up, err := updater.New(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to create Updater instance: %w", err)
-	}
-
-	if daysInFuture != "0" {
-		laterDay, _ := strconv.Atoi(daysInFuture)
-		laterTime := time.Now().AddDate(0, 0, laterDay)
-		up.UnsafeSetRefTime(laterTime)
 	}
 
 	// try to build the top-level metadata
