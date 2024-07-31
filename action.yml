@@ -22,6 +22,7 @@ runs:
     - name: Install test
       run: |
         echo "::group::Install test suite and dependencies"
+        sudo apt install faketime
         pip install -e "${{ github.action_path }}"
         echo "::endgroup::"
       shell: bash

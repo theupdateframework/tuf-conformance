@@ -9,6 +9,13 @@
 # 
 # SPDX-License-Identifier: BSD-2-Clause
 
+FAKETIME := $(shell command -v faketime 2> /dev/null)
+all:
+ifndef FAKETIME
+    $(error "Program 'faketime' was not found. Please install it")
+endif
+
+
 #########################
 # tuf-conformance section
 #########################
