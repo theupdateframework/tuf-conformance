@@ -179,3 +179,29 @@ def test_timestamp_eq_versions_check(
     timestamp_path = os.path.join(client.metadata_dir, "timestamp.json")
     timestamp: Metadata[Timestamp] = Metadata.from_file(timestamp_path)
     assert initial_timestamp_meta_ver == timestamp.signed.snapshot_meta.version
+
+
+def test_custom_fields(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    """Verify that client copes with unexpected fields in metadata.
+
+    spec section 4: "Implementers who encounter undefined attribute-value pairs
+    in the format must include the data when calculating hashes or verifying
+    signatures."""
+
+    init_data, repo = server.new_test(client.test_name)
+
+    assert client.init_client(init_data) == 0
+    assert client.refresh(init_data) == 0
+
+    # Add some custom fields into root metadata, make a new root version
+    repo.root.unrecognized_fields["custom-field"] = "value"
+    keyid = repo.root.roles[Root.type].keyids[0]
+    repo.root.keys[keyid].unrecognized_fields["extra-field"] = {"a": 1, "b": 2}
+    repo.root.roles[Root.type].unrecognized_fields["another-field"] = "value"
+    repo.bump_root_by_one()
+
+    # client should accept new root: The signed content contains the unknown fields
+    assert client.refresh(init_data) == 0
+    assert client._version(Root.type) == 2
