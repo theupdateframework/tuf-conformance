@@ -467,7 +467,7 @@ class RepositorySimulator():
             return
 
         self.dump_version += 1
-        dest_dir = os.path.join(self.dump_dir, str(self.dump_version))
+        dest_dir = os.path.join(self.dump_dir, f"refresh-{self.dump_version}")
         os.makedirs(dest_dir, exist_ok=True)
 
         for ver in range(1, len(self.signed_roots) + 1):

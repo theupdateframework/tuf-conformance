@@ -87,8 +87,8 @@ we can now run the test:
     --repository-dump-dir /tmp/test-repos   # dump repository contents
 
 # take a look at the repository targets.json that got debug dumped
-cat /tmp/test-repos/test_targets_version/1/targets.json
-cat /tmp/test-repos/test_targets_version/1/snapshot.json
+cat /tmp/test-repos/test_targets_version/refresh-1/targets.json
+cat /tmp/test-repos/test_targets_version/refresh-1/snapshot.json
 ```
 
 The metadata looks as expected (targets version is 7) so we can add a modification to the end of the test:
@@ -110,8 +110,8 @@ Running the test again results in a second repository version being dumped (each
     --repository-dump-dir /tmp/test-repos   # dump repository contents
 
 # take a look at targets versions in both snapshot versions that got debug dumped
-cat /tmp/test-repos/test_targets_version/1/snapshot.json
-cat /tmp/test-repos/test_targets_version/2/snapshot.json
+cat /tmp/test-repos/test_targets_version/refresh-1/snapshot.json
+cat /tmp/test-repos/test_targets_version/refresh-2/snapshot.json
 ```
 
 The repository metadata looks as expected (but not spec-compliant) so we can add some asserts for client behaviour now.
