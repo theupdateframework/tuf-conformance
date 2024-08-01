@@ -33,8 +33,8 @@ def initial_setup_for_key_threshold(client: ClientRunner,
     assert len(repo.root.roles[Snapshot.type].keyids) == 4
 
     assert client.refresh(init_data) == 0
-    assert client._version(Snapshot.type) == 3
-    assert client._version(Root.type) == 4
+    assert client.version(Snapshot.type) == 3
+    assert client.version(Root.type) == 4
 
 
 def test_root_has_keys_but_not_snapshot(
@@ -53,7 +53,7 @@ def test_root_has_keys_but_not_snapshot(
                                 Timestamp.type,
                                 Snapshot.type,
                                 Targets.type])
-    assert client._version(Snapshot.type) == 1
+    assert client.version(Snapshot.type) == 1
     assert len(repo.md_snapshot.signatures) == 1
 
     initial_setup_for_key_threshold(client, repo, init_data)
@@ -64,8 +64,8 @@ def test_root_has_keys_but_not_snapshot(
 
     # Updating should fail. Root should bump, but not snapshot
     assert client.refresh(init_data) == 1
-    assert client._version(Root.type) == 5
-    assert client._version(Snapshot.type) == 3
+    assert client.version(Root.type) == 5
+    assert client.version(Snapshot.type) == 3
 
     # Add two invalid keys only to root and expect the client
     # to fail updating
@@ -78,8 +78,8 @@ def test_root_has_keys_but_not_snapshot(
 
     # Updating should fail. Root should bump, but not snapshot
     assert client.refresh(init_data) == 1
-    assert client._version(Root.type) == 5
-    assert client._version(Snapshot.type) == 3
+    assert client.version(Root.type) == 5
+    assert client.version(Snapshot.type) == 3
 
 
 def test_wrong_hashing_algorithm(
@@ -115,8 +115,8 @@ def test_wrong_hashing_algorithm(
     # main assertion: That the client updates so that it has the
     # same metadata as the repository.
     assert client.refresh(init_data) == 0
-    assert client._version(Root.type) == repo._version(Root.type)
-    assert client._version(Snapshot.type) == repo._version(Snapshot.type)
+    assert client.version(Root.type) == repo._version(Root.type)
+    assert client.version(Snapshot.type) == repo._version(Snapshot.type)
 
 
 def test_snapshot_threshold(
@@ -147,7 +147,7 @@ def test_snapshot_threshold(
     # Ensure that client does not update because it does
     # not have enough keys.
     assert client.refresh(init_data) == 1
-    assert client._version(Snapshot.type) == 1
+    assert client.version(Snapshot.type) == 1
 
 
 def test_duplicate_keys_root(
@@ -165,7 +165,7 @@ def test_duplicate_keys_root(
                                 Timestamp.type,
                                 Snapshot.type,
                                 Targets.type])
-    assert client._version(Snapshot.type) == 1
+    assert client.version(Snapshot.type) == 1
 
     signer = CryptoSigner.generate_ecdsa()
 
@@ -188,7 +188,7 @@ def test_duplicate_keys_root(
 
     # Sanity check that the clients snapshot
     # metadata is version 1
-    assert client._version(Snapshot.type) == 1
+    assert client.version(Snapshot.type) == 1
 
     # This should fail because the metadata should not have
     # the same key in more than 1 keyids. We check failure
@@ -198,4 +198,4 @@ def test_duplicate_keys_root(
 
     # The clients snapshot metadata should still
     # be version 1
-    assert client._version(Snapshot.type) == 1
+    assert client.version(Snapshot.type) == 1

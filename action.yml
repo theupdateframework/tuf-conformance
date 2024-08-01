@@ -28,13 +28,25 @@ runs:
       shell: bash
 
     - name: Run test suite
-      id: sigstore-conformance
+      id: tuf-conformance
       env:
         ENTRYPOINT: ${{ inputs.entrypoint }}
         EXPECTED_FAILURES: ${{ inputs.expected-failures }}
         TEST_LOCATION: ${{ github.action_path }}/tuf_conformance
       run: |
+        # create a sanitized name for the artifact upload
+        echo "NAME=${ENTRYPOINT##*/}" >> "$GITHUB_OUTPUT"
+
+        # run test suite
         pytest -v "$TEST_LOCATION" \
           --entrypoint "$ENTRYPOINT" \
-          --expected-failures "$EXPECTED_FAILURES"
+          --expected-failures "$EXPECTED_FAILURES" \
+          --repository-dump-dir ./test-repositories \
       shell: bash
+
+    - name: Upload repository dump
+      if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
+      with:
+        name: test repositories for '${{ steps.tuf-conformance.outputs.NAME }}'
+        path: test-repositories

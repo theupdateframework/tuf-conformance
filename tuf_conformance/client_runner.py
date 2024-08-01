@@ -51,6 +51,9 @@ class ClientRunner:
         return self._run(cmd)
 
     def refresh(self, data: ClientInitData, days_in_future=0) -> int:
+        # dump a repository version for each client refresh (if configured to)
+        self._server.debug_dump(self.test_name)
+
         cmd = self._cmd
         if days_in_future:
             cmd = ["faketime", "-f", f"+{days_in_future}d"] + cmd
@@ -71,7 +74,7 @@ class ClientRunner:
                                       "download"]
         return self._run(cmd)
 
-    def _version(self, role: str) -> None:
+    def version(self, role: str) -> None:
         """Returns the version of a metadata role"""
         md = MetadataTest.from_file(os.path.join(self.metadata_dir, f"{role}.json"))
         return md.signed.version

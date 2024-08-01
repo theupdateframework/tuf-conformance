@@ -33,9 +33,9 @@ def test_root_expired(
 
     # Clients should check for a freeze attack after persisting (5.3.10),
     # so root should update, but no other MD should update
-    assert client._version(Root.type) == 3
-    assert client._version(Timestamp.type) == 1
-    assert client._version(Snapshot.type) == 1
+    assert client.version(Root.type) == 3
+    assert client.version(Timestamp.type) == 1
+    assert client.version(Snapshot.type) == 1
 
 
 def test_snapshot_expired(
@@ -62,7 +62,7 @@ def test_snapshot_expired(
     # Check that the client still has the correct metadata files
     # i.e. that it has not updated to the expired metadata
     assert client._files_exist([Root.type, Timestamp.type])
-    assert client._version(Snapshot.type) == 1
+    assert client.version(Snapshot.type) == 1
 
 
 def test_targets_expired(
@@ -92,7 +92,7 @@ def test_targets_expired(
                                 Targets.type])
 
     # Client should not bump targets version, because it has expired
-    assert client._version(Targets.type) == 1
+    assert client.version(Targets.type) == 1
 
 
 def test_expired_metadata(
@@ -137,9 +137,9 @@ def test_expired_metadata(
     # which means a successful refresh is performed
     # with expired local metadata.
 
-    assert client._version(Targets.type) == 2
-    assert client._version(Timestamp.type) == 3
-    assert client._version(Snapshot.type) == 2
+    assert client.version(Targets.type) == 2
+    assert client.version(Timestamp.type) == 3
+    assert client.version(Snapshot.type) == 2
 
 
 def test_timestamp_expired(
@@ -152,7 +152,7 @@ def test_timestamp_expired(
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._version(Timestamp.type) == 1
+    assert client.version(Timestamp.type) == 1
 
     repo.timestamp.expires = utils.get_date_n_days_in_past(5)
     repo.update_timestamp()  # v2
@@ -161,7 +161,7 @@ def test_timestamp_expired(
 
     # Check that client resisted rollback attack
     assert client._files_exist([Root.type])
-    assert client._version(Timestamp.type) == 1
+    assert client.version(Timestamp.type) == 1
 
 
 def test_TestDelegateConsistentSnapshotDisabled(

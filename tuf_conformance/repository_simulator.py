@@ -75,7 +75,7 @@ class RepositorySimulator():
     """Simulates a TUF repository that can be used for testing."""
 
     # pylint: disable=too-many-instance-attributes
-    def __init__(self) -> None:
+    def __init__(self, dump_dir: str | None) -> None:
         self.md_delegates: Dict[str, Metadata[Targets]] = {}
 
         # other metadata is signed on-demand (when fetched) but roots must be
@@ -95,7 +95,7 @@ class RepositorySimulator():
         # Enable hash-prefixed target file names
         self.prefix_targets_with_hash = True
 
-        self.dump_dir: Optional[str] = None
+        self.dump_dir = dump_dir
         self.dump_version = 0
 
         self.metadata_statistics: List[Tuple[str, Optional[int]]] = []
@@ -197,6 +197,7 @@ class RepositorySimulator():
                 role = ver_and_name
                 version = None
 
+            self.metadata_statistics.append((role, version))
             return self.fetch_metadata(role, version)
         elif path.startswith("targets/"):
             # figure out target path and hash prefix
@@ -209,6 +210,7 @@ class RepositorySimulator():
                 prefix, _, filename = prefixed_filename.partition(".")
             target_path = f"{dir_parts}{sep}{filename}"
 
+            self.artifact_statistics.append((target_path, target_hash))
             return self.fetch_target(target_path, prefix)
         raise ValueError(f"Unknown path '{path}'")
 
@@ -219,7 +221,6 @@ class RepositorySimulator():
 
         If hash is None, then consistent_snapshot is not used.
         """
-        self.artifact_statistics.append((target_path, target_hash))
 
         repo_target = self.artifacts.get(target_path)
         if repo_target is None:
@@ -240,7 +241,6 @@ class RepositorySimulator():
 
         If version is None, non-versioned metadata is being requested.
         """
-        self.metadata_statistics.append((role, version))
         # decode role for the metadata
         role = parse.unquote(role, encoding="utf-8")
 
@@ -455,19 +455,20 @@ class RepositorySimulator():
 
         delegator.add_key(signer.public_key)
 
-    def write(self) -> None:
+    def debug_dump(self) -> None:
         """Dump current repository metadata to self.dump_dir
 
         This is a debugging tool: dumping repository state before running
         Updater refresh may be useful while debugging a test.
+
+        If dump_dir is None, dumping does not happen
         """
-        if self.dump_dir is None:
-            self.dump_dir = tempfile.mkdtemp()
-            print(f"Repository Simulator dumps in {self.dump_dir}")
+        if not self.dump_dir:
+            return
 
         self.dump_version += 1
-        dest_dir = os.path.join(self.dump_dir, str(self.dump_version))
-        os.makedirs(dest_dir)
+        dest_dir = os.path.join(self.dump_dir, f"refresh-{self.dump_version}")
+        os.makedirs(dest_dir, exist_ok=True)
 
         for ver in range(1, len(self.signed_roots) + 1):
             with open(os.path.join(dest_dir, f"{ver}.root.json"), "wb") as f:

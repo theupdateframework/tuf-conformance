@@ -20,16 +20,25 @@ def pytest_addoption(parser) -> None:
         required=False,
         type=str,
     )
+    parser.addoption(
+        "--repository-dump-dir",
+        action="store",
+        help="Optional path to dump repository versions for each test for debugging",
+        required=False,
+        type=str,
+    )
 
 
 @pytest.fixture
-def server():
+def server(pytestconfig):
     """
     Parametrize each test with the server under test.
     """
-    server = SimulatorServer()
+    dump_dir = pytestconfig.getoption("--repository-dump-dir")
+    server = SimulatorServer(dump_dir)
     yield server
     server.server_close()
+
 
 @pytest.fixture
 def client(pytestconfig, server, request):
