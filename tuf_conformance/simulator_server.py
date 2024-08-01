@@ -1,8 +1,8 @@
-from os import path
-from typing import Dict
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-
+from os import path
+from typing import Dict
+from urllib import parse
 from tuf_conformance.repository_simulator import RepositorySimulator
 
 
@@ -24,7 +24,7 @@ class _ReqHandler(BaseHTTPRequestHandler):
         test, _, path = self.path.lstrip("/").partition("/")
 
         try:
-            repo: RepositorySimulator = self.server.repos[test]
+            repo: RepositorySimulator = self.server.repos[parse.unquote(test)]
         except KeyError:
             self.send_error(404, f"Did not find repository for {test}")
             return
