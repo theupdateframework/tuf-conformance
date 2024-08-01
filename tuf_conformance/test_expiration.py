@@ -1,29 +1,24 @@
 import datetime
 import os
-
 from datetime import timezone
-from tuf_conformance.client_runner import ClientRunner
-from tuf_conformance.repository_simulator import RepositorySimulator
-from tuf_conformance.simulator_server import SimulatorServer
-from tuf_conformance import utils
-
 from tuf.api.metadata import (
     Timestamp, Snapshot, Root, Targets, Metadata,
     DelegatedRole
 )
 
+from tuf_conformance.client_runner import ClientRunner
+from tuf_conformance.simulator_server import SimulatorServer
+from tuf_conformance import utils
 
-def test_root_expired(client: ClientRunner,
-                      server: SimulatorServer) -> None:
+
+def test_root_expired(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
     """Tests a case where root is expired. The spec (5.3.10)
     says that the root should update, so at the end, this
     test asserts that root updates but no other metadata does"""
-    name = "test_root_expired"
+    init_data, repo = server.new_test(client.test_name)
 
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
 
@@ -43,17 +38,14 @@ def test_root_expired(client: ClientRunner,
     assert client._version(Snapshot.type) == 1
 
 
-def test_snapshot_expired(client: ClientRunner,
-                          server: SimulatorServer) -> None:
+def test_snapshot_expired(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
     """Tests a case where the snapshot metadata is expired.
     Checks whether the clients updates the snapshot metadata
     if the repo has a newer version, but it is expired"""
-    name = "test_snapshot_expired"
+    init_data, repo = server.new_test(client.test_name)
 
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity check
@@ -73,17 +65,14 @@ def test_snapshot_expired(client: ClientRunner,
     assert client._version(Snapshot.type) == 1
 
 
-def test_targets_expired(client: ClientRunner,
-                         server: SimulatorServer) -> None:
+def test_targets_expired(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
     """Tests a case where the targets metadata is expired.
     Checks whether the clients updates the targets metadata
     if the repo has a newer version, but it is expired"""
-    name = "test_targets_expired"
+    init_data, repo = server.new_test(client.test_name)
 
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     assert client._files_exist([Root.type,
@@ -106,8 +95,9 @@ def test_targets_expired(client: ClientRunner,
     assert client._version(Targets.type) == 1
 
 
-def test_expired_metadata(client: ClientRunner,
-                          server: SimulatorServer) -> None:
+def test_expired_metadata(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
     """Verifies that expired local timestamp/snapshot can be used for
     updating from remote.
 
@@ -118,12 +108,8 @@ def test_expired_metadata(client: ClientRunner,
      - Timestamp v2 expiry set to day 21
      - Second updater refresh performed on day 18,
        it is successful and timestamp/snaphot final versions are v2"""
-    name = "test_expired_metadata"
+    init_data, repo = server.new_test(client.test_name)
 
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
 
     now = datetime.datetime.now(timezone.utc)
@@ -156,18 +142,14 @@ def test_expired_metadata(client: ClientRunner,
     assert client._version(Snapshot.type) == 2
 
 
-def test_timestamp_expired(client: ClientRunner,
-                           server: SimulatorServer) -> None:
+def test_timestamp_expired(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
     """Tests a case where the timestamp metadata is expired.
     Checks whether the clients updates the timestamp metadata
     if the repo has a newer version, but it is expired"""
+    init_data, repo = server.new_test(client.test_name)
 
-    name = "test_timestamp_expired"
-
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     assert client._version(Timestamp.type) == 1
@@ -186,12 +168,8 @@ def test_TestDelegateConsistentSnapshotDisabled(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
     # https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_consistent_snapshot_test.go#L97C6-L97C60
-    name = "test_TestDelegatesRolesUpdateWithConsistentSnapshotDisabled"
+    init_data, repo = server.new_test(client.test_name)
 
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity check

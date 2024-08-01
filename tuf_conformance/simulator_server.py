@@ -54,8 +54,17 @@ class SimulatorServer(ThreadingHTTPServer):
         # key is test name, value is the repository sim for that test
         self.repos: Dict[str, RepositorySimulator] = {}
 
-    def get_client_init_data(self, repo: str) -> ClientInitData:
-        return ClientInitData(
-            f"http://{self.server_address[0]}:{self.server_address[1]}/{repo}/metadata/",
-            self.repos[repo].fetch_metadata("root", 1)
+    def new_test(self, name: str) -> tuple[ClientInitData, RepositorySimulator]:
+        """Return a tuple of
+        * A new repository simulator (for test case to control)
+        * client initialization parameters (so client can find the simulated repo)
+        """
+        repo = RepositorySimulator()
+        self.repos[name] = repo
+
+        client_data = ClientInitData(
+            f"http://{self.server_address[0]}:{self.server_address[1]}/{name}/metadata/",
+            repo.fetch_metadata("root", 1)
         )
+
+        return client_data, repo

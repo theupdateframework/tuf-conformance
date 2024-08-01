@@ -1,22 +1,16 @@
-from tuf_conformance.client_runner import ClientRunner
-from tuf_conformance.repository_simulator import RepositorySimulator
-from tuf_conformance.simulator_server import SimulatorServer
-
 from tuf.api.metadata import (
     Timestamp, Snapshot, Root, Targets
 )
+
+from tuf_conformance.client_runner import ClientRunner
+from tuf_conformance.repository_simulator import RepositorySimulator
+from tuf_conformance.simulator_server import SimulatorServer
 
 
 def test_new_snapshot_version_rollback(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
-
-    name = "test_new_snapshot_version_rollback"
-
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
 
@@ -35,12 +29,8 @@ def test_new_snapshot_version_rollback(
 def test_new_timestamp_version_rollback(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
-    name = "test_new_timestamp_version_rollback"
+    init_data, repo = server.new_test(client.test_name)
 
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
 
     # Repository performs legitimate update to snapshot
@@ -62,12 +52,7 @@ def test_new_timestamp_version_rollback(
 def test_new_timestamp_snapshot_rollback(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
-    name = "test_new_timestamp_snapshot_rollback"
-
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
 
@@ -105,12 +90,7 @@ def test_new_targets_fast_forward_recovery(
         - Rollback the target version
     """
 
-    name = "test_new_targets_fast_forward_recovery"
-
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
+    init_data, repo = server.new_test(client.test_name)
     assert client.init_client(init_data) == 0
 
     repo.md_targets.signed.version = 99999
@@ -142,12 +122,7 @@ def test_new_snapshot_fast_forward_recovery(
     - Bump and publish root
     - Bump the timestamp
     """
-    name = "test_new_snapshot_fast_forward_recovery"
-
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     repo.snapshot.version = 99999
@@ -169,16 +144,12 @@ def test_new_snapshot_fast_forward_recovery(
     assert client._version(Snapshot.type) == 1
 
 
-def test_new_snapshot_version_mismatch(client: ClientRunner,
-                                       server: SimulatorServer) -> None:
+def test_new_snapshot_version_mismatch(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
     # Check against timestamp role's snapshot version
 
-    name = "test_new_snapshot_version_mismatch"
-
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
 
@@ -190,8 +161,9 @@ def test_new_snapshot_version_mismatch(client: ClientRunner,
     assert client._files_exist([Root.type, Timestamp.type])
 
 
-def test_new_timestamp_fast_forward_recovery(client: ClientRunner,
-                                             server: SimulatorServer) -> None:
+def test_new_timestamp_fast_forward_recovery(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
     """The timestamp recovery is made by the following steps
      - Remove the timestamp key
      - Create and add a new key for timestamp
@@ -199,12 +171,7 @@ def test_new_timestamp_fast_forward_recovery(client: ClientRunner,
      - Rollback the timestamp version
     """
 
-    name = "test_new_timestamp_fast_forward_recovery"
-
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
 
@@ -232,12 +199,8 @@ def test_snapshot_rollback_with_local_snapshot_hash_mismatch(
     # Test triggering snapshot rollback check on a newly downloaded snapshot
     # when the local snapshot is loaded even when there is a hash mismatch
     # with timestamp.snapshot_meta.
-    name = "test_snapshot_rollback_with_local_snapshot_hash_mismatch"
+    init_data, repo = server.new_test(client.test_name)
 
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     assert client._files_exist([Root.type,

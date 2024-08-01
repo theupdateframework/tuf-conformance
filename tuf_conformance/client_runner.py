@@ -18,7 +18,7 @@ class ClientRunner:
     conforms to the test script definition.
 
     ClientRunner manages client resources (like the cache paths etc)"""
-    def __init__(self, client_cmd: str, server: SimulatorServer) -> None:
+    def __init__(self, client_cmd: str, server: SimulatorServer, test_name: str) -> None:
         self._server = server
         self._cmd = client_cmd
         self._tempdir = TemporaryDirectory()
@@ -28,6 +28,7 @@ class ClientRunner:
         self.metadata_dir = os.path.join(self._tempdir.name, "metadata")
         os.mkdir(self.metadata_dir)
         self.max_root_rotations = 32
+        self.test_name = test_name
 
     def get_last_downloaded_target(self) -> str:
         list_of_files = glob.glob(self._target_dir.name+"/*")

@@ -1,11 +1,11 @@
-from tuf_conformance.repository_simulator import RepositorySimulator
-from tuf_conformance.simulator_server import SimulatorServer, ClientInitData
-from tuf_conformance.client_runner import ClientRunner
 from securesystemslib.signer import CryptoSigner
-
 from tuf.api.metadata import (
     Timestamp, Snapshot, Root, Targets
 )
+
+from tuf_conformance.repository_simulator import RepositorySimulator
+from tuf_conformance.simulator_server import SimulatorServer, ClientInitData
+from tuf_conformance.client_runner import ClientRunner
 
 
 def initial_setup_for_key_threshold(client: ClientRunner,
@@ -37,18 +37,15 @@ def initial_setup_for_key_threshold(client: ClientRunner,
     assert client._version(Root.type) == 4
 
 
-def test_root_has_keys_but_not_snapshot(client: ClientRunner,
-                                        server: SimulatorServer) -> None:
+def test_root_has_keys_but_not_snapshot(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
     """This test adds keys to the repo root MD to test for cases
     where are client might calculate the threshold from only the
     roots keys and not check that the snapshot MD has the same
     keys"""
-    name = "test_root_has_keys_but_not_snapshot"
+    init_data, repo = server.new_test(client.test_name)
 
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity checks
@@ -85,17 +82,13 @@ def test_root_has_keys_but_not_snapshot(client: ClientRunner,
     assert client._version(Snapshot.type) == 3
 
 
-def test_wrong_hashing_algorithm(client: ClientRunner,
-                                 server: SimulatorServer) -> None:
+def test_wrong_hashing_algorithm(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
     """This test sets a wrong but valid hashing algorithm for a key
     in the root MD. The client should not care and still update"""
+    init_data, repo = server.new_test(client.test_name)
 
-    name = "test_wrong_hashing_algorithm"
-
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
 
@@ -129,13 +122,9 @@ def test_wrong_hashing_algorithm(client: ClientRunner,
 def test_snapshot_threshold(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
-    # Tests that add_key works as intended
+    # Test basic failure to reach signature threshold
+    init_data, repo = server.new_test(client.test_name)
 
-    name = "test_snapshot_threshold"
-
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
 
@@ -161,19 +150,14 @@ def test_snapshot_threshold(
     assert client._version(Snapshot.type) == 1
 
 
-# Set/keep a threshold of 10 keys. All the keyids are different,
-# but the keys are all identical. As such, the snapshot metadata
-# has been signed by 1 key.
-def test_duplicate_keys_root(client: ClientRunner,
-                             server: SimulatorServer) -> None:
-    # Tests that add_key works as intended
+def test_duplicate_keys_root(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    # Set/keep a threshold of 10 keys. All the keyids are different,
+    # but the keys are all identical. As such, the snapshot metadata
+    # has been signed by 1 key.
+    init_data, repo = server.new_test(client.test_name)
 
-    name = "test_duplicate_keys_root"
-
-    # initialize a simulator with repository content we need
-    repo = RepositorySimulator()
-    server.repos[name] = repo
-    init_data = server.get_client_init_data(name)
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity checks
@@ -183,7 +167,6 @@ def test_duplicate_keys_root(client: ClientRunner,
                                 Targets.type])
     assert client._version(Snapshot.type) == 1
 
-    # Add the same key 9 times
     signer = CryptoSigner.generate_ecdsa()
 
     # Add one key 9 times to root
