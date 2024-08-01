@@ -67,7 +67,7 @@ class SimulatorServer(ThreadingHTTPServer):
         self.repos[name] = repo
 
         client_data = ClientInitData(
-            f"http://{self.server_address[0]}:{self.server_address[1]}/{name}/metadata/",
+            f"http://{self.server_address[0]}:{self.server_address[1]}/{parse.quote(name)}/metadata/",
             repo.fetch_metadata("root", 1)
         )
 
