@@ -49,7 +49,7 @@ def client(pytestconfig, server, request):
     if not os.path.isabs(entrypoint):
         entrypoint = os.path.join(pytestconfig.invocation_params.dir, entrypoint)
 
-    return ClientRunner(entrypoint, server, request.node.originalname)
+    return ClientRunner(entrypoint, server, request.node.name)
 
 
 @pytest.fixture(autouse=True)
