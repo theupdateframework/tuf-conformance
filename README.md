@@ -42,8 +42,9 @@ There are two required steps:
 ## Development
 
 This repository contains two client-under-test CLI protocol implementations
-to enable easy development and testing. There is a Makefile that runs the test suite in
-virtual environment:
+to enable easy development and testing. The test suite depends on various
+python modules which will be installed by the make commands into a virtual environment.
+The suite also depends on `faketime` tool which needs to be available.
 
 ```bash
 # run against both clients or just one of them:

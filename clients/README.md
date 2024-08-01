@@ -9,7 +9,6 @@ Clients must implement the following command-line interface:
 `refresh`: Updates the local metadata from the repository.
 - `--metadata-dir`, Required: The localpath where the client stores metadata.
 - `--metadata-url`, Required: The URL to the repository. The test suite takes care of passing the URL to the local repository.
-- `--days-in-future`, Not required, defaults to `0`: A helper to fake time to a point in the future. Useful for testing expiration-related cases.
 - `--max-root-rotations`, Not required, defaults to `32`: The number of root rotations the client will allow from the repository. The client should not update if the repository has rotated keys more times than this.
 
 `download`: Downloads a target file.
