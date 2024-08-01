@@ -34,50 +34,6 @@ def test_TestTimestampEqVersionsCheck(
     assert client._version(Timestamp.type) == initial_timestamp_meta_ver
 
 
-def test_max_root_rotations(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    # Root must stop looking for new versions after Y number of
-    # intermediate files were downloaded.
-    init_data, repo = server.new_test(client.test_name)
-
-    assert client.init_client(init_data) == 0
-    client.refresh(init_data)
-    # Sanity check
-    assert client._files_exist([Root.type,
-                                Timestamp.type,
-                                Snapshot.type,
-                                Targets.type])
-
-    updater_max_root_rotations = 3
-    client.max_root_rotations = updater_max_root_rotations
-
-    # repo bumps the Root version by more than the client allows
-    maxIterations = 20
-    for i in range(20):
-        if i > maxIterations:
-            # Sanity check. This should not happen but
-            # it prevents a potential infinite loop
-            assert False
-        if repo.md_root.signed.version >= updater_max_root_rotations+10:
-            break
-        repo.bump_root_by_one()
-
-    # The repositorys root version is now 13.
-    assert repo._version(Root.type) == 13
-
-    # Check that the client does not upgrade by more than its max
-    md_root = Metadata.from_file(
-        os.path.join(client.metadata_dir, "root.json")
-    )
-    initial_root_version = md_root.signed.version
-    client.refresh(init_data)
-
-    # Assert that root version was increased with no more
-    # than 'max_root_rotations'
-    assert client._version(Root.type) == initial_root_version+3
-
-
 def test_new_targets_hash_mismatch(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
