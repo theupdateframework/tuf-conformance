@@ -25,14 +25,12 @@ def refresh(
     metadata_url: str,
     metadata_dir: str,
     days_in_future: str,
-    max_root_rotations: int,
 ) -> None:
     """Refresh local metadata from remote"""
 
     updater = Updater(
         metadata_dir,
         metadata_url,
-        config=UpdaterConfig(max_root_rotations=int(max_root_rotations)),
     )
     if days_in_future != "0":
         day_int = int(days_in_future)
@@ -74,9 +72,6 @@ def main() -> int:
     parser.add_argument("--target-dir", required=False)
     parser.add_argument("--target-base-url", required=False)
     parser.add_argument("--days-in-future", required=False, default="0")
-    parser.add_argument(
-        "--max-root-rotations", required=False, default=32, type=int
-    )
 
     sub_command = parser.add_subparsers(dest="sub_command")
     init_parser = sub_command.add_parser(
@@ -105,7 +100,6 @@ def main() -> int:
             command_args.metadata_url,
             command_args.metadata_dir,
             command_args.days_in_future,
-            command_args.max_root_rotations,
         )
     elif command_args.sub_command == "download":
         download_target(
