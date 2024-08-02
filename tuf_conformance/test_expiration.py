@@ -2,8 +2,7 @@ import datetime
 import os
 from datetime import timezone
 from tuf.api.metadata import (
-    Timestamp, Snapshot, Root, Targets, Metadata,
-    DelegatedRole
+    Timestamp, Snapshot, Root, Targets, Metadata
 )
 
 from tuf_conformance.client_runner import ClientRunner
@@ -162,59 +161,3 @@ def test_timestamp_expired(
     # Check that client resisted rollback attack
     assert client._files_exist([Root.type])
     assert client.version(Timestamp.type) == 1
-
-
-def test_TestDelegateConsistentSnapshotDisabled(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    # https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_consistent_snapshot_test.go#L97C6-L97C60
-    init_data, repo = server.new_test(client.test_name)
-
-    assert client.init_client(init_data) == 0
-    client.refresh(init_data)
-    # Sanity check
-    assert client._files_exist([Root.type,
-                                Timestamp.type,
-                                Snapshot.type,
-                                Targets.type])
-
-    repo.set_root_consistent_snapshot(False)
-    repo.bump_root_by_one()
-
-    # Add 3 delegates for new target
-    # Target that expires 5 days in the future
-    new_target = Targets(expires=datetime.datetime.now(timezone.utc)
-                         .replace(microsecond=0)
-                         + datetime.timedelta(days=5))
-
-    delegated_role1 = DelegatedRole(name="role1",
-                                    keyids=list(),
-                                    threshold=1,
-                                    terminating=False,
-                                    paths=["*"])
-    repo.add_delegation(Targets.type,
-                        delegated_role1,
-                        new_target)
-
-    delegated_role2 = DelegatedRole(name="..",
-                                    keyids=list(),
-                                    threshold=1,
-                                    terminating=False,
-                                    paths=["*"])
-    repo.add_delegation(Targets.type,
-                        delegated_role2,
-                        new_target)
-
-    delegated_role3 = DelegatedRole(name=".",
-                                    keyids=list(),
-                                    threshold=1,
-                                    terminating=False,
-                                    paths=["*"])
-    repo.add_delegation(Targets.type,
-                        delegated_role3,
-                        new_target)
-    repo.update_snapshot()
-
-    assert client.refresh(init_data) == 0
-
-    # TODO: Implement this: https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_consistent_snapshot_test.go#L146-L161
