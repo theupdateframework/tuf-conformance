@@ -35,6 +35,7 @@ test-all: test-python-tuf test-go-tuf
 lint: dev
 	./env/bin/ruff format --diff tuf_conformance
 	./env/bin/ruff check tuf_conformance
+	./env/bin/mypy tuf_conformance
 
 fix: dev
 	./env/bin/ruff format tuf_conformance

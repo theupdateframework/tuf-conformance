@@ -99,7 +99,7 @@ class RepositorySimulator:
         self.dump_version = 0
 
         self.metadata_statistics: List[Tuple[str, Optional[int]]] = []
-        self.artifact_statistics: List[Tuple[str, Optional[int]]] = []
+        self.artifact_statistics: List[Tuple[str, Optional[str]]] = []
 
         now = datetime.datetime.utcnow()
         self.safe_expiry = now.replace(microsecond=0) + datetime.timedelta(days=30)
@@ -267,7 +267,7 @@ class RepositorySimulator:
         )
         return md.to_bytes(JSONSerializer())
 
-    def _version(self, role: str) -> None:
+    def _version(self, role: str) -> int:
         if role == Timestamp.type:
             return self.timestamp.version
         elif role == Snapshot.type:
@@ -308,9 +308,7 @@ class RepositorySimulator:
         if self.compute_metafile_hashes_length:
             hashes, length = self._compute_hashes_and_length(Snapshot.type)
 
-        self.md_timestamp.snapshot_meta = MetaFile(
-            self.snapshot.version, length, hashes
-        )
+        self.timestamp.snapshot_meta = MetaFile(self.snapshot.version, length, hashes)
         self.timestamp.version -= 1
 
     def update_snapshot(self) -> None:

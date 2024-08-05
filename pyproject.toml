@@ -20,3 +20,6 @@ lint = [
 [tool.hatch.version]
 path = "tuf_conformance/__init__.py"
 
+[[tool.mypy.overrides]]
+module = ["securesystemslib.*"]
+ignore_missing_imports = "True"

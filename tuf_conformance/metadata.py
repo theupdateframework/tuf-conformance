@@ -29,7 +29,7 @@ from typing import Dict, Any, cast, List, Optional, Type
 
 class MetadataTest(Metadata):
     @classmethod
-    def from_dict(cls, metadata: Dict[str, Any]) -> "MetadataTest[T]":
+    def from_dict(cls, metadata: Dict[str, Any]) -> "Metadata[T]":
         _type = metadata["signed"]["_type"]
 
         if _type == _TARGETS:
@@ -110,7 +110,7 @@ class RoleTest(Role):
 class JSONDeserializerTest(MetadataDeserializer):
     """Provides JSON to Metadata deserialize method."""
 
-    def deserialize(self, raw_data: bytes) -> MetadataTest:
+    def deserialize(self, raw_data: bytes) -> Metadata:
         """Deserialize utf-8 encoded JSON bytes into Metadata object."""
         json_dict = json.loads(raw_data.decode("utf-8"))
         metadata_obj = MetadataTest.from_dict(json_dict)

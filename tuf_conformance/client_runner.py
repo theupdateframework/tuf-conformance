@@ -86,12 +86,12 @@ class ClientRunner:
         ]
         return self._run(cmd)
 
-    def version(self, role: str) -> None:
+    def version(self, role: str) -> int:
         """Returns the version of a metadata role"""
         md = MetadataTest.from_file(os.path.join(self.metadata_dir, f"{role}.json"))
         return md.signed.version
 
-    def _files_exist(self, roles: Iterable[str]) -> None:
+    def _files_exist(self, roles: Iterable[str]) -> bool:
         """Check that local metadata files exist for 'roles'.
         There may be additional files in the local
         metadata_dir than the expted files"""

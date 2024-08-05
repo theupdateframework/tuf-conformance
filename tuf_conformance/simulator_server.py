@@ -24,7 +24,8 @@ class _ReqHandler(BaseHTTPRequestHandler):
         test, _, path = self.path.lstrip("/").partition("/")
 
         try:
-            repo: RepositorySimulator = self.server.repos[parse.unquote(test)]
+            assert isinstance(self.server, SimulatorServer)
+            repo = self.server.repos[parse.unquote(test)]
         except KeyError:
             self.send_error(404, f"Did not find repository for {test}")
             return
@@ -67,8 +68,10 @@ class SimulatorServer(ThreadingHTTPServer):
         repo = RepositorySimulator(dump_dir)
         self.repos[name] = repo
 
+        host, port = self.server_address[0], self.server_address[1]
+        assert isinstance(host, str)
         client_data = ClientInitData(
-            f"http://{self.server_address[0]}:{self.server_address[1]}/{parse.quote(name)}/metadata/",
+            f"http://{host}:{port}/{parse.quote(name)}/metadata/",
             repo.fetch_metadata("root", 1),
         )
 
