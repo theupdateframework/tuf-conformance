@@ -33,7 +33,6 @@ Example::
 import datetime
 import logging
 import os
-import tempfile
 from dataclasses import dataclass
 from typing import Dict, Iterator, List, Optional, Tuple
 from urllib import parse
@@ -208,7 +207,7 @@ class RepositorySimulator:
                 prefix, _, filename = prefixed_filename.partition(".")
             target_path = f"{dir_parts}{sep}{filename}"
 
-            self.artifact_statistics.append((target_path, target_hash))
+            self.artifact_statistics.append((target_path, prefix))
             return self.fetch_target(target_path, prefix)
         raise ValueError(f"Unknown path '{path}'")
 

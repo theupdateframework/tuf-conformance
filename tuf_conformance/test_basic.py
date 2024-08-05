@@ -1,7 +1,6 @@
 # Test runner
 import os
 
-from tuf_conformance.repository_simulator import RepositorySimulator
 from tuf_conformance.simulator_server import SimulatorServer
 from tuf_conformance.client_runner import ClientRunner
 

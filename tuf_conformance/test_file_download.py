@@ -137,9 +137,7 @@ def test_repository_substitutes_target_file(
     # Client downloads the file by referencing the name specified
     # in the targets metadata.
     url_prefix = get_url_prefix(server_process_handler, client)
-    target_file2 = client.download_target(
-        init_data, target_base_name, target_base_url=url_prefix
-    )
+    client.download_target(init_data, target_base_name, target_base_url=url_prefix)
     # Sanity check that the client has downloaded the file
     assert client.get_last_downloaded_target() == os.path.join(
         client._target_dir.name, target_base_name
@@ -223,9 +221,7 @@ def test_repository_substitutes_target_file_and_bumps_10_times(
     # Download the file created and added above.
     url_prefix = get_url_prefix(server_process_handler, client)
 
-    target_file2 = client.download_target(
-        init_data, target_base_name, target_base_url=url_prefix
-    )
+    client.download_target(init_data, target_base_name, target_base_url=url_prefix)
     # Sanity check that we downloaded the file
     assert client.get_last_downloaded_target() == os.path.join(
         client._target_dir.name, target_base_name
@@ -319,9 +315,7 @@ def test_multiple_changes_to_target(
 
     # Client downloads the file
     url_prefix = get_url_prefix(server_process_handler, client)
-    target_file2 = client.download_target(
-        init_data, target_base_name, target_base_url=url_prefix
-    )
+    client.download_target(init_data, target_base_name, target_base_url=url_prefix)
     # Sanity checks that we downloaded the file and that it is the correct one
     # check filename
     assert client.get_last_downloaded_target() == os.path.join(

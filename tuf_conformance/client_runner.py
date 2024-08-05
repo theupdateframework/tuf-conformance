@@ -2,7 +2,7 @@ import subprocess
 import os
 import glob
 from tempfile import TemporaryDirectory
-from typing import Iterable, Optional
+from typing import Iterable
 
 from tuf_conformance.simulator_server import ClientInitData, SimulatorServer
 
@@ -99,8 +99,7 @@ class ClientRunner:
         local_metadata_files = sorted(os.listdir(self.metadata_dir))
         return all(x in local_metadata_files for x in expected_files)
 
-    def _content(self, role: str, version: Optional[int] = None) -> None:
-        """Assert that local file content is the expected"""
+    def _content(self, role: str) -> bytes:
+        """Return role metadata as bytes"""
         with open(os.path.join(self.metadata_dir, f"{role}.json"), "rb") as f:
             return f.read()
-            self.assertEqual(f.read(), expected_content)
