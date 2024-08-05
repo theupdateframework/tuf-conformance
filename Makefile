@@ -23,13 +23,21 @@ endif
 env/pyvenv.cfg: pyproject.toml
 	python3 -m venv env
 	./env/bin/python -m pip install --upgrade pip
-	./env/bin/python -m pip install -e .
+	./env/bin/python -m pip install -e .[lint]
 
 .PHONY: dev
 dev: env/pyvenv.cfg
 
 .PHONY: test-all
 test-all: test-python-tuf test-go-tuf
+
+lint: dev
+	ruff format --diff tuf_conformance
+	ruff check tuf_conformance
+
+fix: dev
+	ruff format tuf_conformance
+	ruff check --fix tuf_conformance
 
 #########################
 # python-tuf section
@@ -50,3 +58,4 @@ test-go-tuf: dev build-go-tuf
 PHONY: build-go-tuf
 build-go-tuf:
 	cd ./clients/go-tuf && go build .
+

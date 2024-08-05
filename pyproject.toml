@@ -11,5 +11,12 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+lint = [
+    "mypy==1.11.1",
+    "ruff==0.5.6"
+]
+
 [tool.hatch.version]
 path = "tuf_conformance/__init__.py"
+
