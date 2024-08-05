@@ -1,16 +1,14 @@
 from securesystemslib.signer import CryptoSigner
-from tuf.api.metadata import (
-    Timestamp, Snapshot, Root, Targets
-)
+from tuf.api.metadata import Timestamp, Snapshot, Root, Targets
 
 from tuf_conformance.repository_simulator import RepositorySimulator
 from tuf_conformance.simulator_server import SimulatorServer, ClientInitData
 from tuf_conformance.client_runner import ClientRunner
 
 
-def initial_setup_for_key_threshold(client: ClientRunner,
-                                    repo: RepositorySimulator,
-                                    init_data: ClientInitData) -> None:
+def initial_setup_for_key_threshold(
+    client: ClientRunner, repo: RepositorySimulator, init_data: ClientInitData
+) -> None:
     # Explicitly set the threshold
     repo.md_root.signed.roles[Snapshot.type].threshold = 3
     repo.bump_root_by_one()  # v2
@@ -49,10 +47,7 @@ def test_root_has_keys_but_not_snapshot(
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity checks
-    assert client._files_exist([Root.type,
-                                Timestamp.type,
-                                Snapshot.type,
-                                Targets.type])
+    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
     assert client.version(Snapshot.type) == 1
     assert len(repo.md_snapshot.signatures) == 1
 
@@ -82,9 +77,7 @@ def test_root_has_keys_but_not_snapshot(
     assert client.version(Snapshot.type) == 3
 
 
-def test_wrong_hashing_algorithm(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
+def test_wrong_hashing_algorithm(client: ClientRunner, server: SimulatorServer) -> None:
     """This test sets a wrong but valid hashing algorithm for a key
     in the root MD. The client should not care and still update"""
     init_data, repo = server.new_test(client.test_name)
@@ -119,9 +112,7 @@ def test_wrong_hashing_algorithm(
     assert client.version(Snapshot.type) == repo._version(Snapshot.type)
 
 
-def test_snapshot_threshold(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
+def test_snapshot_threshold(client: ClientRunner, server: SimulatorServer) -> None:
     # Test basic failure to reach signature threshold
     init_data, repo = server.new_test(client.test_name)
 
@@ -150,9 +141,7 @@ def test_snapshot_threshold(
     assert client.version(Snapshot.type) == 1
 
 
-def test_duplicate_keys_root(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
+def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> None:
     # Set/keep a threshold of 10 keys. All the keyids are different,
     # but the keys are all identical. As such, the snapshot metadata
     # has been signed by 1 key.
@@ -161,10 +150,7 @@ def test_duplicate_keys_root(
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity checks
-    assert client._files_exist([Root.type,
-                                Timestamp.type,
-                                Snapshot.type,
-                                Targets.type])
+    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
     assert client.version(Snapshot.type) == 1
 
     signer = CryptoSigner.generate_ecdsa()

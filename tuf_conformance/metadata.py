@@ -1,5 +1,6 @@
 from tuf.api.metadata import (
-    Metadata, Key,
+    Metadata,
+    Key,
 )
 
 import json
@@ -26,7 +27,7 @@ from tuf.api.serialization.json import (
 from typing import Dict, Any, cast, List, Optional, Type
 
 
-class MetadataTest(Metadata):
+class MetadataTest(Metadata[T]):
     @classmethod
     def from_dict(cls, metadata: Dict[str, Any]) -> "MetadataTest[T]":
         _type = metadata["signed"]["_type"]

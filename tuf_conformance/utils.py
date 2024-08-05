@@ -18,10 +18,8 @@
   Provide common utilities for TUF tests
 """
 
-import argparse
 import datetime
 import errno
-import json
 import logging
 import os
 import queue
@@ -30,11 +28,8 @@ import subprocess
 import sys
 import threading
 import time
-import unittest
-import warnings
-from contextlib import contextmanager
 from datetime import timezone
-from typing import IO, Any, Callable, Dict, Iterator, List, Optional
+from typing import IO, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -44,37 +39,11 @@ TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
 # Used when forming URLs on the client side
 TEST_HOST_ADDRESS = "127.0.0.1"
 
-# DataSet is only here so type hints can be used.
-DataSet = Dict[str, Any]
 
 class TestTarget:
     path: str
     content: bytes
     encoded_path: str
-
-
-# Test runner decorator: Runs the test as a set of N SubTests,
-# (where N is number of items in dataset), feeding the actual test
-# function one test case at a time
-def run_sub_tests_with_dataset(
-    dataset: DataSet,
-) -> Callable[[Callable], Callable]:
-    """Decorator starting a unittest.TestCase.subtest() for each of the
-    cases in dataset"""
-
-    def real_decorator(
-        function: Callable[[unittest.TestCase, Any], None],
-    ) -> Callable[[unittest.TestCase], None]:
-        def wrapper(test_cls: unittest.TestCase) -> None:
-            for case, data in dataset.items():
-                with test_cls.subTest(case=case):
-                    # Save case name for future reference
-                    test_cls.case_name = case.replace(" ", "_")
-                    function(test_cls, data)
-
-        return wrapper
-
-    return real_decorator
 
 
 class TestServerProcessError(Exception):
@@ -86,24 +55,13 @@ class TestServerProcessError(Exception):
         return repr(self.value)
 
 
-@contextmanager
-def ignore_deprecation_warnings(module: str) -> Iterator[None]:
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore", category=DeprecationWarning, module=module
-        )
-        yield
-
-
 # Wait until host:port accepts connections.
 # Raises TimeoutError if this does not happen within timeout seconds
 # There are major differences between operating systems on how this works
 # but the current blocking connect() seems to work fast on Linux and seems
 # to at least work on Windows (ECONNREFUSED unfortunately has a 2 second
 # timeout on Windows)
-def wait_for_server(
-    host: str, server: str, port: int, timeout: int = 10
-) -> None:
+def wait_for_server(host: str, server: str, port: int, timeout: int = 10) -> None:
     """Wait for server start until timeout is reached or server has started"""
     start = time.time()
     remaining_timeout = timeout
@@ -122,9 +80,7 @@ def wait_for_server(
         except OSError as e:
             # ECONNREFUSED is expected while the server is not started
             if e.errno not in [errno.ECONNREFUSED]:
-                logger.warning(
-                    "Unexpected error while waiting for server: %s", str(e)
-                )
+                logger.warning("Unexpected error while waiting for server: %s", str(e))
             # Avoid pegging a core just for this
             time.sleep(0.01)
         finally:
@@ -139,51 +95,17 @@ def wait_for_server(
         )
 
 
-def configure_test_logging(argv: List[str]) -> None:
-    """Configure logger level for a certain test file"""
-    # parse arguments but only handle '-v': argv may contain
-    # other things meant for unittest argument parser
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-    args, _ = parser.parse_known_args(argv)
-
-    if args.verbose <= 1:
-        # 0 and 1 both mean ERROR: this way '-v' makes unittest print test
-        # names without increasing log level
-        loglevel = logging.ERROR
-    elif args.verbose == 2:
-        loglevel = logging.WARNING
-    elif args.verbose == 3:
-        loglevel = logging.INFO
-    else:
-        loglevel = logging.DEBUG
-
-    logging.basicConfig(level=loglevel)
-
-
-def cleanup_dir(path: str) -> None:
-    """Delete all files inside a directory"""
-    for filepath in [
-        os.path.join(path, filename) for filename in os.listdir(path)
-    ]:
-        os.remove(filepath)
-
 def get_date_n_days_in_past(days: int) -> datetime.datetime:
     return datetime.datetime.now(timezone.utc).replace(
         microsecond=0
     ) - datetime.timedelta(days=days)
+
 
 def get_date_n_days_in_future(days: int) -> datetime.datetime:
     return datetime.datetime.now(timezone.utc).replace(
         microsecond=0
     ) + datetime.timedelta(days=days)
 
-def meta_dict_to_bytes(md: dict) -> bytes:
-    """Converts a dict to bytes typically to save metadata as bytes."""
-    return json.dumps(md,
-                      indent=None,
-                      separators = (",", ":"),
-                      sort_keys=True).encode("utf-8")
 
 class TestServerProcess:
     """Helper class used to create a child process with the subprocess.Popen
@@ -208,12 +130,12 @@ class TestServerProcess:
         server: str = os.path.join(TESTS_DIR, "simple_server.py"),
         timeout: int = 10,
         popen_cwd: str = ".",
-        extra_cmd_args: Optional[List[str]] = None,
+        extra_cmd_args: Optional[list[str]] = None,
     ):
         self.server = server
         self.__logger = log
         # Stores popped messages from the queue.
-        self.__logged_messages: List[str] = []
+        self.__logged_messages: list[str] = []
         self.__server_process: Optional[subprocess.Popen] = None
         self._log_queue: Optional[queue.Queue] = None
         self.port = -1
@@ -229,7 +151,7 @@ class TestServerProcess:
             raise e
 
     def _start_server(
-        self, timeout: int, extra_cmd_args: List[str], popen_cwd: str
+        self, timeout: int, extra_cmd_args: list[str], popen_cwd: str
     ) -> None:
         """
         Start the server subprocess and a thread
@@ -244,7 +166,7 @@ class TestServerProcess:
 
         self.__logger.info("%s serving on %d", self.server, self.port)
 
-    def _start_process(self, extra_cmd_args: List[str], popen_cwd: str) -> None:
+    def _start_process(self, extra_cmd_args: list[str], popen_cwd: str) -> None:
         """Starts the process running the server."""
 
         # The "-u" option forces stdin, stdout and stderr to be unbuffered.
@@ -334,9 +256,7 @@ class TestServerProcess:
                     + "message as first stdout line as expected!"
                 )
         except queue.Empty as e:
-            raise TimeoutError(
-                "Failure during " + self.server + " startup!"
-            ) from e
+            raise TimeoutError("Failure during " + self.server + " startup!") from e
 
     def _kill_server_process(self) -> None:
         """Kills the server subprocess if it's running."""

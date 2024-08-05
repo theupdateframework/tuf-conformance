@@ -4,6 +4,7 @@ import pytest
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import SimulatorServer
 
+
 def pytest_addoption(parser) -> None:
     """Add `--entrypoint` flag to CLI."""
     parser.addoption(

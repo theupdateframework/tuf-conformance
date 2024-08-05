@@ -10,9 +10,10 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 FAKETIME := $(shell command -v faketime 2> /dev/null)
-all:
+
+faketime:
 ifndef FAKETIME
-    $(error "Program 'faketime' was not found. Please install it")
+	$(error "Program 'faketime' was not found. Please install it")
 endif
 
 
@@ -23,7 +24,7 @@ endif
 env/pyvenv.cfg: pyproject.toml
 	python3 -m venv env
 	./env/bin/python -m pip install --upgrade pip
-	./env/bin/python -m pip install -e .
+	./env/bin/python -m pip install -e .[lint]
 
 .PHONY: dev
 dev: env/pyvenv.cfg
@@ -31,12 +32,21 @@ dev: env/pyvenv.cfg
 .PHONY: test-all
 test-all: test-python-tuf test-go-tuf
 
+lint: dev
+	./env/bin/ruff format --diff tuf_conformance
+	./env/bin/ruff check tuf_conformance
+	./env/bin/mypy tuf_conformance
+
+fix: dev
+	./env/bin/ruff format tuf_conformance
+	./env/bin/ruff check --fix tuf_conformance
+
 #########################
 # python-tuf section
 #########################
 
 PHONY: test-python-tuf
-test-python-tuf: dev
+test-python-tuf: dev faketime
 	./env/bin/pytest tuf_conformance --entrypoint "./env/bin/python ./clients/python-tuf/python_tuf.py" -vv
 
 #########################
@@ -44,9 +54,10 @@ test-python-tuf: dev
 #########################
 
 PHONY: test-go-tuf
-test-go-tuf: dev build-go-tuf
+test-go-tuf: dev build-go-tuf faketime
 	./env/bin/pytest tuf_conformance --entrypoint "./clients/go-tuf/go-tuf"
 
 PHONY: build-go-tuf
 build-go-tuf:
 	cd ./clients/go-tuf && go build .
+
