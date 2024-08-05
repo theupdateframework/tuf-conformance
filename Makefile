@@ -33,12 +33,12 @@ dev: env/pyvenv.cfg
 test-all: test-python-tuf test-go-tuf
 
 lint: dev
-	ruff format --diff tuf_conformance
-	ruff check tuf_conformance
+	./env/bin/ruff format --diff tuf_conformance
+	./env/bin/ruff check tuf_conformance
 
 fix: dev
-	ruff format tuf_conformance
-	ruff check --fix tuf_conformance
+	./env/bin/ruff format tuf_conformance
+	./env/bin/ruff check --fix tuf_conformance
 
 #########################
 # python-tuf section
