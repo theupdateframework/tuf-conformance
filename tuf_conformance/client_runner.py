@@ -7,7 +7,7 @@ from typing import Iterable, Optional
 from tuf_conformance.simulator_server import ClientInitData, SimulatorServer
 
 from tuf_conformance.metadata import (
-    MetadataTest
+    MetadataTest, JSONDeserializerTest
 )
 
 
@@ -76,7 +76,7 @@ class ClientRunner:
 
     def version(self, role: str) -> None:
         """Returns the version of a metadata role"""
-        md = MetadataTest.from_file(os.path.join(self.metadata_dir, f"{role}.json"))
+        md = MetadataTest.from_file(os.path.join(self.metadata_dir, f"{role}.json"), JSONDeserializerTest())
         return md.signed.version
 
     def _files_exist(self, roles: Iterable[str]) -> None:

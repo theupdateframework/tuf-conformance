@@ -199,3 +199,30 @@ def test_duplicate_keys_root(
     # The clients snapshot metadata should still
     # be version 1
     assert client.version(Snapshot.type) == 1
+
+
+def test_duplicate_public_key(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    """Tests whether clients can consider the same
+    signature twice when there is a threshold"""
+    init_data, repo = server.new_test(client.test_name)
+
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    repo.bump_root_by_one()  # v2
+
+    assert len(repo.root.roles["snapshot"].keyids) == 1
+    assert len(repo.md_snapshot.signatures) == 1
+    snapshot_keys = repo.md_snapshot.signatures
+    first_snapshot_keyid = next(iter(snapshot_keys))
+    repo.root.roles[Snapshot.type].keyids.append(first_snapshot_keyid)
+    repo.bump_root_by_one()  # v3
+    client.refresh(init_data)
+    repo.root.roles[Snapshot.type].threshold = 2
+    repo.bump_root_by_one()  # v4
+    repo.update_snapshot()  # v2
+    client.refresh(init_data)
+
+    assert client.version(Snapshot.type) == 1
+    assert client.version(Root.type) == 4
