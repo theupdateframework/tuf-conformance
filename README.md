@@ -47,7 +47,7 @@ python modules which will be installed by the make commands into a virtual envir
 The suite also depends on `faketime` tool which needs to be available.
 
 ```bash
-# run against both clients or just one of them:
+# run test suite against both included clients or just one of them:
 make test-all
 make test-python-tuf
 make test-go-tuf
@@ -59,6 +59,15 @@ It's also possible to locally run the test suite with a client-under-test CLI th
 make dev
 ./env/bin/pytest tuf_conformance --entrypoint path/to/my/client-under-test/cli
 ```
+
+linters can also be invoked with make:
+```bash
+# Run linters
+make lint
+# Fix issues that can be automatically fixed
+make fix
+```
+
 
 ### Creating (and debugging) tests
 
