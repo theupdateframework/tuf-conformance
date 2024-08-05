@@ -3,7 +3,7 @@
 # Copyright 2021, New York University and the TUF contributors
 # SPDX-License-Identifier: MIT OR Apache-2.0
 
-""""Test utility to simulate a repository
+""" "Test utility to simulate a repository
 
 RepositorySimulator provides methods to modify repository metadata so that it's
 easy to "publish" new repository versions with modified metadata, while serving
@@ -67,11 +67,12 @@ SPEC_VER = ".".join(SPECIFICATION_VERSION)
 @dataclass
 class Artifact:
     """Contains actual artifact bytes and the related metadata."""
+
     data: bytes
     target_file: TargetFile
 
 
-class RepositorySimulator():
+class RepositorySimulator:
     """Simulates a TUF repository that can be used for testing."""
 
     # pylint: disable=too-many-instance-attributes
@@ -102,9 +103,7 @@ class RepositorySimulator():
         self.artifact_statistics: List[Tuple[str, Optional[int]]] = []
 
         now = datetime.datetime.utcnow()
-        self.safe_expiry = now.replace(microsecond=0) + datetime.timedelta(
-            days=30
-        )
+        self.safe_expiry = now.replace(microsecond=0) + datetime.timedelta(days=30)
 
         # initialize a basic repository structure
         self._initialize()
@@ -184,12 +183,11 @@ class RepositorySimulator():
         """
         if path.startswith("metadata/") and path.endswith(".json"):
             # figure out rolename and version
-            ver_and_name = path[len("metadata/"):][:-len(".json")]
+            ver_and_name = path[len("metadata/") :][: -len(".json")]
             version_str, _, role = ver_and_name.partition(".")
             # root is always version-prefixed while timestamp is always NOT
             if role == Root.type or (
-                self.root.consistent_snapshot
-                and ver_and_name != Timestamp.type
+                self.root.consistent_snapshot and ver_and_name != Timestamp.type
             ):
                 version: Optional[int] = int(version_str)
             else:
@@ -201,7 +199,7 @@ class RepositorySimulator():
             return self.fetch_metadata(role, version)
         elif path.startswith("targets/"):
             # figure out target path and hash prefix
-            target_path = path[len("targets/"):]
+            target_path = path[len("targets/") :]
             dir_parts, sep, prefixed_filename = target_path.rpartition("/")
             # extract the hash prefix, if any
             prefix: Optional[str] = None
@@ -214,9 +212,7 @@ class RepositorySimulator():
             return self.fetch_target(target_path, prefix)
         raise ValueError(f"Unknown path '{path}'")
 
-    def fetch_target(
-        self, target_path: str, target_hash: Optional[str]
-    ) -> bytes:
+    def fetch_target(self, target_path: str, target_hash: Optional[str]) -> bytes:
         """Return data for 'target_path' if it is given.
 
         If hash is None, then consistent_snapshot is not used.
@@ -225,18 +221,13 @@ class RepositorySimulator():
         repo_target = self.artifacts.get(target_path)
         if repo_target is None:
             raise ValueError(f"No target {target_path}")
-        if (
-            target_hash
-            and target_hash not in repo_target.target_file.hashes.values()
-        ):
+        if target_hash and target_hash not in repo_target.target_file.hashes.values():
             raise ValueError(f"hash mismatch for {target_path}")
 
         logger.debug("fetched target %s", target_path)
         return repo_target.data
 
-    def fetch_metadata(
-        self, role: str, version: Optional[int] = None
-    ) -> bytes:
+    def fetch_metadata(self, role: str, version: Optional[int] = None) -> bytes:
         """Return signed metadata for 'role', using 'version' if it is given.
 
         If version is None, non-versioned metadata is being requested.
@@ -277,9 +268,7 @@ class RepositorySimulator():
         )
         return md.to_bytes(JSONSerializer())
 
-    def _version(
-        self, role: str
-    ) -> None:
+    def _version(self, role: str) -> None:
         if role == Timestamp.type:
             return self.timestamp.version
         elif role == Snapshot.type:
@@ -289,9 +278,7 @@ class RepositorySimulator():
         else:
             return self.root.version
 
-    def _compute_hashes_and_length(
-        self, role: str
-    ) -> Tuple[Dict[str, str], int]:
+    def _compute_hashes_and_length(self, role: str) -> Tuple[Dict[str, str], int]:
         data = self.fetch_metadata(role)
         digest_object = sslib_hash.digest(sslib_hash.DEFAULT_HASH_ALGORITHM)
         digest_object.update(data)
@@ -308,9 +295,7 @@ class RepositorySimulator():
         if self.compute_metafile_hashes_length:
             hashes, length = self._compute_hashes_and_length(Snapshot.type)
 
-        self.timestamp.snapshot_meta = MetaFile(
-            self.snapshot.version, length, hashes
-        )
+        self.timestamp.snapshot_meta = MetaFile(self.snapshot.version, length, hashes)
 
         self.timestamp.version += 1
 
@@ -325,9 +310,7 @@ class RepositorySimulator():
             hashes, length = self._compute_hashes_and_length(Snapshot.type)
 
         self.md_timestamp.snapshot_meta = MetaFile(
-            self.snapshot.version,
-            length,
-            hashes
+            self.snapshot.version, length, hashes
         )
         self.timestamp.version -= 1
 
@@ -348,7 +331,7 @@ class RepositorySimulator():
 
     def downgrade_snapshot(self) -> None:
         """Update snapshot, assign targets versions and update timestamp.
-           This is malicious behavior"""
+        This is malicious behavior"""
         for role, delegate in self.all_targets():
             hashes = None
             length = None
@@ -377,11 +360,9 @@ class RepositorySimulator():
         targets.targets[path] = target
         self.artifacts[path] = Artifact(data, target)
 
-    def add_target_with_length(
-        self, role: str, test_target: TestTarget
-    ) -> None:
+    def add_target_with_length(self, role: str, test_target: TestTarget) -> None:
         """Create a target from data and add it to the target_files.
-           The hash value can be invalid compared to the length"""
+        The hash value can be invalid compared to the length"""
         content = test_target.content
         path = test_target.path
         length = len(test_target.content)
@@ -437,9 +418,7 @@ class RepositorySimulator():
             delegator.delegations is not None
             and delegator.delegations.roles is not None
         ):
-            raise ValueError(
-                "Can't add a succinct_roles when delegated roles are used"
-            )
+            raise ValueError("Can't add a succinct_roles when delegated roles are used")
 
         signer = CryptoSigner.generate_ecdsa()
         succinct_roles = SuccinctRoles([], 1, bit_length, name_prefix)
@@ -480,8 +459,7 @@ class RepositorySimulator():
 
         for role in self.md_delegates:
             quoted_role = parse.quote(role, "")
-            with open(os.path.join(dest_dir,
-                                   f"{quoted_role}.json"), "wb") as f:
+            with open(os.path.join(dest_dir, f"{quoted_role}.json"), "wb") as f:
                 f.write(self.fetch_metadata(role))
 
     def add_key(self, role: str) -> None:

@@ -49,6 +49,7 @@ class _ReqHandler(BaseHTTPRequestHandler):
 
 class SimulatorServer(ThreadingHTTPServer):
     """Web server to serve a number of repositories"""
+
     def __init__(self, dump_dir: str | None):
         super().__init__(("127.0.0.1", 0), _ReqHandler)
         self.timeout = 0
@@ -68,7 +69,7 @@ class SimulatorServer(ThreadingHTTPServer):
 
         client_data = ClientInitData(
             f"http://{self.server_address[0]}:{self.server_address[1]}/{parse.quote(name)}/metadata/",
-            repo.fetch_metadata("root", 1)
+            repo.fetch_metadata("root", 1),
         )
 
         return client_data, repo

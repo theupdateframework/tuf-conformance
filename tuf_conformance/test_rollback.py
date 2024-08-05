@@ -1,6 +1,4 @@
-from tuf.api.metadata import (
-    Timestamp, Snapshot, Root, Targets
-)
+from tuf.api.metadata import Timestamp, Snapshot, Root, Targets
 
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.repository_simulator import RepositorySimulator
@@ -165,10 +163,10 @@ def test_new_timestamp_fast_forward_recovery(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
     """The timestamp recovery is made by the following steps
-     - Remove the timestamp key
-     - Create and add a new key for timestamp
-     - Bump and publish root
-     - Rollback the timestamp version
+    - Remove the timestamp key
+    - Create and add a new key for timestamp
+    - Bump and publish root
+    - Rollback the timestamp version
     """
 
     init_data, repo = server.new_test(client.test_name)
@@ -203,10 +201,7 @@ def test_snapshot_rollback_with_local_snapshot_hash_mismatch(
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._files_exist([Root.type,
-                                Timestamp.type,
-                                Snapshot.type,
-                                Targets.type])
+    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
 
     # Initialize all metadata and assign targets
     # version higher than 1.

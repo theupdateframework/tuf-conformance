@@ -1,5 +1,6 @@
 from tuf.api.metadata import (
-    Metadata, Key,
+    Metadata,
+    Key,
 )
 
 import json

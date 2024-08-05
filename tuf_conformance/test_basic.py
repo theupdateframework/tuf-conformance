@@ -5,9 +5,7 @@ from tuf_conformance.repository_simulator import RepositorySimulator
 from tuf_conformance.simulator_server import SimulatorServer
 from tuf_conformance.client_runner import ClientRunner
 
-from tuf.api.metadata import (
-    Timestamp, Snapshot, Root, Targets, Metadata
-)
+from tuf.api.metadata import Timestamp, Snapshot, Root, Targets, Metadata
 
 
 def test_TestTimestampEqVersionsCheck(
@@ -19,10 +17,7 @@ def test_TestTimestampEqVersionsCheck(
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity check
-    assert client._files_exist([Root.type,
-                                Timestamp.type,
-                                Snapshot.type,
-                                Targets.type])
+    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
 
     initial_timestamp_meta_ver = repo.timestamp.snapshot_meta.version
     # Change timestamp without bumping its version in order to test if a new
@@ -43,9 +38,7 @@ def test_new_targets_hash_mismatch(
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
     # Sanity check
-    assert client._files_exist([Root.type,
-                                Timestamp.type,
-                                Snapshot.type])
+    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type])
 
     repo.compute_metafile_hashes_length = True
     repo.update_snapshot()
@@ -73,23 +66,15 @@ def test_new_targets_version_mismatch(
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._files_exist([Root.type,
-                                Timestamp.type,
-                                Snapshot.type,
-                                Targets.type])
+    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
 
     repo.targets.version += 1
     client.refresh(init_data)
     # Check that the client still has the correct metadata files
-    assert client._files_exist([Root.type,
-                                Timestamp.type,
-                                Snapshot.type,
-                                Targets.type])
+    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
 
 
-def test_basic_init_and_refresh(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
+def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -> None:
     init_data, repo = server.new_test(client.test_name)
 
     # Run the test: step 1:  initialize client
@@ -99,16 +84,19 @@ def test_basic_init_and_refresh(
     assert client.refresh(init_data) == 0
 
     # Verify that expected requests were made
-    assert repo.metadata_statistics == [('root', 2),
-                                        ('timestamp', None),
-                                        ('snapshot', 1),
-                                        ('targets', 1)]
+    assert repo.metadata_statistics == [
+        ("root", 2),
+        ("timestamp", None),
+        ("snapshot", 1),
+        ("targets", 1),
+    ]
 
-    #verify client metadata looks as expected
+    # verify client metadata looks as expected
     assert client.version(Root.type) == 1
     assert client.version(Timestamp.type) == 1
     assert client.version(Snapshot.type) == 1
     assert client.version(Targets.type) == 1
+
 
 def test_timestamp_eq_versions_check(
     client: ClientRunner, server: SimulatorServer
@@ -135,9 +123,7 @@ def test_timestamp_eq_versions_check(
     assert initial_timestamp_meta_ver == timestamp.signed.snapshot_meta.version
 
 
-def test_custom_fields(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
+def test_custom_fields(client: ClientRunner, server: SimulatorServer) -> None:
     """Verify that client copes with unexpected fields in metadata.
 
     spec section 4: "Implementers who encounter undefined attribute-value pairs

@@ -15,7 +15,8 @@ class MdVersion:
     keys: list[int]
     threshold: int
     sigs: list[int]
-    res: bool = True # expected client success/failure
+    res: bool = True  # expected client success/failure
+
 
 root_rotation_cases = {
     "1-of-1-key-rotation": [
@@ -88,26 +89,34 @@ root_rotation_cases = {
 }
 
 non_root_rotation_cases: Dict[str, MdVersion] = {
-    "1-of-1-key-rotation":
-        MdVersion(keys=[2], threshold=1, sigs=[2]),
-    "1-of-1-key-rotation-unused-signatures":
-        MdVersion(keys=[1], threshold=1, sigs=[3, 1, 4]),
-    "1-of-1-key-rotation-fail-not-signed-with-new-key":
-        MdVersion(keys=[2], threshold=1, sigs=[1, 3, 4], res=False),
-    "3-of-5-one-key-signature-wrong-not-signed-with-3-expected-keys":
-        MdVersion(keys=[0, 1, 3, 4, 5], threshold=3, sigs=[0, 2, 4], res=False),
-    "2-of-5-one-key-signature-mising-threshold-not-reached":
-        MdVersion(keys=[0, 1, 3, 4, 5], threshold=3, sigs=[0, 4], res=False),
-    "3-of-5-sign-first-combo":
-        MdVersion(keys=[0, 1, 2, 3, 4], threshold=3, sigs=[0, 2, 4]),
-    "3-of-5-sign-second-combo":
-        MdVersion(keys=[0, 1, 2, 3, 4], threshold=3, sigs=[0, 4, 1]),
-    "3-of-5-sign-third-combo":
-        MdVersion(keys=[0, 1, 2, 3, 4], threshold=3, sigs=[0, 1, 3]),
-    "3-of-5-sign-fourth-combo":
-        MdVersion(keys=[0, 1, 2, 3, 4], threshold=3, sigs=[1, 2, 3]),
-    "3-of-5-sign-fifth-combo":
-        MdVersion(keys=[0, 1, 2, 3, 4], threshold=3, sigs=[2, 3, 4]),
+    "1-of-1-key-rotation": MdVersion(keys=[2], threshold=1, sigs=[2]),
+    "1-of-1-key-rotation-unused-signatures": MdVersion(
+        keys=[1], threshold=1, sigs=[3, 1, 4]
+    ),
+    "1-of-1-key-rotation-fail-not-signed-with-new-key": MdVersion(
+        keys=[2], threshold=1, sigs=[1, 3, 4], res=False
+    ),
+    "3-of-5-one-key-signature-wrong-not-signed-with-3-expected-keys": MdVersion(
+        keys=[0, 1, 3, 4, 5], threshold=3, sigs=[0, 2, 4], res=False
+    ),
+    "2-of-5-one-key-signature-mising-threshold-not-reached": MdVersion(
+        keys=[0, 1, 3, 4, 5], threshold=3, sigs=[0, 4], res=False
+    ),
+    "3-of-5-sign-first-combo": MdVersion(
+        keys=[0, 1, 2, 3, 4], threshold=3, sigs=[0, 2, 4]
+    ),
+    "3-of-5-sign-second-combo": MdVersion(
+        keys=[0, 1, 2, 3, 4], threshold=3, sigs=[0, 4, 1]
+    ),
+    "3-of-5-sign-third-combo": MdVersion(
+        keys=[0, 1, 2, 3, 4], threshold=3, sigs=[0, 1, 3]
+    ),
+    "3-of-5-sign-fourth-combo": MdVersion(
+        keys=[0, 1, 2, 3, 4], threshold=3, sigs=[1, 2, 3]
+    ),
+    "3-of-5-sign-fifth-combo": MdVersion(
+        keys=[0, 1, 2, 3, 4], threshold=3, sigs=[2, 3, 4]
+    ),
 }
 
 rotation_ids = root_rotation_cases.keys()
@@ -118,21 +127,21 @@ non_rotation_cases = non_root_rotation_cases.values()
 
 
 @pytest.mark.parametrize("root_versions", rotation_cases, ids=rotation_ids)
-def test_root_rotation(client: ClientRunner,
-                       server: SimulatorServer,
-                       root_versions: list[MdVersion]) -> None:
+def test_root_rotation(
+    client: ClientRunner, server: SimulatorServer, root_versions: list[MdVersion]
+) -> None:
     """Test client refresh with various sequences of root updates
 
-        Each MdVersion in root_versions describes root keys and signatures of a
-        remote root metadata version. As an example:
-            MdVersion([1,2,3], 2, [1,2])
-        defines a root that contains keys 1, 2 and 3 with threshold 2. The
-        metadata is signed with keys 1 and 2.
+    Each MdVersion in root_versions describes root keys and signatures of a
+    remote root metadata version. As an example:
+        MdVersion([1,2,3], 2, [1,2])
+    defines a root that contains keys 1, 2 and 3 with threshold 2. The
+    metadata is signed with keys 1 and 2.
 
-        Assert that refresh result is expected and that local root on disk is
-        the expected one after all roots have been loaded from remote using the
-        standard client update workflow.
-        """
+    Assert that refresh result is expected and that local root on disk is
+    the expected one after all roots have been loaded from remote using the
+    standard client update workflow.
+    """
 
     signers = []
     for _ in range(10):
@@ -176,9 +185,9 @@ def test_root_rotation(client: ClientRunner,
 
 
 @pytest.mark.parametrize("md_version", non_rotation_cases, ids=non_rotation_ids)
-def test_non_root_rotations(client: ClientRunner,
-                            server: SimulatorServer,
-                            md_version: MdVersion) -> None:
+def test_non_root_rotations(
+    client: ClientRunner, server: SimulatorServer, md_version: MdVersion
+) -> None:
     """Test Updater.refresh() with various sequences of metadata updates
 
     Each MdVersion in the list describes metadata keys and signatures
