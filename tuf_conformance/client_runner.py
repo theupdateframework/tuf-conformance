@@ -68,9 +68,7 @@ class ClientRunner:
         ]
         return self._run(cmd)
 
-    def download_target(
-        self, data: ClientInitData, target_name: str, target_base_url: str
-    ) -> int:
+    def download_target(self, data: ClientInitData, target_name: str) -> int:
         cmd = self._cmd + [
             "--metadata-url",
             data.metadata_url,
@@ -81,7 +79,7 @@ class ClientRunner:
             "--target-dir",
             self._target_dir.name,
             "--target-base-url",
-            target_base_url,
+            data.targets_url,
             "download",
         ]
         return self._run(cmd)
