@@ -217,11 +217,10 @@ def test_non_root_rotations(client: ClientRunner,
         repo.publish_root()
 
         # run client workflow, assert success/failure
-        expected_error = md_version.res
-        if expected_error:
+        expected_result = md_version.res
+        if expected_result:
             assert client.refresh(init_data) == 0
 
-            # Call fetch_metadata to sign metadata with new keys
             expected_local_md: bytes = repo.fetch_metadata(role)
             # assert local metadata role is on disk as expected
             md_path = os.path.join(client.metadata_dir, f"{role}.json")
