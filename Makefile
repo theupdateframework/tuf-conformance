@@ -10,9 +10,10 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 FAKETIME := $(shell command -v faketime 2> /dev/null)
-all:
+
+faketime:
 ifndef FAKETIME
-    $(error "Program 'faketime' was not found. Please install it")
+	$(error "Program 'faketime' was not found. Please install it")
 endif
 
 
@@ -44,7 +45,7 @@ fix: dev
 #########################
 
 PHONY: test-python-tuf
-test-python-tuf: dev
+test-python-tuf: dev faketime
 	./env/bin/pytest tuf_conformance --entrypoint "./env/bin/python ./clients/python-tuf/python_tuf.py" -vv
 
 #########################
@@ -52,7 +53,7 @@ test-python-tuf: dev
 #########################
 
 PHONY: test-go-tuf
-test-go-tuf: dev build-go-tuf
+test-go-tuf: dev build-go-tuf faketime
 	./env/bin/pytest tuf_conformance --entrypoint "./clients/go-tuf/go-tuf"
 
 PHONY: build-go-tuf
