@@ -30,14 +30,17 @@ class ClientRunner:
         os.mkdir(self.artifact_dir)
         self.test_name = test_name
 
-    def get_last_downloaded_target(self) -> str:
+    def get_downloaded_target_bytes(self) -> list[bytes]:
+        """Returns list of downloaded artifact contents in order of modification time"""
         artifacts = glob.glob(f"{self.artifact_dir}/**", recursive=True)
-        artifacts = [a for a in artifacts if os.path.isfile(a)]
-        if len(artifacts) == 0:
-            raise FileNotFoundError
+        artifact_bytes = []
+        for artifact in sorted(artifacts, key=os.path.getmtime):
+            if not os.path.isfile(artifact):
+                continue
+            with open(artifact, "rb") as f:
+                artifact_bytes.append(f.read())
 
-        latest_artifact = max(artifacts, key=os.path.getmtime)
-        return latest_artifact
+        return artifact_bytes
 
     def _run(self, cmd: list[str]) -> int:
         popen = subprocess.Popen(cmd)
