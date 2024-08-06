@@ -12,6 +12,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -53,6 +54,8 @@ var downloadCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(downloadCmd)
+	getTargetInfoCmd.SetOut(os.Stdout)
+	rootCmd.AddCommand(getTargetInfoCmd)
 }
 
 func RefreshAndDownloadCmd(targetName string,
@@ -64,19 +67,10 @@ func RefreshAndDownloadCmd(targetName string,
 		log.SetLevel(log.DebugLevel)
 	}
 
-	// read the trusted root metadata
-	rootBytes, err := os.ReadFile(filepath.Join(FlagMetadataDir, "root.json"))
+	cfg, err := newConfig()
 	if err != nil {
 		return err
 	}
-
-	// create an Updater configuration
-	cfg, err := config.New(FlagMetadataURL, rootBytes) // default config
-	if err != nil {
-		return err
-	}
-	cfg.LocalMetadataDir = FlagMetadataDir
-	cfg.LocalTargetsDir = FlagMetadataDir // TODO: perhaps fix that once we progress
 	cfg.RemoteTargetsURL = targetBaseUrl
 
 	// create an Updater instance
@@ -124,5 +118,85 @@ func RefreshAndDownloadCmd(targetName string,
 
 	fmt.Printf("go-tuf-metadata test client: downloaded target %s in %s\n", targetName, path)
 
+	return nil
+}
+
+func newConfig() (*config.UpdaterConfig, error) {
+	// read the trusted root metadata
+	rootBytes, err := os.ReadFile(filepath.Join(FlagMetadataDir, "root.json"))
+	if err != nil {
+		return nil, err
+	}
+
+	// create an Updater configuration
+	cfg, err := config.New(FlagMetadataURL, rootBytes) // default config
+	if err != nil {
+		return nil, err
+	}
+	cfg.LocalMetadataDir = FlagMetadataDir
+	cfg.LocalTargetsDir = FlagMetadataDir // TODO: perhaps fix that once we progress
+	return cfg, nil
+}
+
+var getTargetInfoCmd = &cobra.Command{
+	Use:   "get-targetinfo",
+	Short: "Returns a jsonified targetinfo",
+	//Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if FlagMetadataURL == "" || FlagMetadataDir == "" || FlagTargetPath == "" {
+			fmt.Println("Error: required flag(s): \"metadata-url\" or \"metadata-dir\" not set")
+			os.Exit(1)
+		}
+		targetPath, err := cmd.Flags().GetString("target-path")
+		if err != nil {
+			os.Exit(1)
+		}
+		maxDelegations, err := cmd.Flags().GetInt("max-delegations")
+		if err != nil {
+			os.Exit(1)
+		}
+
+		// refresh metadata and try to download the desired target
+		// first arg means the name of the target file to download
+		return GetTargetInfo(targetPath, maxDelegations)
+	},
+}
+
+func GetTargetInfo(targetPath string, maxDelegations int) error {
+	// handle verbosity level
+	if FlagVerbosity {
+		log.SetLevel(log.DebugLevel)
+	}
+
+	cfg, err := newConfig()
+	if err != nil {
+		return err
+	}
+	cfg.MaxDelegations = maxDelegations
+
+	// create an Updater instance
+	up, err := updater.New(cfg)
+	if err != nil {
+		return err
+	}
+
+	// try to build the top-level metadata
+	err = up.Refresh()
+	if err != nil {
+		return err
+	}
+
+	// search if the desired target is available
+	targetInfo, err := up.GetTargetInfo(targetPath)
+	if err != nil {
+		return err
+	}
+
+	targetInfoJson, err := json.Marshal(targetInfo)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(targetInfoJson))
 	return nil
 }

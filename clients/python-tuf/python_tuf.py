@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: MIT OR Apache-2.0
 
 import argparse
+import json
 import os
 import shutil
 import sys
@@ -18,6 +19,15 @@ def init(metadata_dir: str, trusted_root: str) -> None:
     # No need to actually run python-tuf code at this point
     shutil.copyfile(trusted_root, os.path.join(metadata_dir, "root.json"))
     print(f"python-tuf test client: Initialized repository in {metadata_dir}")
+
+def get_targetinfo(metadata_url: str, metadata_dir: str, target_path: str, max_delegations: int) -> str:
+    updater = Updater(
+        metadata_dir,
+        metadata_url,
+    )
+    updater.config.max_delegations = max_delegations
+    targetinfo = updater.get_targetinfo(target_path)
+    return json.dumps(targetinfo.__dict__)
 
 
 def refresh(metadata_url: str, metadata_dir: str) -> None:
@@ -61,6 +71,8 @@ def main() -> int:
     parser.add_argument("--target-name", required=False)
     parser.add_argument("--target-dir", required=False)
     parser.add_argument("--target-base-url", required=False)
+    parser.add_argument("--target-path", required=False)
+    parser.add_argument("--max-delegations", required=False, type=int)
 
     sub_command = parser.add_subparsers(dest="sub_command")
     init_parser = sub_command.add_parser(
@@ -77,6 +89,11 @@ def main() -> int:
     sub_command.add_parser(
         "download",
         help="Downloads a target",
+    )
+
+    sub_command.add_parser(
+        "get-targetinfo",
+        help="Downloads targetinfo of a target",
     )
 
     command_args = parser.parse_args()
@@ -96,6 +113,13 @@ def main() -> int:
             command_args.target_name,
             command_args.target_dir,
             command_args.target_base_url,
+        )
+    elif command_args.sub_command == "get-targetinfo":
+        get_targetinfo(
+            command_args.metadata_url,
+            command_args.metadata_dir,
+            command_args.target_path,
+            command_args.max_delegations,
         )
     else:
         parser.print_help()
