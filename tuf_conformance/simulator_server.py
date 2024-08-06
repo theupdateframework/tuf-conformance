@@ -9,6 +9,7 @@ from tuf_conformance.repository_simulator import RepositorySimulator
 @dataclass
 class ClientInitData:
     metadata_url: str
+    targets_url: str
     trusted_root: bytes
 
 
@@ -72,6 +73,7 @@ class SimulatorServer(ThreadingHTTPServer):
         assert isinstance(host, str)
         client_data = ClientInitData(
             f"http://{host}:{port}/{parse.quote(name)}/metadata/",
+            f"http://{host}:{port}/{parse.quote(name)}/targets/",
             repo.fetch_metadata("root", 1),
         )
 

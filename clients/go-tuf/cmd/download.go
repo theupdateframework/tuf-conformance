@@ -77,7 +77,6 @@ func RefreshAndDownloadCmd(targetName string,
 	cfg.LocalMetadataDir = FlagMetadataDir
 	cfg.LocalTargetsDir = FlagMetadataDir // TODO: perhaps fix that once we progress
 	cfg.RemoteTargetsURL = targetBaseUrl
-	cfg.PrefixTargetsWithHash = false // change if needed to be compliant with python-tuf
 
 	// create an Updater instance
 	up, err := updater.New(cfg)

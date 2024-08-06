@@ -56,7 +56,6 @@ from tuf.api.metadata import (
     Timestamp,
 )
 from tuf.api.serialization.json import JSONSerializer
-from tuf_conformance.utils import TestTarget
 
 logger = logging.getLogger(__name__)
 
@@ -356,19 +355,6 @@ class RepositorySimulator:
         target = TargetFile.from_data(path, data, ["sha256"])
         targets.targets[path] = target
         self.artifacts[path] = Artifact(data, target)
-
-    def add_target_with_length(self, role: str, test_target: TestTarget) -> None:
-        """Create a target from data and add it to the target_files.
-        The hash value can be invalid compared to the length"""
-        content = test_target.content
-        path = test_target.path
-        length = len(test_target.content)
-        targets = self._get_delegator(role)
-
-        target = TargetFile.from_data(path, content, ["sha256"])
-        target.length = length
-        targets.targets[path] = target
-        self.artifacts[path] = Artifact(content, target)
 
     def add_delegation(
         self, delegator_name: str, role: DelegatedRole, targets: Targets
