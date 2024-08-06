@@ -20,7 +20,10 @@ def init(metadata_dir: str, trusted_root: str) -> None:
     shutil.copyfile(trusted_root, os.path.join(metadata_dir, "root.json"))
     print(f"python-tuf test client: Initialized repository in {metadata_dir}")
 
-def get_targetinfo(metadata_url: str, metadata_dir: str, target_path: str, max_delegations: int) -> str:
+
+def get_targetinfo(
+    metadata_url: str, metadata_dir: str, target_path: str, max_delegations: int
+) -> str:
     updater = Updater(
         metadata_dir,
         metadata_url,

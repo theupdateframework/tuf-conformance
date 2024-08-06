@@ -69,12 +69,14 @@ class Artifact:
     data: bytes
     target_file: TargetFile
 
+
 @dataclass
 class FetchTracker:
     """Fetcher counter for metadata and targets."""
 
     metadata: List[Tuple[str, Optional[int]]] = field(default_factory=list)
     targets: List[Tuple[str, Optional[str]]] = field(default_factory=list)
+
 
 class RepositorySimulator:
     """Simulates a TUF repository that can be used for testing."""
