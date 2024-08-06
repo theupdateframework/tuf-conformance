@@ -72,8 +72,8 @@ class SimulatorServer(ThreadingHTTPServer):
         host, port = self.server_address[0], self.server_address[1]
         assert isinstance(host, str)
         client_data = ClientInitData(
-            f"http://{host}:{port}/{parse.quote(name)}/metadata/",
-            f"http://{host}:{port}/{parse.quote(name)}/targets/",
+            f"http://{host}:{port}/{parse.quote(name, '')}/metadata/",
+            f"http://{host}:{port}/{parse.quote(name, '')}/targets/",
             repo.fetch_metadata("root", 1),
         )
 
