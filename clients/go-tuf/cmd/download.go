@@ -13,6 +13,7 @@ package cmd
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -103,7 +104,8 @@ func RefreshAndDownloadCmd(targetName string,
 	}
 
 	// target is available, so let's see if the target is already present locally
-	path, _, err := up.FindCachedTarget(targetInfo, "")
+	localPath := filepath.Join(targetDownloadDir, url.QueryEscape(targetName))
+	path, _, err := up.FindCachedTarget(targetInfo, localPath)
 	if err != nil {
 		return fmt.Errorf("failed while finding a cached target: %w", err)
 	}
@@ -114,7 +116,8 @@ func RefreshAndDownloadCmd(targetName string,
 	}
 
 	// target is not present locally, so let's try to download it
-	path, _, err = up.DownloadTarget(targetInfo, filepath.Join(targetDownloadDir, targetName), targetBaseUrl)
+	//
+	path, _, err = up.DownloadTarget(targetInfo, localPath, targetBaseUrl)
 	if err != nil {
 		return fmt.Errorf("failed to download target file %s - %w", targetName, err)
 	}
