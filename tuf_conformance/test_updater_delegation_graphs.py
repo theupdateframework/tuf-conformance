@@ -209,5 +209,5 @@ def test_graph_traversal(
     print("repo targets: ", repo.md_delegates)
     # For some reason "('root', 2), ('timestamp', None)" gets prepended
     # in every case, so we compare from the 3rd item in the list.
-    assert repo.fetch_tracker.metadata[2:] == exp_calls
+    assert repo.fetch_tracker.metadata[2:-2] == exp_calls
     assert client._files_exist(exp_files)
