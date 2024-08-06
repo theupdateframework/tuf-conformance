@@ -1,3 +1,5 @@
+import pytest
+
 from tuf.api.metadata import Targets
 
 from tuf_conformance.simulator_server import SimulatorServer
@@ -20,9 +22,38 @@ def test_client_downloads_expected_file(
     target_content = b"target file contents"
     repo.add_target(Targets.type, target_content, target_path)
 
-    # Client updates, sanity update that nothing was downloaded
+    # Client updates, sanity check that nothing was downloaded
     assert client.refresh(init_data) == 0
-    assert client.get_last_downloaded_target() == ""
+    with pytest.raises(FileNotFoundError):
+        client.get_last_downloaded_target()
+
+    assert client.download_target(init_data, target_path) == 0
+
+    # assert that the downloaded file contents are correct
+    with open(client.get_last_downloaded_target(), "rb") as last_download_file:
+        assert last_download_file.read() == target_content
+
+
+def test_client_downloads_expected_file_in_sub_dir(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    """This test adds a file to the repository targets metadata with a targetpath that
+    contains a directory. Client then refreshes, and downloads the target. Finally,
+    the test asserts that the client downloaded the file and that the contents of the
+    file are correct
+    """
+    init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+
+    # Create a test artifact, add it to the repository
+    target_path = "path/to/a/target_file.txt"
+    target_content = b"target file contents"
+    repo.add_target(Targets.type, target_content, target_path)
+
+    # Client updates, sanity check that nothing was downloaded
+    assert client.refresh(init_data) == 0
+    with pytest.raises(FileNotFoundError):
+        client.get_last_downloaded_target()
 
     assert client.download_target(init_data, target_path) == 0
 
@@ -72,7 +103,7 @@ def test_repository_substitutes_target_file(
         assert last_download_file.read() == target_content_1
 
     # ask client to download the other artifact and expect failure
-    assert client.download_target(init_data, target_path_1) == 1
+    assert client.download_target(init_data, target_path_2) == 1
 
     # assert the client did not store the malicious artifact
     with open(client.get_last_downloaded_target(), "rb") as last_download_file:

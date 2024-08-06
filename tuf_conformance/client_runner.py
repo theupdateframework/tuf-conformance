@@ -31,11 +31,13 @@ class ClientRunner:
         self.test_name = test_name
 
     def get_last_downloaded_target(self) -> str:
-        list_of_files = glob.glob(self._target_dir.name + "/*")
-        if len(list_of_files) == 0:
-            return ""
-        latest_file = max(list_of_files, key=os.path.getctime)
-        return latest_file
+        artifacts = glob.glob(f"{self._target_dir.name}/**", recursive=True)
+        artifacts = [a for a in artifacts if os.path.isfile(a)]
+        if len(artifacts) == 0:
+            raise FileNotFoundError
+
+        latest_artifact = max(artifacts, key=os.path.getmtime)
+        return latest_artifact
 
     def _run(self, cmd: list[str]) -> int:
         popen = subprocess.Popen(cmd)
