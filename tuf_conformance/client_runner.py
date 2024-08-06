@@ -23,15 +23,15 @@ class ClientRunner:
         self._server = server
         self._cmd = client_cmd.split(" ")
         self._tempdir = TemporaryDirectory()
-        self._target_dir = TemporaryDirectory()
-        self._remote_target_dir = TemporaryDirectory(dir=os.getcwd())
         # TODO: cleanup tempdir
         self.metadata_dir = os.path.join(self._tempdir.name, "metadata")
+        self.artifact_dir = os.path.join(self._tempdir.name, "targets")
         os.mkdir(self.metadata_dir)
+        os.mkdir(self.artifact_dir)
         self.test_name = test_name
 
     def get_last_downloaded_target(self) -> str:
-        artifacts = glob.glob(f"{self._target_dir.name}/**", recursive=True)
+        artifacts = glob.glob(f"{self.artifact_dir}/**", recursive=True)
         artifacts = [a for a in artifacts if os.path.isfile(a)]
         if len(artifacts) == 0:
             raise FileNotFoundError
@@ -79,7 +79,7 @@ class ClientRunner:
             "--target-name",
             target_name,
             "--target-dir",
-            self._target_dir.name,
+            self.artifact_dir,
             "--target-base-url",
             data.targets_url,
             "download",
