@@ -23,19 +23,24 @@ class ClientRunner:
         self._server = server
         self._cmd = client_cmd.split(" ")
         self._tempdir = TemporaryDirectory()
-        self._target_dir = TemporaryDirectory()
-        self._remote_target_dir = TemporaryDirectory(dir=os.getcwd())
         # TODO: cleanup tempdir
         self.metadata_dir = os.path.join(self._tempdir.name, "metadata")
+        self.artifact_dir = os.path.join(self._tempdir.name, "targets")
         os.mkdir(self.metadata_dir)
+        os.mkdir(self.artifact_dir)
         self.test_name = test_name
 
-    def get_last_downloaded_target(self) -> str:
-        list_of_files = glob.glob(self._target_dir.name + "/*")
-        if len(list_of_files) == 0:
-            return ""
-        latest_file = max(list_of_files, key=os.path.getctime)
-        return latest_file
+    def get_downloaded_target_bytes(self) -> list[bytes]:
+        """Returns list of downloaded artifact contents in order of modification time"""
+        artifacts = glob.glob(f"{self.artifact_dir}/**", recursive=True)
+        artifact_bytes = []
+        for artifact in sorted(artifacts, key=os.path.getmtime):
+            if not os.path.isfile(artifact):
+                continue
+            with open(artifact, "rb") as f:
+                artifact_bytes.append(f.read())
+
+        return artifact_bytes
 
     def _run(self, cmd: list[str]) -> int:
         popen = subprocess.Popen(cmd)
@@ -77,7 +82,7 @@ class ClientRunner:
             "--target-name",
             target_name,
             "--target-dir",
-            self._target_dir.name,
+            self.artifact_dir,
             "--target-base-url",
             data.targets_url,
             "download",
