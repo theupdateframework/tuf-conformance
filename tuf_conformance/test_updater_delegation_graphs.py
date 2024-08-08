@@ -181,30 +181,17 @@ def test_graph_traversal(
     ##
     exp_files = [*TOP_LEVEL_ROLE_NAMES, *graphs.visited_order]
     exp_calls = [(role, 1) for role in graphs.visited_order]
-    print("client.test_name: ", client.test_name)
 
     init_data, repo = server.new_test(client.test_name)
     assert client.init_client(init_data) == 0
-    print("initting repo:")
     init_repo(repo, graphs)
-    # restrict the max number of delegations to simplify the test
-    client.max_delegations = 4
 
     # Call explicitly refresh to simplify the expected_calls list
     client.refresh(init_data)
     repo.metadata_statistics.clear()
     assert client._files_exist(TOP_LEVEL_ROLE_NAMES)
-    print("self.md_delegates: ", repo.md_delegates)
-    print("getting target info")
-    targetfile = client.download_target(init_data, "missingpath")
-    print("targetfile: ", targetfile)
-    #assert targetfile == None
-    print("exp_files: ", exp_files)
-    print("repo targets: ", repo.md_delegates)
+    client.download_target(init_data, "missingpath")
     # For some reason "('root', 2), ('timestamp', None)" gets prepended
     # in every case, so we compare from the 3rd item in the list.
-    print("repo.metadata_statistics", repo.metadata_statistics)
-    print("repo.artifact_statistics", repo.artifact_statistics)
     assert repo.metadata_statistics[2:] == exp_calls
     assert client._files_exist(exp_files)
-    #assert 1==2
