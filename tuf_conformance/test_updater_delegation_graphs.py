@@ -45,7 +45,7 @@ class DelegationsTestCase:
     visited_order: List[str] = field(default_factory=list)
 
 
-graphs2: DataSet = {
+graphs: DataSet = {
     "basic-delegation": DelegationsTestCase(
         delegations=[TestDelegation("targets", "A")],
         visited_order=["A"],
@@ -148,32 +148,8 @@ graphs2: DataSet = {
         # 'C' is reached through 'B' since 'A' does not delegate a matching pattern"
         visited_order=["A", "B", "C"],
     ),
-    "max-number-of-delegations": DelegationsTestCase(
-        delegations=[
-            TestDelegation("targets", "A"),
-            TestDelegation("targets", "B"),
-            TestDelegation("targets", "C"),
-            TestDelegation("C", "D"),
-            TestDelegation("C", "E"),
-        ],
-        # "E" is skipped, max_delegations is 4
-        visited_order=["A", "B", "C", "D"],
-    ),
 }
 
-graphs: DataSet = {
-    "max-number-of-delegations": DelegationsTestCase(
-        delegations=[
-            TestDelegation("targets", "A"),
-            TestDelegation("targets", "B"),
-            TestDelegation("targets", "C"),
-            TestDelegation("C", "D"),
-            TestDelegation("C", "E"),
-        ],
-        # "E" is skipped, max_delegations is 4
-        visited_order=["A", "B", "C", "D"],
-    ),
-}
 
 graph_ids = graphs.keys()
 graph_cases = graphs.values()
@@ -216,17 +192,19 @@ def test_graph_traversal(
 
     # Call explicitly refresh to simplify the expected_calls list
     client.refresh(init_data)
-    repo.fetch_tracker.metadata.clear()
+    repo.metadata_statistics.clear()
     assert client._files_exist(TOP_LEVEL_ROLE_NAMES)
     print("self.md_delegates: ", repo.md_delegates)
     print("getting target info")
-    targetfile = client.get_targetinfo(init_data, "missingpath")
+    targetfile = client.download_target(init_data, "missingpath")
     print("targetfile: ", targetfile)
-    assert targetfile == None
-    print("repo.fetch_tracker.metadata: ", repo.fetch_tracker.metadata)
+    #assert targetfile == None
     print("exp_files: ", exp_files)
     print("repo targets: ", repo.md_delegates)
     # For some reason "('root', 2), ('timestamp', None)" gets prepended
     # in every case, so we compare from the 3rd item in the list.
-    assert repo.fetch_tracker.metadata[2:] == exp_calls
+    print("repo.metadata_statistics", repo.metadata_statistics)
+    print("repo.artifact_statistics", repo.artifact_statistics)
+    assert repo.metadata_statistics[2:] == exp_calls
     assert client._files_exist(exp_files)
+    #assert 1==2

@@ -29,7 +29,6 @@ class ClientRunner:
         os.mkdir(self.metadata_dir)
         os.mkdir(self.artifact_dir)
         self.test_name = test_name
-        self.max_delegations = 10
 
     def get_downloaded_target_bytes(self) -> list[bytes]:
         """Returns list of downloaded artifact contents in order of modification time"""
@@ -55,28 +54,6 @@ class ClientRunner:
             f.write(data.trusted_root)
 
         cmd = self._cmd + ["--metadata-dir", self.metadata_dir, "init", trusted]
-        return self._run(cmd)
-
-    def get_targetinfo(self, data: ClientInitData, target_path: str) -> str:
-        self._server.debug_dump(self.test_name)
-
-        cmd = self._cmd
-
-        cmd = cmd + [
-            "--metadata-url",
-            data.metadata_url,
-            "--metadata-dir",
-            self.metadata_dir,
-            "--target-path",
-            target_path,
-            "--max-delegations",
-            f"{self.max_delegations}",
-            "get-targetinfo",
-        ]
-        popen = subprocess.Popen(cmd)
-        while popen.poll() is None:
-            self._server.handle_request()
-        return popen.stdout
         return self._run(cmd)
 
     def refresh(self, data: ClientInitData, days_in_future=0) -> int:

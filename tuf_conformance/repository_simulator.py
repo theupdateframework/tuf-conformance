@@ -70,14 +70,6 @@ class Artifact:
     target_file: TargetFile
 
 
-@dataclass
-class FetchTracker:
-    """Fetcher counter for metadata and targets."""
-
-    metadata: List[Tuple[str, Optional[int]]] = field(default_factory=list)
-    targets: List[Tuple[str, Optional[str]]] = field(default_factory=list)
-
-
 class RepositorySimulator:
     """Simulates a TUF repository that can be used for testing."""
 
@@ -104,8 +96,6 @@ class RepositorySimulator:
 
         self.dump_dir = dump_dir
         self.dump_version = 0
-
-        self.fetch_tracker = FetchTracker()
 
         self.metadata_statistics: List[Tuple[str, Optional[int]]] = []
         self.artifact_statistics: List[Tuple[str, Optional[str]]] = []
@@ -225,7 +215,6 @@ class RepositorySimulator:
 
         If hash is None, then consistent_snapshot is not used.
         """
-        self.fetch_tracker.targets.append((target_path, target_hash))
 
         repo_target = self.artifacts.get(target_path)
         if repo_target is None:
@@ -243,7 +232,6 @@ class RepositorySimulator:
         """
         # decode role for the metadata
         role = parse.unquote(role, encoding="utf-8")
-        self.fetch_tracker.metadata.append((role, version))
 
         if role == Root.type:
             # return a version previously serialized in publish_root()
