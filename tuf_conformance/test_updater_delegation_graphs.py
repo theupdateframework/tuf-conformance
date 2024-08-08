@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any
 
 from tuf.api.metadata import (
     SPECIFICATION_VERSION,

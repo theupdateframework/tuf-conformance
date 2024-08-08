@@ -33,7 +33,7 @@ Example::
 import datetime
 import logging
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, Iterator, List, Optional, Tuple
 from urllib import parse
 
