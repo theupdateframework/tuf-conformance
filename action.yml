@@ -5,6 +5,11 @@ inputs:
   entrypoint:
     description: "client-under-test CLI to invoke"
     required: true
+  artifact-name:
+    description: "Name to use for GitHub artifact upload. The 'entrypoint' will be used by default
+      but if you call this action in a job matrix, make sure each call gets a unique name"
+    default: ""
+    required: false
   expected-failures:
     description: "Optional list test names expected to fail"
     default: ""
@@ -33,9 +38,14 @@ runs:
         ENTRYPOINT: ${{ inputs.entrypoint }}
         EXPECTED_FAILURES: ${{ inputs.expected-failures }}
         TEST_LOCATION: ${{ github.action_path }}/tuf_conformance
+        NAME: ${{ inputs.artifact-name }}
       run: |
         # create a sanitized name for the artifact upload
-        echo "NAME=${ENTRYPOINT##*/}" >> "$GITHUB_OUTPUT"
+        if [[ -z $NAME ]]; then
+          echo "NAME=test repositories for ${ENTRYPOINT##*/}" >> "$GITHUB_OUTPUT"
+        else
+          echo "NAME=$NAME" >> "$GITHUB_OUTPUT"
+        fi
 
         # run test suite
         pytest -v "$TEST_LOCATION" \
@@ -48,5 +58,5 @@ runs:
       if: ${{ !cancelled() }}
       uses: actions/upload-artifact@89ef406dd8d7e03cfd12d9e0a4a378f454709029 # v4.3.5
       with:
-        name: test repositories for '${{ steps.tuf-conformance.outputs.NAME }}'
+        name: ${{ steps.tuf-conformance.outputs.NAME }}
         path: test-repositories
