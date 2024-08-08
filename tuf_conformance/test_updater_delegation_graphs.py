@@ -18,7 +18,7 @@ DataSet = Dict[str, Any]
 
 
 @dataclass
-class TestDelegation:
+class DelegationTester:
     delegator: str
     rolename: str
     keyids: List[str] = field(default_factory=list)
@@ -40,110 +40,110 @@ class DelegationsTestCase:
     """A delegations graph as lists of delegations and target files
     and the expected order of traversal as a list of role names."""
 
-    delegations: List[TestDelegation]
+    delegations: List[DelegationTester]
     target_files: List[TestTarget] = field(default_factory=list)
     visited_order: List[str] = field(default_factory=list)
 
 
 graphs: DataSet = {
     "basic-delegation": DelegationsTestCase(
-        delegations=[TestDelegation("targets", "A")],
+        delegations=[DelegationTester("targets", "A")],
         visited_order=["A"],
     ),
     "single-level-delegations": DelegationsTestCase(
         delegations=[
-            TestDelegation("targets", "A"),
-            TestDelegation("targets", "B"),
+            DelegationTester("targets", "A"),
+            DelegationTester("targets", "B"),
         ],
         visited_order=["A", "B"],
     ),
     "two-level-delegations": DelegationsTestCase(
         delegations=[
-            TestDelegation("targets", "A"),
-            TestDelegation("targets", "B"),
-            TestDelegation("B", "C"),
+            DelegationTester("targets", "A"),
+            DelegationTester("targets", "B"),
+            DelegationTester("B", "C"),
         ],
         visited_order=["A", "B", "C"],
     ),
     "two-level-test-DFS-order-of-traversal": DelegationsTestCase(
         delegations=[
-            TestDelegation("targets", "A"),
-            TestDelegation("targets", "B"),
-            TestDelegation("A", "C"),
-            TestDelegation("A", "D"),
+            DelegationTester("targets", "A"),
+            DelegationTester("targets", "B"),
+            DelegationTester("A", "C"),
+            DelegationTester("A", "D"),
         ],
         visited_order=["A", "C", "D", "B"],
     ),
     "three-level-delegation-test-DFS-order-of-traversal": DelegationsTestCase(
         delegations=[
-            TestDelegation("targets", "A"),
-            TestDelegation("targets", "B"),
-            TestDelegation("A", "C"),
-            TestDelegation("C", "D"),
+            DelegationTester("targets", "A"),
+            DelegationTester("targets", "B"),
+            DelegationTester("A", "C"),
+            DelegationTester("C", "D"),
         ],
         visited_order=["A", "C", "D", "B"],
     ),
     "two-level-terminating-ignores-all-but-roles-descendants": DelegationsTestCase(
         delegations=[
-            TestDelegation("targets", "A"),
-            TestDelegation("targets", "B"),
-            TestDelegation("A", "C", terminating=True),
-            TestDelegation("A", "D"),
+            DelegationTester("targets", "A"),
+            DelegationTester("targets", "B"),
+            DelegationTester("A", "C", terminating=True),
+            DelegationTester("A", "D"),
         ],
         visited_order=["A", "C"],
     ),
     "three-level-terminating-ignores-all-but-roles-descendants": DelegationsTestCase(
         delegations=[
-            TestDelegation("targets", "A"),
-            TestDelegation("targets", "B"),
-            TestDelegation("A", "C", terminating=True),
-            TestDelegation("C", "D"),
+            DelegationTester("targets", "A"),
+            DelegationTester("targets", "B"),
+            DelegationTester("A", "C", terminating=True),
+            DelegationTester("C", "D"),
         ],
         visited_order=["A", "C", "D"],
     ),
     "two-level-ignores-all-branches-not-matching-paths": DelegationsTestCase(
         delegations=[
-            TestDelegation("targets", "A", paths=["*.py"]),
-            TestDelegation("targets", "B"),
-            TestDelegation("A", "C"),
+            DelegationTester("targets", "A", paths=["*.py"]),
+            DelegationTester("targets", "B"),
+            DelegationTester("A", "C"),
         ],
         visited_order=["B"],
     ),
     "three-level-ignores-all-branches-not-matching-paths": DelegationsTestCase(
         delegations=[
-            TestDelegation("targets", "A"),
-            TestDelegation("targets", "B"),
-            TestDelegation("A", "C", paths=["*.py"]),
-            TestDelegation("C", "D"),
+            DelegationTester("targets", "A"),
+            DelegationTester("targets", "B"),
+            DelegationTester("A", "C", paths=["*.py"]),
+            DelegationTester("C", "D"),
         ],
         visited_order=["A", "B"],
     ),
     "cyclic-graph": DelegationsTestCase(
         delegations=[
-            TestDelegation("targets", "A"),
-            TestDelegation("targets", "B"),
-            TestDelegation("B", "C"),
-            TestDelegation("C", "D"),
-            TestDelegation("D", "B"),
+            DelegationTester("targets", "A"),
+            DelegationTester("targets", "B"),
+            DelegationTester("B", "C"),
+            DelegationTester("C", "D"),
+            DelegationTester("D", "B"),
         ],
         visited_order=["A", "B", "C", "D"],
     ),
     "two-roles-delegating-to-a-third": DelegationsTestCase(
         delegations=[
-            TestDelegation("targets", "A"),
-            TestDelegation("targets", "B"),
-            TestDelegation("B", "C"),
-            TestDelegation("A", "C"),
+            DelegationTester("targets", "A"),
+            DelegationTester("targets", "B"),
+            DelegationTester("B", "C"),
+            DelegationTester("A", "C"),
         ],
         # Under all same conditions, 'C' is reached through 'A' first"
         visited_order=["A", "C", "B"],
     ),
     "two-roles-delegating-to-a-third-different-paths": DelegationsTestCase(
         delegations=[
-            TestDelegation("targets", "A"),
-            TestDelegation("targets", "B"),
-            TestDelegation("B", "C"),
-            TestDelegation("A", "C", paths=["*.py"]),
+            DelegationTester("targets", "A"),
+            DelegationTester("targets", "B"),
+            DelegationTester("B", "C"),
+            DelegationTester("A", "C", paths=["*.py"]),
         ],
         # 'C' is reached through 'B' since 'A' does not delegate a matching pattern"
         visited_order=["A", "B", "C"],
