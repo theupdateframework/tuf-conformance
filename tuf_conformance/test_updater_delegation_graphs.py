@@ -178,7 +178,8 @@ def init_repo(repo: RepositorySimulator, test_case: DelegationsTestCase) -> None
 def test_graph_traversal(
     client: ClientRunner, server: SimulatorServer, graphs: DelegationsTestCase
 ) -> None:
-    ##
+    """Test that delegated roles are traversed in the order of appearance
+    in the delegator's metadata, using pre-order depth-first search"""
     exp_files = [*TOP_LEVEL_ROLE_NAMES, *graphs.visited_order]
     exp_calls = [(role, 1) for role in graphs.visited_order]
 
