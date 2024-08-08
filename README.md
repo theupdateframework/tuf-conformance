@@ -22,7 +22,7 @@ The conformance test suite provides a GitHub action that can be used to test a T
 There are two required steps:
 
 1. Include an executable in the client project that implements the client-under-test
-   [CLI protocol](clients/README.md). 
+   [CLI protocol](CLIENT-CLI.md).
 2. Use the `theupdateframework/tuf-conformance` action in your test workflow:
     ```yaml
     jobs:
