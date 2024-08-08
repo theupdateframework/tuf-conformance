@@ -6,12 +6,6 @@ repository is to allow client developers to
   2. Achieve better practical compatibility with other implementations
   3. Collaborate on tests with other client developers
 
-> [!NOTE]
-> The conformance test suite is currently under rapid development. There is no stability guarantee
-> on either the GitHub action inputs or the client-under-test CLI protocol yet. Please wait for
-> initial release if that sounds unappealing. 
-
-
 - [Usage](#Usage)
 - [Development](#Development)
 
@@ -33,7 +27,7 @@ There are two required steps:
 
           # insert possible client compilation/installation steps here
 
-          - uses: theupdateframework/tuf-conformance@main
+          - uses: theupdateframework/tuf-conformance@v1
             with:
               entrypoint: path/to/my/test/executable
     ```
@@ -151,6 +145,27 @@ def test_targets_version(
     assert client.version(Targets.type) == 7
 ```
 
+### Releasing
+
+Checklist for making a new tuf-conformance release
+* Review changes since last release, decide on version number
+  * If the client-under-test CLI has changed or client workflows are otherwise likely to break, bump major version
+  * otherwise if new tests were added, bump minor version
+  * otherwise bump patch version
+* Create and merge PR with README changes if needed (the workflow example contains the major version number)
+* tag the new version from a commit in main branch. Example when releasing v1.1.1:
+  ```
+      git tag --sign v1.1.1 -m "v1.1.1"
+      git push origin v1.1.1
+
+      # now rewrite the major tag: yes rewriting tags is awful, it's also what GitHub recommends...
+      git tag --delete v1
+      git push --force origin v1
+      git tag --sign v1 -m "v1.1.1"
+      git push origin v1
+  ```
+* Add release notes to GitHub release in the web UI: this will be shown to action users in the dependabot update.
+  Release notes must mention all breaking changes.
 
 ### Some design notes
 
