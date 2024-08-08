@@ -9,7 +9,7 @@ import os
 import shutil
 import sys
 
-from tuf.ngclient import Updater, UpdaterConfig
+from tuf.ngclient import Updater
 
 
 def init(metadata_dir: str, trusted_root: str) -> None:

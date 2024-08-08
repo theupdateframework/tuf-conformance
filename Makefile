@@ -32,14 +32,15 @@ dev: env/pyvenv.cfg
 .PHONY: test-all
 test-all: test-python-tuf test-go-tuf
 
+lint_dirs = tuf_conformance clients/python-tuf
 lint: dev
-	./env/bin/ruff format --diff tuf_conformance
-	./env/bin/ruff check tuf_conformance
-	./env/bin/mypy tuf_conformance
+	./env/bin/ruff format --diff $(lint_dirs)
+	./env/bin/ruff check $(lint_dirs)
+	./env/bin/mypy $(lint_dirs)
 
 fix: dev
-	./env/bin/ruff format tuf_conformance
-	./env/bin/ruff check --fix tuf_conformance
+	./env/bin/ruff format $(lint_dirs)
+	./env/bin/ruff check --fix $(lint_dirs)
 
 #########################
 # python-tuf section
