@@ -12,7 +12,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -48,7 +47,6 @@ func Execute() {
 	rootCmd.PersistentFlags().StringVar(&FlagTargetBaseUrl, "target-base-url", "", "base url for target file")
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println("ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR", err)
 		os.Exit(1)
 	}
 }
