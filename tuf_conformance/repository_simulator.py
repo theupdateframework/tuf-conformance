@@ -33,8 +33,8 @@ Example::
 import datetime
 import logging
 import os
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Dict, Iterator, List, Optional, Tuple
 from urllib import parse
 
 import securesystemslib.hash as sslib_hash
@@ -75,18 +75,18 @@ class RepositorySimulator:
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self, dump_dir: str | None) -> None:
-        self.md_delegates: Dict[str, Metadata[Targets]] = {}
+        self.md_delegates: dict[str, Metadata[Targets]] = {}
 
         # other metadata is signed on-demand (when fetched) but roots must be
         # explicitly published with publish_root() which maintains this list
-        self.signed_roots: List[bytes] = []
+        self.signed_roots: list[bytes] = []
 
         # signers are used on-demand at fetch time to sign metadata
         # keys are roles, values are dicts of {keyid: signer}
-        self.signers: Dict[str, Dict[str, Signer]] = {}
+        self.signers: dict[str, dict[str, Signer]] = {}
 
         # target downloads are served from this dict
-        self.artifacts: Dict[str, Artifact] = {}
+        self.artifacts: dict[str, Artifact] = {}
 
         # Whether to compute hashes and length for meta in snapshot/timestamp
         self.compute_metafile_hashes_length = False
@@ -97,8 +97,8 @@ class RepositorySimulator:
         self.dump_dir = dump_dir
         self.dump_version = 0
 
-        self.metadata_statistics: List[Tuple[str, Optional[int]]] = []
-        self.artifact_statistics: List[Tuple[str, Optional[str]]] = []
+        self.metadata_statistics: list[tuple[str, int | None]] = []
+        self.artifact_statistics: list[tuple[str, str | None]] = []
 
         now = datetime.datetime.utcnow()
         self.safe_expiry = now.replace(microsecond=0) + datetime.timedelta(days=30)
@@ -122,7 +122,7 @@ class RepositorySimulator:
     def targets(self) -> Targets:
         return self.md_targets.signed
 
-    def all_targets(self) -> Iterator[Tuple[str, Targets]]:
+    def all_targets(self) -> Iterator[tuple[str, Targets]]:
         """Yield role name and signed portion of targets one by one."""
         yield Targets.type, self.md_targets.signed
         for role, md in self.md_delegates.items():
@@ -187,7 +187,7 @@ class RepositorySimulator:
             if role == Root.type or (
                 self.root.consistent_snapshot and ver_and_name != Timestamp.type
             ):
-                version: Optional[int] = int(version_str)
+                version: int | None = int(version_str)
             else:
                 # the file is not version-prefixed
                 role = ver_and_name
@@ -200,7 +200,7 @@ class RepositorySimulator:
             target_path = path[len("targets/") :]
             dir_parts, sep, prefixed_filename = target_path.rpartition("/")
             # extract the hash prefix, if any
-            prefix: Optional[str] = None
+            prefix: str | None = None
             filename = prefixed_filename
             if self.root.consistent_snapshot and self.prefix_targets_with_hash:
                 prefix, _, filename = prefixed_filename.partition(".")
@@ -210,7 +210,7 @@ class RepositorySimulator:
             return self.fetch_target(target_path, prefix)
         raise ValueError(f"Unknown path '{path}'")
 
-    def fetch_target(self, target_path: str, target_hash: Optional[str]) -> bytes:
+    def fetch_target(self, target_path: str, target_hash: str | None) -> bytes:
         """Return data for 'target_path' if it is given.
 
         If hash is None, then consistent_snapshot is not used.
@@ -225,7 +225,7 @@ class RepositorySimulator:
         logger.debug("fetched target %s", target_path)
         return repo_target.data
 
-    def fetch_metadata(self, role: str, version: Optional[int] = None) -> bytes:
+    def fetch_metadata(self, role: str, version: int | None = None) -> bytes:
         """Return signed metadata for 'role', using 'version' if it is given.
 
         If version is None, non-versioned metadata is being requested.
@@ -241,7 +241,7 @@ class RepositorySimulator:
             return self.signed_roots[version - 1]
 
         # sign and serialize the requested metadata
-        md: Optional[Metadata]
+        md: Metadata | None
         if role == Timestamp.type:
             md = self.md_timestamp
         elif role == Snapshot.type:
@@ -276,7 +276,7 @@ class RepositorySimulator:
         else:
             return self.root.version
 
-    def _compute_hashes_and_length(self, role: str) -> Tuple[Dict[str, str], int]:
+    def _compute_hashes_and_length(self, role: str) -> tuple[dict[str, str], int]:
         data = self.fetch_metadata(role)
         digest_object = sslib_hash.digest(sslib_hash.DEFAULT_HASH_ALGORITHM)
         digest_object.update(data)

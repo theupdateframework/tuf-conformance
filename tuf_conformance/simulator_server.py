@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from os import path
-from typing import Dict
 from urllib import parse
 
 from tuf_conformance.repository_simulator import RepositorySimulator
@@ -59,7 +58,7 @@ class SimulatorServer(ThreadingHTTPServer):
         self._dump_dir = dump_dir
 
         # key is test name, value is the repository sim for that test
-        self.repos: Dict[str, RepositorySimulator] = {}
+        self.repos: dict[str, RepositorySimulator] = {}
 
     def new_test(self, name: str) -> tuple[ClientInitData, RepositorySimulator]:
         """Return a tuple of

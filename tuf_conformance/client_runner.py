@@ -1,8 +1,8 @@
 import glob
 import os
 import subprocess
+from collections.abc import Iterable
 from tempfile import TemporaryDirectory
-from typing import Iterable
 
 from tuf_conformance.metadata import MetadataTest
 from tuf_conformance.simulator_server import ClientInitData, SimulatorServer
