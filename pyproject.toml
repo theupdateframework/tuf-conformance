@@ -25,7 +25,8 @@ module = ["securesystemslib.*"]
 ignore_missing_imports = "True"
 
 [tool.ruff]
-lint.select = ["ANN", "E", "F", "I", "N", "UP", "W",]
+lint.select = ["ANN", "E", "F", "I", "N", "S", "UP", "W",]
 lint.ignore = [
     "ANN101", "ANN102", # nonsense, deprecated in ruff
+    "S101", # assert is fine in pytest tests
 ]
