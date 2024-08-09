@@ -99,6 +99,28 @@ def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -
     assert client.version(Snapshot.type) == 1
     assert client.version(Targets.type) == 1
 
+def test_implicit_refresh(client: ClientRunner, server: SimulatorServer) -> None:
+    init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+
+    # Run download immediately after initialization: Expect download to fail
+    # (as targetpath does not exist) but expect metadata to get updated
+    assert client.download_target(init_data,"nonexistent artifact") == 1
+
+    # Verify that expected requests were made
+    assert repo.metadata_statistics == [
+        ("root", 2),
+        ("timestamp", None),
+        ("snapshot", 1),
+        ("targets", 1),
+    ]
+
+    # verify client metadata looks as expected
+    assert client.version(Root.type) == 1
+    assert client.version(Timestamp.type) == 1
+    assert client.version(Snapshot.type) == 1
+    assert client.version(Targets.type) == 1
+
 
 def test_timestamp_eq_versions_check(
     client: ClientRunner, server: SimulatorServer
