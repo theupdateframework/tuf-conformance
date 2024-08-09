@@ -1,10 +1,10 @@
 # Test runner
 import os
 
-from tuf_conformance.simulator_server import SimulatorServer
-from tuf_conformance.client_runner import ClientRunner
+from tuf.api.metadata import Metadata, Root, Snapshot, Targets, Timestamp
 
-from tuf.api.metadata import Timestamp, Snapshot, Root, Targets, Metadata
+from tuf_conformance.client_runner import ClientRunner
+from tuf_conformance.simulator_server import SimulatorServer
 
 
 def test_TestTimestampEqVersionsCheck(

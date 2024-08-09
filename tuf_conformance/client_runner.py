@@ -1,12 +1,11 @@
-import subprocess
-import os
 import glob
+import os
+import subprocess
 from tempfile import TemporaryDirectory
 from typing import Iterable
 
-from tuf_conformance.simulator_server import ClientInitData, SimulatorServer
-
 from tuf_conformance.metadata import MetadataTest
+from tuf_conformance.simulator_server import ClientInitData, SimulatorServer
 
 
 class ClientRunner:

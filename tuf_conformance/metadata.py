@@ -1,12 +1,7 @@
-from tuf.api.metadata import (
-    Metadata,
-    Key,
-)
-
 import json
+from typing import Any, Dict, List, Optional, Type, cast
 
 from securesystemslib.signer import Signature
-
 from tuf.api._payload import (
     _ROOT,
     _SNAPSHOT,
@@ -20,11 +15,13 @@ from tuf.api._payload import (
     Targets,
     Timestamp,
 )
+from tuf.api.metadata import (
+    Key,
+    Metadata,
+)
 from tuf.api.serialization.json import (
     MetadataDeserializer,
 )
-
-from typing import Dict, Any, cast, List, Optional, Type
 
 
 class MetadataTest(Metadata[T]):
