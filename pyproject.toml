@@ -25,4 +25,4 @@ module = ["securesystemslib.*"]
 ignore_missing_imports = "True"
 
 [tool.ruff]
-lint.select = ["E", "F", "W", "I"]
+lint.select = ["E", "F", "I", "N", "UP", "W",]

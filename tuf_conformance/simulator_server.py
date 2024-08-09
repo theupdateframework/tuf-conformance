@@ -20,7 +20,7 @@ class _ReqHandler(BaseHTTPRequestHandler):
     Serves metadata and targets for multiple repositories
     """
 
-    def do_GET(self):
+    def do_GET(self):  # noqa: N802
         """Handle GET: metadata and target files"""
 
         test, _, path = self.path.lstrip("/").partition("/")
