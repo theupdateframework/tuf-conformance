@@ -1,4 +1,5 @@
 # Test runner
+import json
 import os
 
 from tuf.api.metadata import Metadata, Root, Snapshot, Targets, Timestamp
@@ -99,13 +100,16 @@ def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -
     assert client.version(Snapshot.type) == 1
     assert client.version(Targets.type) == 1
 
+
 def test_implicit_refresh(client: ClientRunner, server: SimulatorServer) -> None:
+    """Run download immediately after initialization: Expect download to fail
+    (as targetpath does not exist) but expect metadata to get updated
+    """
+
     init_data, repo = server.new_test(client.test_name)
     assert client.init_client(init_data) == 0
 
-    # Run download immediately after initialization: Expect download to fail
-    # (as targetpath does not exist) but expect metadata to get updated
-    assert client.download_target(init_data,"nonexistent artifact") == 1
+    assert client.download_target(init_data, "nonexistent artifact") == 1
 
     # Verify that expected requests were made
     assert repo.metadata_statistics == [
@@ -120,6 +124,45 @@ def test_implicit_refresh(client: ClientRunner, server: SimulatorServer) -> None
     assert client.version(Timestamp.type) == 1
     assert client.version(Snapshot.type) == 1
     assert client.version(Targets.type) == 1
+
+
+def test_invalid_initial_root(client: ClientRunner, server: SimulatorServer) -> None:
+    """Initialize client with invalid root. Expect refresh to fail and
+    nothing to get downloaded from repository
+    """
+    init_data, repo = server.new_test(client.test_name)
+
+    root_json = json.loads(init_data.trusted_root)
+    del root_json["signed"]["version"]
+    init_data.trusted_root = json.dumps(root_json).encode()
+
+    # init may or may not fail (depending on if client does validation at this point)
+    client.init_client(init_data)
+
+    # Verify that refresh fails and no requests were made
+    assert client.refresh(init_data) == 1
+    assert repo.metadata_statistics == []
+
+
+def test_unsigned_initial_root(client: ClientRunner, server: SimulatorServer) -> None:
+    """Initialize client with root that is not correctly signed. Expect refresh to fail
+    and nothing to get downloaded from repository
+    """
+    init_data, repo = server.new_test(client.test_name)
+
+    # replace root signature with some other signature
+    root_json = json.loads(init_data.trusted_root)
+    root_json["signatures"][0]["sig"] = (
+        "3045022100ee448afe2d25dd1f05afedac83a24e7df90f203615221434979153dc7cea6d4702207710015851e571885a77db8a6e42c4b2983a59b9e1ebec91178dfa2fb0d42ab8"
+    )
+    init_data.trusted_root = json.dumps(root_json).encode()
+
+    # init may or may not fail (depending on if client does validation at this point)
+    client.init_client(init_data)
+
+    # Verify that refresh fails and no requests were made
+    assert client.refresh(init_data) == 1
+    assert repo.metadata_statistics == []
 
 
 def test_timestamp_eq_versions_check(
