@@ -1,7 +1,7 @@
 from tuf.api.metadata import Targets
 
-from tuf_conformance.simulator_server import SimulatorServer
 from tuf_conformance.client_runner import ClientRunner
+from tuf_conformance.simulator_server import SimulatorServer
 
 
 def test_client_downloads_expected_file(

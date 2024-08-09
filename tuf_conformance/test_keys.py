@@ -1,9 +1,9 @@
 from securesystemslib.signer import CryptoSigner
-from tuf.api.metadata import Timestamp, Snapshot, Root, Targets
+from tuf.api.metadata import Root, Snapshot, Targets, Timestamp
 
-from tuf_conformance.repository_simulator import RepositorySimulator
-from tuf_conformance.simulator_server import SimulatorServer, ClientInitData
 from tuf_conformance.client_runner import ClientRunner
+from tuf_conformance.repository_simulator import RepositorySimulator
+from tuf_conformance.simulator_server import ClientInitData, SimulatorServer
 
 
 def initial_setup_for_key_threshold(

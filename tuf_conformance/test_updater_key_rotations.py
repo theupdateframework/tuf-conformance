@@ -1,13 +1,13 @@
 import os
-import pytest
-
 from dataclasses import dataclass
-from tuf_conformance.client_runner import ClientRunner
-from tuf_conformance.simulator_server import SimulatorServer
-from securesystemslib.signer import CryptoSigner
 from typing import Dict
 
+import pytest
+from securesystemslib.signer import CryptoSigner
 from tuf.api.metadata import Root
+
+from tuf_conformance.client_runner import ClientRunner
+from tuf_conformance.simulator_server import SimulatorServer
 
 
 @dataclass

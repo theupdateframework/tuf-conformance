@@ -3,6 +3,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from os import path
 from typing import Dict
 from urllib import parse
+
 from tuf_conformance.repository_simulator import RepositorySimulator
 
 

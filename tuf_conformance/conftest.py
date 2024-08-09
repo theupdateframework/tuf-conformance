@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 from tuf_conformance.client_runner import ClientRunner

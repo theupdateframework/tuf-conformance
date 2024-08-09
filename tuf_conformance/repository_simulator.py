@@ -39,8 +39,6 @@ from urllib import parse
 
 import securesystemslib.hash as sslib_hash
 from securesystemslib.signer import CryptoSigner, Signer
-from tuf_conformance.metadata import RootTest, MetadataTest
-
 from tuf.api.metadata import (
     SPECIFICATION_VERSION,
     TOP_LEVEL_ROLE_NAMES,
@@ -56,6 +54,8 @@ from tuf.api.metadata import (
     Timestamp,
 )
 from tuf.api.serialization.json import JSONSerializer
+
+from tuf_conformance.metadata import MetadataTest, RootTest
 
 logger = logging.getLogger(__name__)
 
