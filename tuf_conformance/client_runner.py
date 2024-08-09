@@ -52,7 +52,7 @@ class ClientRunner:
         with open(trusted, "bw") as f:
             f.write(data.trusted_root)
 
-        cmd = self._cmd + ["--metadata-dir", self.metadata_dir, "init", trusted]
+        cmd = [*self._cmd, "--metadata-dir", self.metadata_dir, "init", trusted]
         return self._run(cmd)
 
     def refresh(self, data: ClientInitData, days_in_future: int = 0) -> int:
@@ -61,9 +61,10 @@ class ClientRunner:
 
         cmd = self._cmd
         if days_in_future:
-            cmd = ["faketime", "-f", f"+{days_in_future}d"] + cmd
+            cmd = ["faketime", "-f", f"+{days_in_future}d", *cmd]
 
-        cmd = cmd + [
+        cmd = [
+            *cmd,
             "--metadata-url",
             data.metadata_url,
             "--metadata-dir",
@@ -73,7 +74,8 @@ class ClientRunner:
         return self._run(cmd)
 
     def download_target(self, data: ClientInitData, target_name: str) -> int:
-        cmd = self._cmd + [
+        cmd = [
+            *self._cmd,
             "--metadata-url",
             data.metadata_url,
             "--metadata-dir",
