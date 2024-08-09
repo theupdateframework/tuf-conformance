@@ -87,7 +87,7 @@ def test_repository_substitutes_target_file(
     repo.artifacts[target_path_2].data = malicious_content
 
     # ask client to download again
-    # NOTE: this may either succeed (if client cached the artifact and never tries to re-download)
+    # NOTE: this may succeed (if client cached the artifact and never re-downloads)
     # or it might fail (if client downloads the new artifact and realizes it is invalid)
     client.download_target(init_data, target_path_1)
 
@@ -170,7 +170,7 @@ def test_multiple_changes_to_target(
         # check downloaded contents
         assert client.get_downloaded_target_bytes() == expected_downloads
 
-        # Modify the original artifact content without updating the hashes/length in metadata.
+        # Modify artifact content without updating the hashes/length in metadata.
         malicious_file_contents = f"malicious contents {i}".encode()
         repo.artifacts[target_path].data = malicious_file_contents
         repo.targets.version += 1
@@ -178,7 +178,8 @@ def test_multiple_changes_to_target(
         # Bump repo snapshot
         repo.update_snapshot()
 
-        # ask client to download (this may fail or succeed, see test_repository_substitutes_target_file)
+        # ask client to download (this may fail or succeed, see
+        # test_repository_substitutes_target_file)
         client.download_target(init_data, target_path)
 
         # Check that the client did not download the malicious file
