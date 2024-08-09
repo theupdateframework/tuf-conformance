@@ -42,7 +42,7 @@ class ClientRunner:
         return artifact_bytes
 
     def _run(self, cmd: list[str]) -> int:
-        popen = subprocess.Popen(cmd)
+        popen = subprocess.Popen(cmd)  # noqa: S603
         while popen.poll() is None:
             self._server.handle_request()
         return popen.returncode
