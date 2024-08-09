@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, Type, cast
+from typing import Any, cast
 
 from securesystemslib.signer import Signature
 from tuf.api._payload import (
@@ -26,11 +26,11 @@ from tuf.api.serialization.json import (
 
 class MetadataTest(Metadata[T]):
     @classmethod
-    def from_dict(cls, metadata: Dict[str, Any]) -> "MetadataTest[T]":
+    def from_dict(cls, metadata: dict[str, Any]) -> "MetadataTest[T]":
         _type = metadata["signed"]["_type"]
 
         if _type == _TARGETS:
-            inner_cls: Type[Signed] = Targets
+            inner_cls: type[Signed] = Targets
         elif _type == _SNAPSHOT:
             inner_cls = Snapshot
         elif _type == _TIMESTAMP:
@@ -41,7 +41,7 @@ class MetadataTest(Metadata[T]):
             raise ValueError(f'unrecognized metadata type "{_type}"')
 
         # Make sure signatures are unique
-        signatures: Dict[str, Signature] = {}
+        signatures: dict[str, Signature] = {}
         for sig_dict in metadata.pop("signatures"):
             sig = Signature.from_dict(sig_dict)
             signatures[sig.keyid] = sig
@@ -67,7 +67,7 @@ class RootTest(Root):
         self.keys[key.keyid] = key
 
     @classmethod
-    def from_dict(cls, signed_dict: Dict[str, Any]) -> "Root":
+    def from_dict(cls, signed_dict: dict[str, Any]) -> "Root":
         """Create ``Root`` object from its json/dict representation.
 
         Raises:
@@ -92,9 +92,9 @@ class RoleTest(Role):
     # without validation
     def __init__(
         self,
-        keyids: List[str],
+        keyids: list[str],
         threshold: int,
-        unrecognized_fields: Optional[Dict[str, Any]] = None,
+        unrecognized_fields: dict[str, Any] | None = None,
     ) -> None:
         self.keyids = keyids
         self.threshold = threshold

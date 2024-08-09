@@ -10,6 +10,7 @@ dependencies = [
     "pytest==8.3.2"
 ]
 dynamic = ["version"]
+requires-python = ">= 3.10"
 
 [project.optional-dependencies]
 lint = [
@@ -33,7 +34,7 @@ module = ["securesystemslib.*"]
 ignore_missing_imports = "True"
 
 [tool.ruff]
-lint.select = ["ANN", "E", "F", "I", "N", "PL", "RUF", "S", "UP", "W",]
+lint.select = ["ANN", "E", "F", "I", "N", "PL", "PYI", "RUF", "S", "UP", "W",]
 lint.ignore = [
     "ANN101", "ANN102", # nonsense, deprecated in ruff
     "S101",             # assert is fine in pytest tests

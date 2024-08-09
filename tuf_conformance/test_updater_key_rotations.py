@@ -1,6 +1,5 @@
 import os
 from dataclasses import dataclass
-from typing import Dict
 
 import pytest
 from securesystemslib.signer import CryptoSigner
@@ -88,7 +87,7 @@ root_rotation_cases = {
     ],
 }
 
-non_root_rotation_cases: Dict[str, MdVersion] = {
+non_root_rotation_cases: dict[str, MdVersion] = {
     "1-of-1-key-rotation": MdVersion(keys=[2], threshold=1, sigs=[2]),
     "1-of-1-key-rotation-unused-signatures": MdVersion(
         keys=[1], threshold=1, sigs=[3, 1, 4]
