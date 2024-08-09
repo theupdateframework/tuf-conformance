@@ -20,6 +20,14 @@ lint = [
 [tool.hatch.version]
 path = "tuf_conformance/__init__.py"
 
+[tool.mypy]
+check_untyped_defs = "True"
+disallow_untyped_defs = "True"
+no_implicit_optional = "True"
+warn_return_any = "True"
+warn_unreachable = "True"
+warn_unused_ignores = "True"
+
 [[tool.mypy.overrides]]
 module = ["securesystemslib.*"]
 ignore_missing_imports = "True"
