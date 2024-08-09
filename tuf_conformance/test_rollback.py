@@ -1,4 +1,4 @@
-from tuf.api.metadata import Timestamp, Snapshot, Root, Targets
+from tuf.api.metadata import Root, Snapshot, Targets, Timestamp
 
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import SimulatorServer

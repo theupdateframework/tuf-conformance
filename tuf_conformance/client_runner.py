@@ -1,12 +1,11 @@
-import subprocess
-import os
 import glob
+import os
+import subprocess
+from collections.abc import Iterable
 from tempfile import TemporaryDirectory
-from typing import Iterable
-
-from tuf_conformance.simulator_server import ClientInitData, SimulatorServer
 
 from tuf_conformance.metadata import MetadataTest
+from tuf_conformance.simulator_server import ClientInitData, SimulatorServer
 
 
 class ClientRunner:
@@ -43,7 +42,7 @@ class ClientRunner:
         return artifact_bytes
 
     def _run(self, cmd: list[str]) -> int:
-        popen = subprocess.Popen(cmd)
+        popen = subprocess.Popen(cmd)  # noqa: S603
         while popen.poll() is None:
             self._server.handle_request()
         return popen.returncode
@@ -53,18 +52,19 @@ class ClientRunner:
         with open(trusted, "bw") as f:
             f.write(data.trusted_root)
 
-        cmd = self._cmd + ["--metadata-dir", self.metadata_dir, "init", trusted]
+        cmd = [*self._cmd, "--metadata-dir", self.metadata_dir, "init", trusted]
         return self._run(cmd)
 
-    def refresh(self, data: ClientInitData, days_in_future=0) -> int:
+    def refresh(self, data: ClientInitData, days_in_future: int = 0) -> int:
         # dump a repository version for each client refresh (if configured to)
         self._server.debug_dump(self.test_name)
 
         cmd = self._cmd
         if days_in_future:
-            cmd = ["faketime", "-f", f"+{days_in_future}d"] + cmd
+            cmd = ["faketime", "-f", f"+{days_in_future}d", *cmd]
 
-        cmd = cmd + [
+        cmd = [
+            *cmd,
             "--metadata-url",
             data.metadata_url,
             "--metadata-dir",
@@ -74,7 +74,8 @@ class ClientRunner:
         return self._run(cmd)
 
     def download_target(self, data: ClientInitData, target_name: str) -> int:
-        cmd = self._cmd + [
+        cmd = [
+            *self._cmd,
             "--metadata-url",
             data.metadata_url,
             "--metadata-dir",
