@@ -95,7 +95,7 @@ class RoleTest(Role):
         keyids: List[str],
         threshold: int,
         unrecognized_fields: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> None:
         self.keyids = keyids
         self.threshold = threshold
         if unrecognized_fields is None:

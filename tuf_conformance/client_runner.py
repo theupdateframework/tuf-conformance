@@ -55,7 +55,7 @@ class ClientRunner:
         cmd = self._cmd + ["--metadata-dir", self.metadata_dir, "init", trusted]
         return self._run(cmd)
 
-    def refresh(self, data: ClientInitData, days_in_future=0) -> int:
+    def refresh(self, data: ClientInitData, days_in_future: int = 0) -> int:
         # dump a repository version for each client refresh (if configured to)
         self._server.debug_dump(self.test_name)
 

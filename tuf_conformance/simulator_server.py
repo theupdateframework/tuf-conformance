@@ -20,7 +20,7 @@ class _ReqHandler(BaseHTTPRequestHandler):
     Serves metadata and targets for multiple repositories
     """
 
-    def do_GET(self):  # noqa: N802
+    def do_GET(self) -> None:  # noqa: N802
         """Handle GET: metadata and target files"""
 
         test, _, path = self.path.lstrip("/").partition("/")
@@ -38,11 +38,11 @@ class _ReqHandler(BaseHTTPRequestHandler):
             self.send_error(404, str(e))
             return
         self.send_response(200)
-        self.send_header("Content-length", len(data))
+        self.send_header("Content-length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
 
-    def log_message(self, format, *args):
+    def log_message(self, format: str, *args: str) -> None:
         """Log an arbitrary message.
 
         Avoid output for now. TODO We may want to log in some situations?
@@ -53,7 +53,7 @@ class _ReqHandler(BaseHTTPRequestHandler):
 class SimulatorServer(ThreadingHTTPServer):
     """Web server to serve a number of repositories"""
 
-    def __init__(self, dump_dir: str | None):
+    def __init__(self, dump_dir: str | None) -> None:
         super().__init__(("127.0.0.1", 0), _ReqHandler)
         self.timeout = 0
         self._dump_dir = dump_dir
@@ -80,5 +80,5 @@ class SimulatorServer(ThreadingHTTPServer):
 
         return client_data, repo
 
-    def debug_dump(self, test_name):
+    def debug_dump(self, test_name: str) -> None:
         self.repos[test_name].debug_dump()
