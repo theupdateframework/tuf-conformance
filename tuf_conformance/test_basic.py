@@ -108,12 +108,10 @@ unsigned_cases = [
 ]
 unsigned_ids = [case[0] for case in unsigned_cases]
 
+
 @pytest.mark.parametrize("role, trusted_md", unsigned_cases, ids=unsigned_ids)
 def test_unsigned_metadata(
-    client: ClientRunner,
-    server: SimulatorServer,
-    role: str,
-    trusted_md: dict[str, int]
+    client: ClientRunner, server: SimulatorServer, role: str, trusted_md: dict[str, int]
 ) -> None:
     """Serve client metadata that is not properly signed.
 
@@ -125,7 +123,7 @@ def test_unsigned_metadata(
     # remove signing key for role, increase version
     repo.signers[role].popitem()
     repo.mds[role].signed.version += 1
-    if role=="root":
+    if role == "root":
         repo.publish_root()
 
     assert client.init_client(init_data) == 0
