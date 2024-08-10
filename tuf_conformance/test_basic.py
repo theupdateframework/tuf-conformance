@@ -10,6 +10,10 @@ from tuf_conformance.simulator_server import SimulatorServer
 
 
 def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -> None:
+    """Test basic client functionality.
+
+    Run a refresh, verify client trusted metadata and requests made by the client
+    """
     init_data, repo = server.new_test(client.test_name)
 
     # Run the test: step 1:  initialize client
@@ -34,8 +38,10 @@ def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -
 
 
 def test_implicit_refresh(client: ClientRunner, server: SimulatorServer) -> None:
-    """Run download immediately after initialization: Expect download to fail
-    (as targetpath does not exist) but expect metadata to get updated
+    """Test that client refreshes metadata before downloading artifacts.
+
+    Run download immediately after initialization: Expect download to fail
+    (as targetpath does not exist) but expect metadata to get updated.
     """
 
     init_data, repo = server.new_test(client.test_name)
@@ -59,7 +65,9 @@ def test_implicit_refresh(client: ClientRunner, server: SimulatorServer) -> None
 
 
 def test_invalid_initial_root(client: ClientRunner, server: SimulatorServer) -> None:
-    """Initialize client with invalid root. Expect refresh to fail and
+    """Test client when initial trusted root is invalid
+
+    Initialize client with invalid root. Expect refresh to fail and
     nothing to get downloaded from repository
     """
     init_data, repo = server.new_test(client.test_name)
@@ -77,7 +85,9 @@ def test_invalid_initial_root(client: ClientRunner, server: SimulatorServer) -> 
 
 
 def test_unsigned_initial_root(client: ClientRunner, server: SimulatorServer) -> None:
-    """Initialize client with root that is not correctly signed. Expect refresh to fail
+    """Test client when initial trusted root is not signed correctly
+
+    Initialize client with root that is not correctly signed. Expect refresh to fail
     and nothing to get downloaded from repository
     """
     init_data, repo = server.new_test(client.test_name)
@@ -113,8 +123,9 @@ unsigned_ids = [case[0] for case in unsigned_cases]
 def test_unsigned_metadata(
     client: ClientRunner, server: SimulatorServer, role: str, trusted_md: dict[str, int]
 ) -> None:
-    """Serve client metadata that is not properly signed.
+    """Test refresh when a top-level role is incorrectly signed.
 
+    Serve client metadata that is not properly signed.
     Expect the refresh to succeed until that point, but not continue from that point.
     """
 
