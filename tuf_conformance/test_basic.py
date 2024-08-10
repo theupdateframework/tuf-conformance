@@ -2,6 +2,7 @@
 import json
 import os
 
+import pytest
 from tuf.api.metadata import Metadata, Root, Snapshot, Targets, Timestamp
 
 from tuf_conformance.client_runner import ClientRunner
@@ -162,6 +163,45 @@ def test_unsigned_initial_root(client: ClientRunner, server: SimulatorServer) ->
     # Verify that refresh fails and no requests were made
     assert client.refresh(init_data) == 1
     assert repo.metadata_statistics == []
+
+
+# tuples of
+#  * rolename that will be improperly signed
+#  * expected trusted metadata versions after refresh fails
+unsigned_cases = [
+    ("root", {"root": 1, "timestamp": None, "snapshot": None, "targets": None}),
+    ("timestamp", {"root": 1, "timestamp": None, "snapshot": None, "targets": None}),
+    ("snapshot", {"root": 1, "timestamp": 1, "snapshot": None, "targets": None}),
+    ("targets", {"root": 1, "timestamp": 1, "snapshot": 1, "targets": None}),
+]
+unsigned_ids = [case[0] for case in unsigned_cases]
+
+@pytest.mark.parametrize("role, trusted_md", unsigned_cases, ids=unsigned_ids)
+def test_unsigned_metadata(
+    client: ClientRunner,
+    server: SimulatorServer,
+    role: str,
+    trusted_md: dict[str, int]
+) -> None:
+    """Serve client metadata that is not properly signed.
+
+    Expect the refresh to succeed until that point, but not continue from that point.
+    """
+
+    init_data, repo = server.new_test(client.test_name)
+
+    # remove signing key for role, increase version
+    repo.signers[role].popitem()
+    repo.mds[role].signed.version += 1
+    if role=="root":
+        repo.publish_root()
+
+    assert client.init_client(init_data) == 0
+
+    # Verify that refresh fails and that current trusted metadata is as expected
+    assert client.refresh(init_data) == 1
+    for trusted_role, ver in trusted_md.items():
+        assert client.version(trusted_role) == ver
 
 
 def test_timestamp_eq_versions_check(

@@ -4,6 +4,8 @@ import subprocess
 from collections.abc import Iterable
 from tempfile import TemporaryDirectory
 
+from tuf.api.exceptions import StorageError
+
 from tuf_conformance.metadata import MetadataTest
 from tuf_conformance.simulator_server import ClientInitData, SimulatorServer
 
@@ -90,9 +92,14 @@ class ClientRunner:
         ]
         return self._run(cmd)
 
-    def version(self, role: str) -> int:
-        """Returns the version of a metadata role"""
-        md = MetadataTest.from_file(os.path.join(self.metadata_dir, f"{role}.json"))
+    def version(self, role: str) -> int | None:
+        """Returns current trusted version of role. Returns None if there is no trusted
+        version
+        """
+        try:
+            md = MetadataTest.from_file(os.path.join(self.metadata_dir, f"{role}.json"))
+        except StorageError:
+            return None
         return md.signed.version
 
     def _files_exist(self, roles: Iterable[str]) -> bool:
