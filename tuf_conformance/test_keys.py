@@ -10,7 +10,7 @@ def initial_setup_for_key_threshold(
     client: ClientRunner, repo: RepositorySimulator, init_data: ClientInitData
 ) -> None:
     # Explicitly set the threshold
-    repo.md_root.signed.roles[Snapshot.type].threshold = 3
+    repo.root.roles[Snapshot.type].threshold = 3
     repo.bump_root_by_one()  # v2
 
     # Add a legitimate key:
@@ -49,7 +49,6 @@ def test_root_has_keys_but_not_snapshot(
     # Sanity checks
     assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
     assert client.version(Snapshot.type) == 1
-    assert len(repo.md_snapshot.signatures) == 1
 
     initial_setup_for_key_threshold(client, repo, init_data)
 
@@ -90,7 +89,7 @@ def test_wrong_hashing_algorithm(client: ClientRunner, server: SimulatorServer) 
 
     # Increase the threshold but it is met
     assert len(repo.root.roles[Snapshot.type].keyids) == 5
-    repo.md_root.signed.roles[Snapshot.type].threshold = 5
+    repo.root.roles[Snapshot.type].threshold = 5
 
     # Set one of the keys' "keyid_hash_algorithms" to an
     # incorrect algorithm.
