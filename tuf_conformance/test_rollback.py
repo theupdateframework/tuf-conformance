@@ -61,8 +61,8 @@ def test_new_timestamp_snapshot_rollback(
     assert client.refresh(init_data) == 0
 
     # Repo attempts rollback attack
-    repo.md_timestamp.signed.snapshot_meta.version = 1
-    repo.md_snapshot.signed.version = 1
+    repo.timestamp.snapshot_meta.version = 1
+    repo.snapshot.version = 1
     repo.update_timestamp()  # v4
     assert repo._version(Timestamp.type) == 4
     assert client.version(Timestamp.type) == 3
@@ -90,7 +90,7 @@ def test_new_targets_fast_forward_recovery(
     init_data, repo = server.new_test(client.test_name)
     assert client.init_client(init_data) == 0
 
-    repo.md_targets.signed.version = 99999
+    repo.targets.version = 99999
     repo.update_snapshot()  # v2
 
     assert client.refresh(init_data) == 0
@@ -99,7 +99,7 @@ def test_new_targets_fast_forward_recovery(
     repo.rotate_keys(Snapshot.type)
     repo.bump_root_by_one()
 
-    repo.md_targets.signed.version = 1
+    repo.targets.version = 1
     repo.update_snapshot()  # v3
 
     client.refresh(init_data)
@@ -183,7 +183,7 @@ def test_new_timestamp_fast_forward_recovery(
     # rolls back timestamp version
     repo.rotate_keys(Timestamp.type)
     repo.bump_root_by_one()
-    repo.md_timestamp.signed.version = 1
+    repo.timestamp.version = 1
 
     # client refresh the metadata and see the initial timestamp version
     client.refresh(init_data)
@@ -204,7 +204,7 @@ def test_snapshot_rollback_with_local_snapshot_hash_mismatch(
 
     # Initialize all metadata and assign targets
     # version higher than 1.
-    repo.md_targets.signed.version = 2
+    repo.targets.version = 2
     repo.update_snapshot()
     assert client.refresh(init_data) == 0
     assert client.version(Targets.type) == 2

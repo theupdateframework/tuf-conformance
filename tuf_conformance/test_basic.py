@@ -25,7 +25,7 @@ def test_timestamp_content_changes(
     initial_timestamp_meta_ver = repo.timestamp.snapshot_meta.version
     # Change timestamp without bumping its version in order to test if a new
     # timestamp with the same version will be persisted.
-    repo.md_timestamp.signed.snapshot_meta.version = 100
+    repo.timestamp.snapshot_meta.version = 100
 
     client.refresh(init_data)
 
@@ -51,8 +51,7 @@ def test_new_targets_hash_mismatch(
     # Modify targets contents without updating
     # snapshot's targets hashes
     repo.targets.version += 1
-    targets_version = repo.md_targets.signed.version
-    repo.snapshot.meta["targets.json"].version = targets_version
+    repo.snapshot.meta["targets.json"].version = repo.targets.version
     repo.snapshot.version += 1
     repo.update_timestamp()
 
