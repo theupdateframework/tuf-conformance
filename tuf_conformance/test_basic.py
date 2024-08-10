@@ -9,74 +9,6 @@ from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import SimulatorServer
 
 
-def test_timestamp_content_changes(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    """Repository modifies timestamp content without bumping a version. Expect client
-    to keep using the version it already has.
-    """
-    # https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_top_level_update_test.go#L1058
-    init_data, repo = server.new_test(client.test_name)
-
-    assert client.init_client(init_data) == 0
-    client.refresh(init_data)
-    # Sanity check
-    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
-
-    initial_timestamp_meta_ver = repo.timestamp.snapshot_meta.version
-    # Change timestamp without bumping its version in order to test if a new
-    # timestamp with the same version will be persisted.
-    repo.timestamp.snapshot_meta.version = 100
-
-    client.refresh(init_data)
-
-    assert client.version(Timestamp.type) == initial_timestamp_meta_ver
-
-
-def test_new_targets_hash_mismatch(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    # Check against snapshot role's targets hashes
-    init_data, repo = server.new_test(client.test_name)
-
-    assert client.init_client(init_data) == 0
-    client.refresh(init_data)
-    # Sanity check
-    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type])
-
-    repo.compute_metafile_hashes_length = True
-    repo.update_snapshot()
-
-    client.refresh(init_data)
-
-    # Modify targets contents without updating
-    # snapshot's targets hashes
-    repo.targets.version += 1
-    repo.snapshot.meta["targets.json"].version = repo.targets.version
-    repo.snapshot.version += 1
-    repo.update_timestamp()
-
-    client.refresh(init_data)
-    assert client.version(Snapshot.type) == 1
-    assert client.version(Targets.type) == 1
-
-
-def test_new_targets_version_mismatch(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    # Check against snapshot role's targets version
-    init_data, repo = server.new_test(client.test_name)
-
-    assert client.init_client(init_data) == 0
-    client.refresh(init_data)
-    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
-
-    repo.targets.version += 1
-    client.refresh(init_data)
-    # Check that the client still has the correct metadata files
-    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
-
-
 def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -> None:
     init_data, repo = server.new_test(client.test_name)
 
@@ -202,6 +134,74 @@ def test_unsigned_metadata(
     assert client.refresh(init_data) == 1
     for trusted_role, ver in trusted_md.items():
         assert client.version(trusted_role) == ver
+
+
+def test_timestamp_content_changes(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    """Repository modifies timestamp content without bumping a version. Expect client
+    to keep using the version it already has.
+    """
+    # https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_top_level_update_test.go#L1058
+    init_data, repo = server.new_test(client.test_name)
+
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    # Sanity check
+    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
+
+    initial_timestamp_meta_ver = repo.timestamp.snapshot_meta.version
+    # Change timestamp without bumping its version in order to test if a new
+    # timestamp with the same version will be persisted.
+    repo.timestamp.snapshot_meta.version = 100
+
+    client.refresh(init_data)
+
+    assert client.version(Timestamp.type) == initial_timestamp_meta_ver
+
+
+def test_new_targets_hash_mismatch(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    # Check against snapshot role's targets hashes
+    init_data, repo = server.new_test(client.test_name)
+
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    # Sanity check
+    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type])
+
+    repo.compute_metafile_hashes_length = True
+    repo.update_snapshot()
+
+    client.refresh(init_data)
+
+    # Modify targets contents without updating
+    # snapshot's targets hashes
+    repo.targets.version += 1
+    repo.snapshot.meta["targets.json"].version = repo.targets.version
+    repo.snapshot.version += 1
+    repo.update_timestamp()
+
+    client.refresh(init_data)
+    assert client.version(Snapshot.type) == 1
+    assert client.version(Targets.type) == 1
+
+
+def test_new_targets_version_mismatch(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    # Check against snapshot role's targets version
+    init_data, repo = server.new_test(client.test_name)
+
+    assert client.init_client(init_data) == 0
+    client.refresh(init_data)
+    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
+
+    repo.targets.version += 1
+    client.refresh(init_data)
+    # Check that the client still has the correct metadata files
+    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
 
 
 def test_timestamp_eq_versions_check(
