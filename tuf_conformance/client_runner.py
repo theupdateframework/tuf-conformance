@@ -125,4 +125,3 @@ class ClientRunner:
             roles[rolename] = md.signed.version
 
         return roles
-
