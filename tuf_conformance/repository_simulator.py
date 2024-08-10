@@ -402,9 +402,7 @@ class RepositorySimulator:
 
         # Add targets metadata for all bins.
         for delegated_name in succinct_roles.get_roles():
-            self.mds[delegated_name] = Metadata(
-                Targets(expires=self.safe_expiry)
-            )
+            self.mds[delegated_name] = Metadata(Targets(expires=self.safe_expiry))
 
             self.add_signer(delegated_name, signer)
 
