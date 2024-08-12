@@ -21,7 +21,7 @@ def test_root_expired(client: ClientRunner, server: SimulatorServer) -> None:
     repo.bump_root_by_one()  # v2
     client.refresh(init_data)
 
-    repo.md_root.signed.expires = utils.get_date_n_days_in_past(1)
+    repo.root.expires = utils.get_date_n_days_in_past(1)
     repo.bump_root_by_one()  # v3
     repo.targets.version += 1  # v2
 
@@ -45,7 +45,7 @@ def test_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> None
     # Sanity check
     assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
 
-    repo.md_snapshot.signed.expires = utils.get_date_n_days_in_past(5)
+    repo.snapshot.expires = utils.get_date_n_days_in_past(5)
     repo.update_snapshot()
 
     client.refresh(init_data)
@@ -66,7 +66,7 @@ def test_targets_expired(client: ClientRunner, server: SimulatorServer) -> None:
     client.refresh(init_data)
     assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
 
-    repo.md_targets.signed.expires = utils.get_date_n_days_in_past(5)
+    repo.targets.expires = utils.get_date_n_days_in_past(5)
     repo.update_snapshot()
 
     assert client.init_client(init_data) == 0
@@ -94,7 +94,7 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
     assert client.init_client(init_data) == 0
 
     now = datetime.datetime.now(timezone.utc)
-    repo.md_timestamp.signed.expires = now + datetime.timedelta(days=7)
+    repo.timestamp.expires = now + datetime.timedelta(days=7)
 
     # Refresh and perform sanity check
     client.refresh(init_data)
@@ -102,10 +102,10 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
         md = Metadata.from_file(os.path.join(client.metadata_dir, f"{role}.json"))
         assert md.signed.version == 1
 
-    repo.md_targets.signed.version += 1
+    repo.targets.version += 1
     repo.update_snapshot()
 
-    repo.md_timestamp.signed.expires = now + datetime.timedelta(days=21)
+    repo.timestamp.expires = now + datetime.timedelta(days=21)
     repo.update_timestamp()
 
     # Mocking time so that local timestamp has expired

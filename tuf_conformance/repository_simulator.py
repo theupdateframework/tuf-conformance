@@ -75,7 +75,8 @@ class RepositorySimulator:
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self, dump_dir: str | None) -> None:
-        self.md_delegates: dict[str, Metadata[Targets]] = {}
+        # All current metadata
+        self.mds: dict[str, Metadata] = {}
 
         # other metadata is signed on-demand (when fetched) but roots must be
         # explicitly published with publish_root() which maintains this list
@@ -108,25 +109,36 @@ class RepositorySimulator:
 
     @property
     def root(self) -> Root:
-        return self.md_root.signed
+        signed = self.mds[Root.type].signed
+        assert isinstance(signed, Root)
+        return signed
 
     @property
     def timestamp(self) -> Timestamp:
-        return self.md_timestamp.signed
+        signed = self.mds[Timestamp.type].signed
+        assert isinstance(signed, Timestamp)
+        return signed
 
     @property
     def snapshot(self) -> Snapshot:
-        return self.md_snapshot.signed
+        signed = self.mds[Snapshot.type].signed
+        assert isinstance(signed, Snapshot)
+        return signed
 
     @property
     def targets(self) -> Targets:
-        return self.md_targets.signed
+        return self.any_targets("targets")
+
+    def any_targets(self, role: str) -> Targets:
+        signed = self.mds[role].signed
+        assert isinstance(signed, Targets)
+        return signed
 
     def all_targets(self) -> Iterator[tuple[str, Targets]]:
         """Yield role name and signed portion of targets one by one."""
-        yield Targets.type, self.md_targets.signed
-        for role, md in self.md_delegates.items():
-            yield role, md.signed
+        for role, md in self.mds.items():
+            if role not in [Root.type, Timestamp.type, Snapshot.type]:
+                yield role, md.signed
 
     def add_signer(self, role: str, signer: CryptoSigner) -> None:
         if role not in self.signers:
@@ -146,14 +158,14 @@ class RepositorySimulator:
     def _initialize(self) -> None:
         """Setup a minimal valid repository."""
 
-        self.md_targets = MetadataTest(Targets(expires=self.safe_expiry))
-        self.md_snapshot = MetadataTest(Snapshot(expires=self.safe_expiry))
-        self.md_timestamp = MetadataTest(Timestamp(expires=self.safe_expiry))
-        self.md_root = MetadataTest(RootTest(expires=self.safe_expiry))
+        self.mds[Targets.type] = MetadataTest(Targets(expires=self.safe_expiry))
+        self.mds[Snapshot.type] = MetadataTest(Snapshot(expires=self.safe_expiry))
+        self.mds[Timestamp.type] = MetadataTest(Timestamp(expires=self.safe_expiry))
+        self.mds[Root.type] = MetadataTest(RootTest(expires=self.safe_expiry))
 
         for role in TOP_LEVEL_ROLE_NAMES:
             signer = CryptoSigner.generate_ecdsa()
-            self.md_root.signed.add_key(signer.public_key, role)
+            self.root.add_key(signer.public_key, role)
             self.add_signer(role, signer)
 
         self.publish_root()
@@ -167,11 +179,12 @@ class RepositorySimulator:
 
     def publish_root(self) -> None:
         """Sign and store a new serialized version of root."""
-        self.md_root.signatures.clear()
+        root_md = self.mds[Root.type]
+        root_md.signatures.clear()
         for signer in self.signers[Root.type].values():
-            self.md_root.sign(signer, append=True)
+            root_md.sign(signer, append=True)
 
-        self.signed_roots.append(self.md_root.to_bytes(JSONSerializer()))
+        self.signed_roots.append(root_md.to_bytes(JSONSerializer()))
         logger.debug("Published root v%d", self.root.version)
 
     def fetch(self, path: str) -> bytes:
@@ -241,15 +254,7 @@ class RepositorySimulator:
             return self.signed_roots[version - 1]
 
         # sign and serialize the requested metadata
-        md: Metadata | None
-        if role == Timestamp.type:
-            md = self.md_timestamp
-        elif role == Snapshot.type:
-            md = self.md_snapshot
-        elif role == Targets.type:
-            md = self.md_targets
-        else:
-            md = self.md_delegates.get(role)
+        md = self.mds.get(role)
 
         if md is None:
             raise ValueError(f"Unknown role {role}")
@@ -267,14 +272,9 @@ class RepositorySimulator:
         return md.to_bytes(JSONSerializer())
 
     def _version(self, role: str) -> int:
-        if role == Timestamp.type:
-            return self.timestamp.version
-        elif role == Snapshot.type:
-            return self.snapshot.version
-        elif role == Targets.type:
-            return self.targets.version
-        else:
-            return self.root.version
+        signed = self.mds[role].signed
+        assert isinstance(signed, Root | Timestamp | Snapshot | Targets)
+        return signed.version
 
     def _compute_hashes_and_length(self, role: str) -> tuple[dict[str, str], int]:
         data = self.fetch_metadata(role)
@@ -334,23 +334,16 @@ class RepositorySimulator:
             if self.compute_metafile_hashes_length:
                 hashes, length = self._compute_hashes_and_length(role)
 
-            self.md_snapshot.signed.meta[f"{role}.json"] = MetaFile(
+            self.snapshot.meta[f"{role}.json"] = MetaFile(
                 delegate.version, length, hashes
             )
 
         self.snapshot.version -= 1
         self.update_timestamp()
 
-    def _get_delegator(self, delegator_name: str) -> Targets:
-        """Given a delegator name return, its corresponding Targets object."""
-        if delegator_name == Targets.type:
-            return self.targets
-
-        return self.md_delegates[delegator_name].signed
-
     def add_target(self, role: str, data: bytes, path: str) -> None:
         """Create a target from data and add it to the target_files."""
-        targets = self._get_delegator(role)
+        targets = self.any_targets(role)
 
         target = TargetFile.from_data(path, data, ["sha256"])
         targets.targets[path] = target
@@ -360,7 +353,7 @@ class RepositorySimulator:
         self, delegator_name: str, role: DelegatedRole, targets: Targets
     ) -> None:
         """Add delegated target role to the repository."""
-        delegator = self._get_delegator(delegator_name)
+        delegator = self.any_targets(delegator_name)
 
         if (
             delegator.delegations is not None
@@ -382,8 +375,8 @@ class RepositorySimulator:
         self.add_signer(role.name, signer)
 
         # Add metadata for the role
-        if role.name not in self.md_delegates:
-            self.md_delegates[role.name] = Metadata(targets, {})
+        if role.name not in self.mds:
+            self.mds[role.name] = Metadata(targets, {})
 
     def add_succinct_roles(
         self, delegator_name: str, bit_length: int, name_prefix: str
@@ -395,7 +388,7 @@ class RepositorySimulator:
         by succinct roles an empty Targets instance
         is created.
         """
-        delegator = self._get_delegator(delegator_name)
+        delegator = self.any_targets(delegator_name)
 
         if (
             delegator.delegations is not None
@@ -409,9 +402,7 @@ class RepositorySimulator:
 
         # Add targets metadata for all bins.
         for delegated_name in succinct_roles.get_roles():
-            self.md_delegates[delegated_name] = Metadata(
-                Targets(expires=self.safe_expiry)
-            )
+            self.mds[delegated_name] = Metadata(Targets(expires=self.safe_expiry))
 
             self.add_signer(delegated_name, signer)
 
@@ -436,11 +427,9 @@ class RepositorySimulator:
             with open(os.path.join(dest_dir, f"{ver}.root.json"), "wb") as f:
                 f.write(self.fetch_metadata(Root.type, ver))
 
-        for role in [Timestamp.type, Snapshot.type, Targets.type]:
-            with open(os.path.join(dest_dir, f"{role}.json"), "wb") as f:
-                f.write(self.fetch_metadata(role))
-
-        for role in self.md_delegates:
+        for role in self.mds:
+            if role == Root.type:
+                continue
             quoted_role = parse.quote(role, "")
             with open(os.path.join(dest_dir, f"{quoted_role}.json"), "wb") as f:
                 f.write(self.fetch_metadata(role))
@@ -449,5 +438,4 @@ class RepositorySimulator:
         """add new key"""
         signer = CryptoSigner.generate_ecdsa()
         self.root.add_key(signer.public_key, role)
-        self.md_root.sign(signer, append=True)
         self.add_signer(role, signer)
