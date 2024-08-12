@@ -170,9 +170,6 @@ class RepositorySimulator:
 
         self.publish_root()
 
-    def set_root_consistent_snapshot(self, b: bool) -> None:
-        self.root.consistent_snapshot = b
-
     def bump_root_by_one(self) -> None:
         self.root.version += 1
         self.publish_root()
@@ -297,19 +294,6 @@ class RepositorySimulator:
 
         self.timestamp.version += 1
 
-    def downgrade_timestamp(self) -> None:
-        """Update timestamp and assign snapshot version to snapshot_meta
-        version.
-        """
-
-        hashes = None
-        length = None
-        if self.compute_metafile_hashes_length:
-            hashes, length = self._compute_hashes_and_length(Snapshot.type)
-
-        self.timestamp.snapshot_meta = MetaFile(self.snapshot.version, length, hashes)
-        self.timestamp.version -= 1
-
     def update_snapshot(self) -> None:
         """Update snapshot, assign targets versions and update timestamp."""
         for role, delegate in self.all_targets():
@@ -325,24 +309,8 @@ class RepositorySimulator:
         self.snapshot.version += 1
         self.update_timestamp()
 
-    def downgrade_snapshot(self) -> None:
-        """Update snapshot, assign targets versions and update timestamp.
-        This is malicious behavior"""
-        for role, delegate in self.all_targets():
-            hashes = None
-            length = None
-            if self.compute_metafile_hashes_length:
-                hashes, length = self._compute_hashes_and_length(role)
-
-            self.snapshot.meta[f"{role}.json"] = MetaFile(
-                delegate.version, length, hashes
-            )
-
-        self.snapshot.version -= 1
-        self.update_timestamp()
-
-    def add_target(self, role: str, data: bytes, path: str) -> None:
-        """Create a target from data and add it to the target_files."""
+    def add_artifact(self, role: str, data: bytes, path: str) -> None:
+        """Add `data` to artifact store and insert its hashes into metadata."""
         targets = self.any_targets(role)
 
         target = TargetFile.from_data(path, data, ["sha256"])
@@ -352,7 +320,7 @@ class RepositorySimulator:
     def add_delegation(
         self, delegator_name: str, role: DelegatedRole, targets: Targets
     ) -> None:
-        """Add delegated target role to the repository."""
+        """Add delegated targets role to the repository."""
         delegator = self.any_targets(delegator_name)
 
         if (
@@ -434,8 +402,14 @@ class RepositorySimulator:
             with open(os.path.join(dest_dir, f"{quoted_role}.json"), "wb") as f:
                 f.write(self.fetch_metadata(role))
 
-    def add_key(self, role: str) -> None:
-        """add new key"""
+    def add_key(self, role: str, delegator_name: str = Root.type) -> None:
+        """add new public key to delegating metadata and store the signer for role"""
         signer = CryptoSigner.generate_ecdsa()
-        self.root.add_key(signer.public_key, role)
+
+        # Add key to delegating metadata
+        delegator = self.mds[delegator_name].signed
+        assert isinstance(delegator, Root | Targets)
+        delegator.add_key(signer.public_key, role)
+
+        # Add signer to signers
         self.add_signer(role, signer)

@@ -18,7 +18,7 @@ def test_client_downloads_expected_file(
     # Create a test artifact, add it to the repository
     target_path = "target_file.txt"
     target_content = b"target file contents"
-    repo.add_target(Targets.type, target_content, target_path)
+    repo.add_artifact(Targets.type, target_content, target_path)
 
     # Client updates, sanity check that nothing was downloaded
     assert client.refresh(init_data) == 0
@@ -44,7 +44,7 @@ def test_client_downloads_expected_file_in_sub_dir(
     # Create a test artifact, add it to the repository
     target_path = "path/to/a/target_file.txt"
     target_content = b"target file contents"
-    repo.add_target(Targets.type, target_content, target_path)
+    repo.add_artifact(Targets.type, target_content, target_path)
 
     # Client updates, sanity check that nothing was downloaded
     assert client.refresh(init_data) == 0
@@ -71,8 +71,8 @@ def test_repository_substitutes_target_file(
     target_content_1 = b"target file contents"
     target_path_2 = "another_target_file.txt"
     target_content_2 = b"content"
-    repo.add_target(Targets.type, target_content_1, target_path_1)
-    repo.add_target(Targets.type, target_content_2, target_path_2)
+    repo.add_artifact(Targets.type, target_content_1, target_path_1)
+    repo.add_artifact(Targets.type, target_content_2, target_path_2)
 
     # Client updates
     assert client.refresh(init_data) == 0
@@ -123,7 +123,7 @@ def test_multiple_changes_to_target(
     # Create a legitimate test artifacts
     target_path = "target_file.txt"
     target_content = b"target file contents"
-    repo.add_target(Targets.type, target_content, target_path)
+    repo.add_artifact(Targets.type, target_content, target_path)
 
     # Client updates
     assert client.refresh(init_data) == 0
@@ -142,11 +142,11 @@ def test_multiple_changes_to_target(
     for i in range(10):
         # Modify the existing artifact legitimately:
         modified_contents = f"modified file contents {i}".encode()
-        repo.add_target(Targets.type, modified_contents, target_path)
+        repo.add_artifact(Targets.type, modified_contents, target_path)
         # Add a completely new artifact
         new_file_contents = f"new file contents {i}".encode()
         new_target_path = f"new-target-{i}"
-        repo.add_target(Targets.type, new_file_contents, new_target_path)
+        repo.add_artifact(Targets.type, new_file_contents, new_target_path)
         repo.targets.version += 1
 
         # Bump repo snapshot

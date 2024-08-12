@@ -91,6 +91,7 @@ def test_new_timestamp_snapshot_rollback(
     assert client.version(Snapshot.type) == 2
     assert repo.metadata_statistics[-1] == (Timestamp.type, None)
 
+
 def test_new_targets_fast_forward_recovery(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
