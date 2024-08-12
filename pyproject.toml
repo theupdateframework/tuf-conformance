@@ -10,6 +10,7 @@ dependencies = [
     "pytest==8.3.2"
 ]
 dynamic = ["version"]
+requires-python = ">= 3.10"
 
 [project.optional-dependencies]
 lint = [
@@ -20,6 +21,22 @@ lint = [
 [tool.hatch.version]
 path = "tuf_conformance/__init__.py"
 
+[tool.mypy]
+check_untyped_defs = "True"
+disallow_untyped_defs = "True"
+no_implicit_optional = "True"
+warn_return_any = "True"
+warn_unreachable = "True"
+warn_unused_ignores = "True"
+
 [[tool.mypy.overrides]]
 module = ["securesystemslib.*"]
 ignore_missing_imports = "True"
+
+[tool.ruff]
+lint.select = ["ANN", "E", "F", "I", "N", "PL", "PYI", "RUF", "S", "UP", "W",]
+lint.ignore = [
+    "ANN101", "ANN102", # nonsense, deprecated in ruff
+    "S101",             # assert is fine in pytest tests
+    "PLR2004",          # magic values are ok in a test suite
+]

@@ -1,15 +1,18 @@
 # Test runner
 import os
 
-from tuf_conformance.simulator_server import SimulatorServer
+from tuf.api.metadata import Metadata, Root, Snapshot, Targets, Timestamp
+
 from tuf_conformance.client_runner import ClientRunner
+from tuf_conformance.simulator_server import SimulatorServer
 
-from tuf.api.metadata import Timestamp, Snapshot, Root, Targets, Metadata
 
-
-def test_TestTimestampEqVersionsCheck(
+def test_timestamp_content_changes(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
+    """Repository modifies timestamp content without bumping a version. Expect client
+    to keep using the version it already has.
+    """
     # https://github.com/theupdateframework/go-tuf/blob/f1d8916f08e4dd25f91e40139137edb8bf0498f3/metadata/updater/updater_top_level_update_test.go#L1058
     init_data, repo = server.new_test(client.test_name)
 
