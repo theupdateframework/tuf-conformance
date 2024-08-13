@@ -65,15 +65,16 @@ class SimulatorServer(ThreadingHTTPServer):
         * A new repository simulator (for test case to control)
         * client initialization parameters (so client can find the simulated repo)
         """
-        dump_dir = path.join(self._dump_dir, name) if self._dump_dir else None
+        safe_name = parse.quote(name, "")
+        dump_dir = path.join(self._dump_dir, safe_name) if self._dump_dir else None
         repo = RepositorySimulator(dump_dir)
         self.repos[name] = repo
 
         host, port = self.server_address[0], self.server_address[1]
         assert isinstance(host, str)
         client_data = ClientInitData(
-            f"http://{host}:{port}/{parse.quote(name, '')}/metadata/",
-            f"http://{host}:{port}/{parse.quote(name, '')}/targets/",
+            f"http://{host}:{port}/{safe_name}/metadata/",
+            f"http://{host}:{port}/{safe_name}/targets/",
             repo.fetch_metadata("root", 1),
         )
 
