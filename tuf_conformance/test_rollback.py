@@ -162,7 +162,11 @@ def test_new_snapshot_fast_forward_recovery(
 def test_new_snapshot_version_mismatch(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
-    # Check against timestamp role's snapshot version
+    """Tests that the client does not download the snapshot
+    metadata if the repo has bumped the snapshot version in
+    the snapshot metadata but not in the timestamp.
+    The client should have only root and timestamp
+    when it refreshes."""
 
     init_data, repo = server.new_test(client.test_name)
 
@@ -170,10 +174,10 @@ def test_new_snapshot_version_mismatch(
 
     # Increase snapshot version without updating timestamp
     repo.snapshot.version += 1
-    repo.update_snapshot()
 
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 1
     assert client._files_exist([Root.type, Timestamp.type])
+    assert repo.metadata_statistics[-1] == (Snapshot.type, 1)
 
 
 def test_new_timestamp_fast_forward_recovery(
