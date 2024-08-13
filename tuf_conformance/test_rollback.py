@@ -218,7 +218,7 @@ def test_snapshot_rollback_with_local_snapshot_hash_mismatch(
     repo.compute_metafile_hashes_length = True
 
     # The new targets must have a lower version than the local trusted one.
-    repo.targets.version = 3
+    repo.targets.version = 1
     repo.update_snapshot()
 
     # Client refresh should fail because there is a hash mismatch.
