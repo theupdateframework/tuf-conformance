@@ -7,6 +7,13 @@ from tuf_conformance.simulator_server import SimulatorServer
 def test_new_snapshot_version_rollback(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
+    """Test a simple snapshot version rollback attack.
+
+    Repository publishes a snapshot with version that is not higher than what client has
+    already seen, without updating timestamp.meta.
+    Expect client to refuse the update.
+    """
+
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
@@ -15,63 +22,74 @@ def test_new_snapshot_version_rollback(
     repo.update_snapshot()  # v2
     assert client.refresh(init_data) == 0
 
-    # Repository attempts rollback attack:
-    repo.downgrade_snapshot()  # v1
-    client.refresh(init_data)
+    # Repository attempts rollback attack (note that the snapshot version in
+    # timestamp.meta is v2)
+    repo.snapshot.version -= 1  # v1
+    # Client succeeds in this case since it already has the snapshot version specified
+    # in timestamp.meta
+    assert client.refresh(init_data) == 0
 
     # Check that client resisted rollback attack
     assert client.version(Snapshot.type) == 2
+    assert repo.metadata_statistics[-1] == (Timestamp.type, None)
 
 
 def test_new_timestamp_version_rollback(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
+    """Test a timestamp version rollback attack.
+
+    Repository publishes a timestamp with version that is not higher than what client
+    has already seen. Expect client to refuse the update
+    """
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
 
-    # Repository performs legitimate update to snapshot
+    # Repository performs legitimate update to timestamp
     repo.update_timestamp()  # v2
     assert client.refresh(init_data) == 0
 
-    # Sanity check that client saw the snapshot update:
+    # Sanity check that client saw the timestamp update:
     assert client.version(Timestamp.type) == 2
 
     # Repository attempts rollback attack:
-    repo.downgrade_timestamp()  # v1
-
+    repo.timestamp.version -= 1  # v1
     assert client.refresh(init_data) == 1
 
     # Check that client resisted rollback attack
     assert client.version(Timestamp.type) == 2
+    assert repo.metadata_statistics[-1] == (Timestamp.type, None)
 
 
 def test_new_timestamp_snapshot_rollback(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
+    """Test a complete snapshot version rollback attack.
+
+    Repository publishes a snapshot with version that is not higher than what client has
+    already seen, updating timestamp.meta.
+    Expect client to refuse the update.
+    """
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
 
     # Start snapshot version at 2
-    repo.update_snapshot()  # v2, timestamp = v3
+    repo.update_snapshot()  # v2, timestamp = v2
 
-    # Repository performs legitimate update to snapshot
-    repo.update_timestamp()  # v3
     assert client.refresh(init_data) == 0
 
     # Repo attempts rollback attack
-    repo.timestamp.snapshot_meta.version = 1
     repo.snapshot.version = 1
-    repo.update_timestamp()  # v4
-    assert repo._version(Timestamp.type) == 4
-    assert client.version(Timestamp.type) == 3
+    repo.update_timestamp()  # v3
 
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 1
 
     # Check that client resisted rollback attack
-    assert client.version(Timestamp.type) == 3
+    assert client.version(Timestamp.type) == 2
     assert client.version(Snapshot.type) == 2
+    assert repo.metadata_statistics[-1] == (Timestamp.type, None)
 
 
 def test_new_targets_fast_forward_recovery(
