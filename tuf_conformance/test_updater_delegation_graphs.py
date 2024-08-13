@@ -1,31 +1,34 @@
-from typing import List, Optional, Dict, Any
+import json
+import os
+from dataclasses import astuple, dataclass, field
+from typing import Any
 
+import pytest
 from tuf.api.metadata import (
     SPECIFICATION_VERSION,
     TOP_LEVEL_ROLE_NAMES,
     DelegatedRole,
+    TargetFile,
     Targets,
 )
 
-from dataclasses import dataclass, field, astuple
-import pytest
 from tuf_conformance.client_runner import ClientRunner
-from tuf_conformance.simulator_server import SimulatorServer
 from tuf_conformance.repository_simulator import RepositorySimulator
+from tuf_conformance.simulator_server import SimulatorServer
 
 # DataSet is only here so type hints can be used.
-DataSet = Dict[str, Any]
+DataSet = dict[str, Any]
 
 
 @dataclass
 class DelegationTester:
     delegator: str
     rolename: str
-    keyids: List[str] = field(default_factory=list)
+    keyids: list[str] = field(default_factory=list)
     threshold: int = 1
     terminating: bool = False
-    paths: Optional[List[str]] = field(default_factory=lambda: ["*"])
-    path_hash_prefixes: Optional[List[str]] = None
+    paths: list[str] | None = field(default_factory=lambda: ["*"])
+    path_hash_prefixes: list[str] | None = None
 
 
 @dataclass
@@ -36,13 +39,20 @@ class TestTarget:
 
 
 @dataclass
+class TargetTestCase:
+    targetpath: str
+    found: bool
+    visited_order: list[str] = field(default_factory=list)
+
+
+@dataclass
 class DelegationsTestCase:
     """A delegations graph as lists of delegations and target files
     and the expected order of traversal as a list of role names."""
 
-    delegations: List[DelegationTester]
-    target_files: List[TestTarget] = field(default_factory=list)
-    visited_order: List[str] = field(default_factory=list)
+    delegations: list[DelegationTester]
+    target_files: list[TestTarget] = field(default_factory=list)
+    visited_order: list[str] = field(default_factory=list)
 
 
 graphs: DataSet = {
@@ -158,8 +168,8 @@ graph_cases = graphs.values()
 def init_repo(repo: RepositorySimulator, test_case: DelegationsTestCase) -> None:
     spec_version = ".".join(SPECIFICATION_VERSION)
     for d in test_case.delegations:
-        if d.rolename in repo.md_delegates:
-            targets = repo.md_delegates[d.rolename].signed
+        if d.rolename in repo.mds:
+            targets = repo.mds[d.rolename].signed
         else:
             targets = Targets(1, spec_version, repo.safe_expiry, {}, None)
         # unpack 'd' but skip "delegator"
@@ -167,7 +177,7 @@ def init_repo(repo: RepositorySimulator, test_case: DelegationsTestCase) -> None
         repo.add_delegation(d.delegator, role, targets)
 
     for target in test_case.target_files:
-        repo.add_target(*astuple(target))
+        repo.add_artifact(*astuple(target))
 
     if test_case.target_files:
         repo.targets.version += 1
@@ -195,4 +205,82 @@ def test_graph_traversal(
     # For some reason "('root', 2), ('timestamp', None)" gets prepended
     # in every case, so we compare from the 3rd item in the list.
     assert repo.metadata_statistics[2:] == exp_calls
+    assert client._files_exist(exp_files)
+
+
+r"""
+Create a single repository with the following delegations:
+
+          targets
+*.doc, *md / \ release/*/*
+          A   B
+ release/x/* / \ release/y/*.zip
+            C   D
+
+Test that Updater successfully finds the target files metadata,
+traversing the delegations as expected.
+"""
+delegations_tree = DelegationsTestCase(
+    delegations=[
+        DelegationTester("targets", "A", paths=["*.doc", "*.md"]),
+        DelegationTester("targets", "B", paths=["releases/*/*"]),
+        DelegationTester("B", "C", paths=["releases/x/*"]),
+        DelegationTester("B", "D", paths=["releases/y/*.zip"]),
+    ],
+    target_files=[
+        TestTarget("targets", b"targetfile content", "targetfile"),
+        TestTarget("A", b"README by A", "README.md"),
+        TestTarget("C", b"x release by C", "releases/x/x_v1"),
+        TestTarget("D", b"y release by D", "releases/y/y_v1.zip"),
+        TestTarget("D", b"z release by D", "releases/z/z_v1.zip"),
+    ],
+)
+
+targets: DataSet = {
+    "no delegations": TargetTestCase("targetfile", True, []),
+    "targetpath matches wildcard": TargetTestCase("README.md", True, ["A"]),
+    "targetpath with separators x": TargetTestCase("releases/x/x_v1", True, ["B", "C"]),
+    "targetpath with separators y": TargetTestCase(
+        "releases/y/y_v1.zip", True, ["B", "D"]
+    ),
+    "targetpath is not delegated by all roles in the chain": TargetTestCase(
+        "releases/z/z_v1.zip", False, ["B"]
+    ),
+}
+
+
+targets_ids = targets.keys()
+targets_cases = targets.values()
+
+
+@pytest.mark.parametrize("target", targets_cases, ids=targets_ids)
+def test_targetfile_search(
+    client: ClientRunner, server: SimulatorServer, target: TargetTestCase
+) -> None:
+    exp_files = [*TOP_LEVEL_ROLE_NAMES, *target.visited_order]
+    exp_calls = [(role, 1) for role in target.visited_order]
+
+    init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+    init_repo(repo, delegations_tree)
+    exp_target = repo.artifacts[target.targetpath].target_file
+
+    # Call explicitly refresh to simplify the expected_calls list
+    client.refresh(init_data)
+    repo.metadata_statistics.clear()
+    client.download_target(init_data, target.targetpath)
+    try:
+        client.download_target(init_data, target.targetpath)
+        with open(os.path.join(client.target_infos_dir, "_taget_info")) as f:
+            local_target_info = TargetFile.from_dict(
+                json.loads(f.read()), target.targetpath
+            )
+            assert local_target_info.to_dict() == exp_target.to_dict()
+    except Exception:
+        assert not target.found
+
+    # repo prepends and appends [('root', 2), ('timestamp', None)]
+    # so we compare equality from the 2nd call to the 3rd-last
+    # call.
+    assert repo.metadata_statistics[2:-2] == exp_calls
     assert client._files_exist(exp_files)
