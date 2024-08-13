@@ -12,6 +12,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -102,7 +103,21 @@ func RefreshAndDownloadCmd(targetName string,
 	if err != nil {
 		return fmt.Errorf("target %s not found: %w", targetName, err)
 	}
-
+	// Save the target_info locally
+	metadataDirUp := filepath.Dir(FlagMetadataDir)
+	targetInfoDir := filepath.Join(metadataDirUp, "target_infos")
+	targetInfoJson, err := json.Marshal(targetInfo)
+	// save the target info if we can convert it to json bytes
+	// otherwise skip and let conformance test fail if it
+	// cannot read the file.
+	if err == nil {
+		writeErr := os.WriteFile(filepath.Join(targetInfoDir, "_taget_info"),
+								 targetInfoJson,
+								 0644)
+		if writeErr != nil {
+			return fmt.Errorf("failed to save target_info")
+		}
+	}
 	// target is available, so let's see if the target is already present locally
 	localPath := filepath.Join(targetDownloadDir, url.QueryEscape(targetName))
 	path, _, err := up.FindCachedTarget(targetInfo, localPath)

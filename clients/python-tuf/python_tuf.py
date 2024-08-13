@@ -6,6 +6,7 @@
 
 import argparse
 import logging
+import json
 import os
 import shutil
 import sys
@@ -50,6 +51,11 @@ def download_target(
     target_info = updater.get_targetinfo(target_name)
     if not target_info:
         raise RuntimeError(f"{target_name} not found in repository")
+    # Save the target_info locally
+    metadata_path_up, _ = os.path.split(metadata_dir)
+    target_info_path = os.path.join(metadata_path_up, "target_infos")
+    with open(os.path.join(target_info_path, "_taget_info"), "w") as f:
+        f.write(json.dumps(target_info.to_dict()))
     updater.download_target(target_info)
 
 

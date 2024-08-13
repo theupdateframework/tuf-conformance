@@ -31,8 +31,10 @@ class ClientRunner:
         # TODO: cleanup tempdir
         self.metadata_dir = os.path.join(self._tempdir.name, "metadata")
         self.artifact_dir = os.path.join(self._tempdir.name, "targets")
+        self.target_infos_dir = os.path.join(self._tempdir.name, "target_infos")
         os.mkdir(self.metadata_dir)
         os.mkdir(self.artifact_dir)
+        os.mkdir(self.target_infos_dir)
         self.test_name = test_name
 
     def get_downloaded_target_bytes(self) -> list[bytes]:
