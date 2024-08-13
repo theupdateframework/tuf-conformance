@@ -159,6 +159,7 @@ def test_new_snapshot_version_mismatch(
 
     assert client.refresh(init_data) == 1
     assert client._files_exist([Root.type, Timestamp.type])
+    assert repo.metadata_statistics[-1] == (Snapshot.type, 1)
 
 
 def test_new_timestamp_fast_forward_recovery(
