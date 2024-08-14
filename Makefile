@@ -16,6 +16,7 @@ ifndef FAKETIME
 	$(error "Program 'faketime' was not found. Please install it")
 endif
 
+DUMP_DIR = /tmp/tuf-conformance-dump
 
 #########################
 # tuf-conformance section
@@ -48,7 +49,10 @@ fix: dev
 
 PHONY: test-python-tuf
 test-python-tuf: dev faketime
-	./env/bin/pytest tuf_conformance --entrypoint "./env/bin/python ./clients/python-tuf/python_tuf.py" -vv
+	./env/bin/pytest tuf_conformance \
+		--entrypoint "./env/bin/python ./clients/python-tuf/python_tuf.py" \
+		--repository-dump-dir $(DUMP_DIR)
+	@echo Repository dump in $(DUMP_DIR)
 
 #########################
 # go-tuf section
@@ -56,8 +60,10 @@ test-python-tuf: dev faketime
 
 PHONY: test-go-tuf
 test-go-tuf: dev build-go-tuf faketime
-	./env/bin/pytest tuf_conformance --entrypoint "./clients/go-tuf/go-tuf"
-
+	./env/bin/pytest tuf_conformance \
+		--entrypoint "./clients/go-tuf/go-tuf" \
+		--repository-dump-dir $(DUMP_DIR)
+	@echo Repository dump in $(DUMP_DIR)
 PHONY: build-go-tuf
 build-go-tuf:
 	cd ./clients/go-tuf && go build .
