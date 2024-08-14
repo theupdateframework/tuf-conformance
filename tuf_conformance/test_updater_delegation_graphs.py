@@ -266,15 +266,16 @@ def test_targetfile_search(
     client.refresh(init_data)
     repo.metadata_statistics.clear()
     client.download_target(init_data, target.targetpath)
-    try:
-        client.download_target(init_data, target.targetpath)
-        with open(os.path.join(client.target_infos_dir, "_taget_info")) as f:
-            local_target_info = TargetFile.from_dict(
-                json.loads(f.read()), target.targetpath
-            )
-            assert local_target_info.to_dict() == exp_target.to_dict()
-    except Exception:
-        assert not target.found
+    if target.found:
+        assert client.download_target(init_data, target.targetpath) == 0
+        downloaded_target_path = client.get_downloaded_target_path()
+        downloaded_target_bytes = client.get_downloaded_target_bytes()[0]
+        local_target_file = TargetFile.from_data(
+            downloaded_target_path, downloaded_target_bytes
+        )
+        assert local_target_file.to_dict() == exp_target.to_dict()
+    else:
+        assert client.download_target(init_data, target.targetpath) == 1
 
     # repo prepends and appends [('root', 2), ('timestamp', None)]
     # so we compare equality from the 2nd call to the 3rd-last

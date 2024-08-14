@@ -31,10 +31,8 @@ class ClientRunner:
         # TODO: cleanup tempdir
         self.metadata_dir = os.path.join(self._tempdir.name, "metadata")
         self.artifact_dir = os.path.join(self._tempdir.name, "targets")
-        self.target_infos_dir = os.path.join(self._tempdir.name, "target_infos")
         os.mkdir(self.metadata_dir)
         os.mkdir(self.artifact_dir)
-        os.mkdir(self.target_infos_dir)
         self.test_name = test_name
 
     def get_downloaded_target_bytes(self) -> list[bytes]:
@@ -48,6 +46,15 @@ class ClientRunner:
                 artifact_bytes.append(f.read())
 
         return artifact_bytes
+
+    def get_downloaded_target_path(self) -> str:
+        """Returns list of downloaded artifact contents in order of modification time"""
+        artifacts = glob.glob(f"{self.artifact_dir}/**", recursive=True)
+        for artifact in sorted(artifacts, key=os.path.getmtime):
+            if not os.path.isfile(artifact):
+                continue
+            return artifact
+        return ""
 
     def _run(self, cmd: list[str]) -> int:
         popen = subprocess.Popen(cmd)  # noqa: S603
