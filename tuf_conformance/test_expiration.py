@@ -1,8 +1,7 @@
 import datetime
-import os
 from datetime import timezone
 
-from tuf.api.metadata import Metadata, Root, Snapshot, Targets, Timestamp
+from tuf.api.metadata import Root, Snapshot, Targets, Timestamp
 
 from tuf_conformance import utils
 from tuf_conformance.client_runner import ClientRunner
@@ -57,6 +56,7 @@ def test_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> None
         (Targets.type, 1),
         (Timestamp.type, 2),
     ]
+
 
 def test_targets_expired(client: ClientRunner, server: SimulatorServer) -> None:
     """Tests a case where the targets metadata is expired.

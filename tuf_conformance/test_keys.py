@@ -1,5 +1,5 @@
 from securesystemslib.signer import CryptoSigner
-from tuf.api.metadata import Root, Snapshot, Targets, Timestamp
+from tuf.api.metadata import Root, Snapshot
 
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.repository_simulator import RepositorySimulator

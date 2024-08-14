@@ -143,6 +143,7 @@ def test_unsigned_metadata(
     assert client.refresh(init_data) == 1
     assert client.trusted_roles() == trusted
 
+
 def test_timestamp_content_changes(
     client: ClientRunner, server: SimulatorServer
 ) -> None:

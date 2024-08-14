@@ -1,7 +1,6 @@
 import glob
 import os
 import subprocess
-from collections.abc import Iterable
 from tempfile import TemporaryDirectory
 
 from tuf.api.exceptions import StorageError
