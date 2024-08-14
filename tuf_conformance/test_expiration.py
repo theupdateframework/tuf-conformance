@@ -36,25 +36,27 @@ def test_root_expired(client: ClientRunner, server: SimulatorServer) -> None:
 
 def test_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> None:
     """Tests a case where the snapshot metadata is expired.
-    Checks whether the clients updates the snapshot metadata
-    if the repo has a newer version, but it is expired"""
+
+    Assert that client does not accept snapshot metadata that is a newer version but is
+    expired
+    """
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
-    client.refresh(init_data)
-    # Sanity check
-    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
+    assert client.refresh(init_data) == 0
 
     repo.snapshot.expires = utils.get_date_n_days_in_past(5)
     repo.update_snapshot()
 
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 1
 
-    # Check that the client still has the correct metadata files
-    # i.e. that it has not updated to the expired metadata
-    assert client._files_exist([Root.type, Timestamp.type])
-    assert client.version(Snapshot.type) == 1
-
+    # Check that the client has not accepted expired snapshot
+    assert client.trusted_roles() == [
+        (Root.type, 1),
+        (Snapshot.type, 1),
+        (Targets.type, 1),
+        (Timestamp.type, 2),
+    ]
 
 def test_targets_expired(client: ClientRunner, server: SimulatorServer) -> None:
     """Tests a case where the targets metadata is expired.
@@ -64,18 +66,19 @@ def test_targets_expired(client: ClientRunner, server: SimulatorServer) -> None:
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
 
     repo.targets.expires = utils.get_date_n_days_in_past(5)
     repo.update_snapshot()
 
-    assert client.init_client(init_data) == 0
+    assert client.refresh(init_data) == 0
 
-    # Check that the client still has the correct metadata files
-    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
-
-    # Client should not bump targets version, because it has expired
-    assert client.version(Targets.type) == 1
+    # Check that the client still has not accepted expired targets
+    assert client.trusted_roles() == [
+        (Root.type, 1),
+        (Snapshot.type, 2),
+        (Targets.type, 1),
+        (Timestamp.type, 2),
+    ]
 
 
 def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None:
@@ -96,17 +99,12 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
     now = datetime.datetime.now(timezone.utc)
     repo.timestamp.expires = now + datetime.timedelta(days=7)
 
-    # Refresh and perform sanity check
+    # Refresh
     client.refresh(init_data)
-    for role in ["timestamp", "snapshot", "targets"]:
-        md = Metadata.from_file(os.path.join(client.metadata_dir, f"{role}.json"))
-        assert md.signed.version == 1
 
     repo.targets.version += 1
-    repo.update_snapshot()
-
     repo.timestamp.expires = now + datetime.timedelta(days=21)
-    repo.update_timestamp()
+    repo.update_snapshot()
 
     # Mocking time so that local timestamp has expired
     # but the new timestamp has not
@@ -115,10 +113,12 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
     # Assert that the final version of timestamp/snapshot is version 2
     # which means a successful refresh is performed
     # with expired local metadata.
-
-    assert client.version(Targets.type) == 2
-    assert client.version(Timestamp.type) == 3
-    assert client.version(Snapshot.type) == 2
+    assert client.trusted_roles() == [
+        (Root.type, 1),
+        (Snapshot.type, 2),
+        (Targets.type, 2),
+        (Timestamp.type, 2),
+    ]
 
 
 def test_timestamp_expired(client: ClientRunner, server: SimulatorServer) -> None:
@@ -129,13 +129,15 @@ def test_timestamp_expired(client: ClientRunner, server: SimulatorServer) -> Non
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    assert client.version(Timestamp.type) == 1
 
     repo.timestamp.expires = utils.get_date_n_days_in_past(5)
     repo.update_timestamp()  # v2
 
-    client.refresh(init_data)
-
-    # Check that client resisted rollback attack
-    assert client._files_exist([Root.type])
-    assert client.version(Timestamp.type) == 1
+    # Check that client does not accept expired timestamp
+    assert client.refresh(init_data) == 1
+    assert client.trusted_roles() == [
+        (Root.type, 1),
+        (Snapshot.type, 1),
+        (Targets.type, 1),
+        (Timestamp.type, 1),
+    ]

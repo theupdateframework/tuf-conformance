@@ -164,9 +164,8 @@ def test_new_snapshot_version_mismatch(
 ) -> None:
     """Tests that the client does not download the snapshot
     metadata if the repo has bumped the snapshot version in
-    the snapshot metadata but not in the timestamp.
-    The client should have only root and timestamp
-    when it refreshes."""
+    the snapshot metadata but not in timestamp.meta.
+    """
 
     init_data, repo = server.new_test(client.test_name)
 
@@ -176,7 +175,7 @@ def test_new_snapshot_version_mismatch(
     repo.snapshot.version += 1
 
     assert client.refresh(init_data) == 1
-    assert client._files_exist([Root.type, Timestamp.type])
+    assert client.trusted_roles() == [(Root.type, 1), (Timestamp.type, 1)]
     assert repo.metadata_statistics[-1] == (Snapshot.type, 1)
 
 
@@ -221,8 +220,6 @@ def test_snapshot_rollback_with_local_snapshot_hash_mismatch(
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
-    client.refresh(init_data)
-    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
 
     # Initialize all metadata and assign targets
     # version higher than 1.
