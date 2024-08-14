@@ -23,12 +23,12 @@ runs:
       with:
         python-version: "3.11"
         cache: "pip"
+        cache-dependency-path: "${{ github.action_path }}/pyproject.toml"
 
     - name: Install test
       run: |
         echo "::group::Install test suite and dependencies"
         sudo apt install faketime
-        pip install -e "${{ github.action_path }}"
         echo "::endgroup::"
       shell: bash
 
@@ -48,7 +48,7 @@ runs:
         fi
 
         # run test suite
-        pytest -v "$TEST_LOCATION" \
+        "${{ github.action_path }}/env/bin/pytest" -v "$TEST_LOCATION" \
           --entrypoint "$ENTRYPOINT" \
           --expected-failures "$EXPECTED_FAILURES" \
           --repository-dump-dir ./test-repositories \
