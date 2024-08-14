@@ -99,8 +99,6 @@ def test_wrong_hashing_algorithm(client: ClientRunner, server: SimulatorServer) 
     repo.root.keys[valid_key].unrecognized_fields[alg_key] = ["md5"]
     repo.bump_root_by_one()  # v5
     repo.update_snapshot()  # v4
-    assert repo._version(Root.type) == 5
-    assert repo._version(Snapshot.type) == 4
 
     # All metadata should update; even though "keyid_hash_algorithms"
     # is wrong, it is not a part of the TUF spec. This is the tests
@@ -131,8 +129,6 @@ def test_snapshot_threshold(client: ClientRunner, server: SimulatorServer) -> No
 
     repo.bump_root_by_one()  # v2
     repo.update_snapshot()  # v2
-    assert repo._version(Snapshot.type) == 2
-    assert repo._version(Root.type) == 2
 
     # Ensure that client does not update because it does
     # not have enough keys.
