@@ -112,16 +112,16 @@ class ClientRunner:
         local_metadata_files = sorted(os.listdir(self.metadata_dir))
         return all(x in local_metadata_files for x in expected_files)
 
-    def trusted_roles(self) -> dict[str, int]:
+    def trusted_roles(self) -> list[tuple[str, int]]:
         """Return dict of current trusted role names and versions
 
         Note that delegated role names may be encoded in a application specific way"""
-        roles = {}
+        roles = []
         for filename in sorted(os.listdir(self.metadata_dir)):
             if not filename.endswith(".json"):
                 continue
             rolename = filename.removesuffix(".json")
             md = Metadata.from_file(os.path.join(self.metadata_dir, filename))
-            roles[rolename] = md.signed.version
+            roles.append((rolename, md.signed.version))
 
         return roles
