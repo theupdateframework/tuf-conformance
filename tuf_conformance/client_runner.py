@@ -5,6 +5,7 @@ from collections.abc import Iterable
 from tempfile import TemporaryDirectory
 
 from tuf.api.exceptions import StorageError
+from tuf.api.metadata import Metadata
 
 from tuf_conformance.metadata import MetadataTest
 from tuf_conformance.simulator_server import ClientInitData, SimulatorServer
@@ -76,6 +77,7 @@ class ClientRunner:
         return self._run(cmd)
 
     def download_target(self, data: ClientInitData, target_name: str) -> int:
+        self._server.debug_dump(self.test_name)
         cmd = [
             *self._cmd,
             "--metadata-url",
@@ -110,7 +112,16 @@ class ClientRunner:
         local_metadata_files = sorted(os.listdir(self.metadata_dir))
         return all(x in local_metadata_files for x in expected_files)
 
-    def _content(self, role: str) -> bytes:
-        """Return role metadata as bytes"""
-        with open(os.path.join(self.metadata_dir, f"{role}.json"), "rb") as f:
-            return f.read()
+    def trusted_roles(self) -> list[tuple[str, int]]:
+        """Return dict of current trusted role names and versions
+
+        Note that delegated role names may be encoded in a application specific way"""
+        roles = []
+        for filename in sorted(os.listdir(self.metadata_dir)):
+            if not filename.endswith(".json"):
+                continue
+            rolename = filename.removesuffix(".json")
+            md = Metadata.from_file(os.path.join(self.metadata_dir, filename))
+            roles.append((rolename, md.signed.version))
+
+        return roles
