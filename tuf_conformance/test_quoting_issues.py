@@ -6,9 +6,6 @@ from tuf.api.metadata import DelegatedRole, Targets
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import SimulatorServer
 
-# tuple of
-#  * name of delegated role,
-#  * do we expect the role to be found in client trusted roles
 unusual_role_names = [
     "?",
     "#",
