@@ -1,0 +1,65 @@
+{
+ "signatures": [
+  {
+   "keyid": "aa61e09f6af7662ac686cf0c6364079f63d3e7a86836684eeced93eace3acd81",
+   "sig": "3045022100e691c6fa8f401a7f6cb6f2fbf5d2596bf50755acdc95d53bbac1bb7f5c2d6bfc02206a85c8ea8015a63d9903588b3bbc5bd563e043cf43fc1b9198a9112e15f2df53"
+  }
+ ],
+ "signed": {
+  "_type": "root",
+  "consistent_snapshot": true,
+  "expires": "2044-08-10T10:05:04Z",
+  "keys": {
+   "a54e905f3e03bb0cccdc954bd40d4d29b5c1a2a95c2777f10f9c63a503c7f777": {
+    "keytype": "ecdsa",
+    "keyval": {
+     "public": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEu+ebm3VUg6U2b0IIeR6NFZU7uxkL\nR1sVLxV8SEW7G+AMXMasEQf5daxfwVMP1kuEkhGs3mBYLkYXlWDh9BNSxg==\n-----END PUBLIC KEY-----\n"
+    },
+    "scheme": "ecdsa-sha2-nistp256",
+    "x-tuf-on-ci-online-uri": "gcpkms:projects/python-tuf-kms/locations/global/keyRings/git-repo-demo/cryptoKeys/online/cryptoKeyVersions/1"
+   },
+   "aa61e09f6af7662ac686cf0c6364079f63d3e7a86836684eeced93eace3acd81": {
+    "keytype": "ecdsa",
+    "keyval": {
+     "public": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEohqIdE+yTl4OxpX8ZxNUPrg3SL9H\nBDnhZuceKkxy2oMhUOxhWweZeG3bfM1T4ZLnJimC6CAYVU5+F5jZCoftRw==\n-----END PUBLIC KEY-----\n"
+    },
+    "scheme": "ecdsa-sha2-nistp256",
+    "x-tuf-on-ci-keyowner": "@jku"
+   }
+  },
+  "roles": {
+   "root": {
+    "keyids": [
+     "aa61e09f6af7662ac686cf0c6364079f63d3e7a86836684eeced93eace3acd81"
+    ],
+    "threshold": 1
+   },
+   "snapshot": {
+    "keyids": [
+     "a54e905f3e03bb0cccdc954bd40d4d29b5c1a2a95c2777f10f9c63a503c7f777"
+    ],
+    "threshold": 1,
+    "x-tuf-on-ci-expiry-period": 7300,
+    "x-tuf-on-ci-signing-period": 60
+   },
+   "targets": {
+    "keyids": [
+     "aa61e09f6af7662ac686cf0c6364079f63d3e7a86836684eeced93eace3acd81"
+    ],
+    "threshold": 1
+   },
+   "timestamp": {
+    "keyids": [
+     "a54e905f3e03bb0cccdc954bd40d4d29b5c1a2a95c2777f10f9c63a503c7f777"
+    ],
+    "threshold": 1,
+    "x-tuf-on-ci-expiry-period": 7300,
+    "x-tuf-on-ci-signing-period": 1
+   }
+  },
+  "spec_version": "1.0.31",
+  "version": 1,
+  "x-tuf-on-ci-expiry-period": 7300,
+  "x-tuf-on-ci-signing-period": 60
+ }
+}

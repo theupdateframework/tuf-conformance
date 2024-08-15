@@ -4,7 +4,7 @@ from collections.abc import Iterator
 import pytest
 
 from tuf_conformance.client_runner import ClientRunner
-from tuf_conformance.simulator_server import SimulatorServer
+from tuf_conformance.simulator_server import SimulatorServer, StaticServer
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -44,6 +44,16 @@ def server(pytestconfig: pytest.Config) -> Iterator[SimulatorServer]:
 
 
 @pytest.fixture
+def static_server(pytestconfig: pytest.Config) -> Iterator[StaticServer]:
+    """
+    Server that serves static repositories
+    """
+    server = StaticServer()
+    yield server
+    server.server_close()
+
+
+@pytest.fixture
 def client(
     pytestconfig: pytest.Config, server: SimulatorServer, request: pytest.FixtureRequest
 ) -> ClientRunner:
@@ -55,6 +65,22 @@ def client(
         entrypoint = os.path.join(pytestconfig.invocation_params.dir, entrypoint)
 
     return ClientRunner(entrypoint, server, request.node.name)
+
+
+@pytest.fixture
+def static_client(
+    pytestconfig: pytest.Config,
+    static_server: StaticServer,
+    request: pytest.FixtureRequest,
+) -> ClientRunner:
+    """
+    Client for running static repository tests.
+    """
+    entrypoint = pytestconfig.getoption("--entrypoint")
+    if not os.path.isabs(entrypoint):
+        entrypoint = os.path.join(pytestconfig.invocation_params.dir, entrypoint)
+
+    return ClientRunner(entrypoint, static_server, request.node.name)
 
 
 @pytest.fixture(autouse=True)
