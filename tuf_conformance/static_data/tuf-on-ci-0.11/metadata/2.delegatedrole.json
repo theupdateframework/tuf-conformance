@@ -1,0 +1,28 @@
+{
+ "signatures": [
+  {
+   "keyid": "aa61e09f6af7662ac686cf0c6364079f63d3e7a86836684eeced93eace3acd81",
+   "sig": "30440220396123e307132efdc6910ab3a82a1106d98f8720be7bd4c86ac9481c622d531f02207467ef8d27c9f7bae24c09c7392dfde1b0ad818c96fac1f413f290327611a07d"
+  },
+  {
+   "keyid": "01104111d18f559cd1ca33a2dd91a2100f2812ffe02c9f70a0e5c4d915b453ac",
+   "sig": ""
+  }
+ ],
+ "signed": {
+  "_type": "targets",
+  "expires": "2044-08-10T10:18:49Z",
+  "spec_version": "1.0.31",
+  "targets": {
+   "delegatedrole/artifact": {
+    "hashes": {
+     "sha256": "45f337ee451b4c098d121d09cc224bacc7794503ac58a47a78cfe7ebefb7fab3"
+    },
+    "length": 34
+   }
+  },
+  "version": 2,
+  "x-tuf-on-ci-expiry-period": 7300,
+  "x-tuf-on-ci-signing-period": 60
+ }
+}

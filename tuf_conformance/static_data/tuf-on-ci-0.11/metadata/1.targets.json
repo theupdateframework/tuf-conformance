@@ -1,0 +1,54 @@
+{
+ "signatures": [
+  {
+   "keyid": "aa61e09f6af7662ac686cf0c6364079f63d3e7a86836684eeced93eace3acd81",
+   "sig": "3044022027258898a89d38218fce7212c24659ec771105a3532d38ea4ef0d2fb84d9e7ff02206e086d154e3cba72e9c55941d85c61f74eb425e2e90e308636bb1883287290c0"
+  }
+ ],
+ "signed": {
+  "_type": "targets",
+  "delegations": {
+   "keys": {
+    "01104111d18f559cd1ca33a2dd91a2100f2812ffe02c9f70a0e5c4d915b453ac": {
+     "keytype": "ecdsa",
+     "keyval": {
+      "public": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1wgTb0BVTvCiDlaPmnUfXOLubQMj\nUxjiafwKLMgiRD0fK+XLSKK6fJjrzNkZCIYG78AUmhbRskgJgOatWD+Z9w==\n-----END PUBLIC KEY-----\n"
+     },
+     "scheme": "ecdsa-sha2-nistp256",
+     "x-tuf-on-ci-keyowner": "@-test-user-"
+    },
+    "aa61e09f6af7662ac686cf0c6364079f63d3e7a86836684eeced93eace3acd81": {
+     "keytype": "ecdsa",
+     "keyval": {
+      "public": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEohqIdE+yTl4OxpX8ZxNUPrg3SL9H\nBDnhZuceKkxy2oMhUOxhWweZeG3bfM1T4ZLnJimC6CAYVU5+F5jZCoftRw==\n-----END PUBLIC KEY-----\n"
+     },
+     "scheme": "ecdsa-sha2-nistp256",
+     "x-tuf-on-ci-keyowner": "@jku"
+    }
+   },
+   "roles": [
+    {
+     "keyids": [
+      "aa61e09f6af7662ac686cf0c6364079f63d3e7a86836684eeced93eace3acd81",
+      "01104111d18f559cd1ca33a2dd91a2100f2812ffe02c9f70a0e5c4d915b453ac"
+     ],
+     "name": "delegatedrole",
+     "paths": [
+      "delegatedrole/*",
+      "delegatedrole/*/*",
+      "delegatedrole/*/*/*",
+      "delegatedrole/*/*/*/*"
+     ],
+     "terminating": true,
+     "threshold": 1
+    }
+   ]
+  },
+  "expires": "2044-08-10T10:09:31Z",
+  "spec_version": "1.0.31",
+  "targets": {},
+  "version": 1,
+  "x-tuf-on-ci-expiry-period": 7300,
+  "x-tuf-on-ci-signing-period": 60
+ }
+}
