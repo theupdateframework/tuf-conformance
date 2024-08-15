@@ -8,7 +8,11 @@ from tuf.api.exceptions import StorageError
 from tuf.api.metadata import Metadata
 
 from tuf_conformance.metadata import MetadataTest
-from tuf_conformance.simulator_server import ClientInitData, SimulatorServer
+from tuf_conformance.simulator_server import (
+    ClientInitData,
+    SimulatorServer,
+    StaticServer,
+)
 
 
 class ClientRunner:
@@ -20,7 +24,7 @@ class ClientRunner:
     ClientRunner manages client resources (like the cache paths etc)"""
 
     def __init__(
-        self, client_cmd: str, server: SimulatorServer, test_name: str
+        self, client_cmd: str, server: SimulatorServer | StaticServer, test_name: str
     ) -> None:
         self._server = server
         self._cmd = client_cmd.split(" ")

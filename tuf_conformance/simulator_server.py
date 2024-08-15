@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from os import path
@@ -82,3 +83,47 @@ class SimulatorServer(ThreadingHTTPServer):
 
     def debug_dump(self, test_name: str) -> None:
         self.repos[test_name].debug_dump()
+
+
+class StaticServer(ThreadingHTTPServer):
+    """Web server to serve static repositories"""
+
+    def __init__(self) -> None:
+        class _StaticReqHandler(BaseHTTPRequestHandler):
+            def do_GET(self) -> None:  # noqa: N802
+                filepath = os.path.join("tuf_conformance", "static_data", self.path[1:])
+                try:
+                    with open(filepath, "rb") as f:
+                        data = f.read()
+                except OSError:
+                    self.send_error(404, f" {self.path} not found")
+                    return
+
+                self.send_response(200)
+                self.send_header("Content-length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+
+        super().__init__(("127.0.0.1", 0), _StaticReqHandler)
+        self.timeout = 0
+
+    def new_test(self, static_dir: str) -> tuple[ClientInitData, str]:
+        sub_dir = os.path.join("tuf_conformance", "static_data", static_dir)
+        with open(os.path.join(sub_dir, "initial_root.json"), "rb") as f:
+            initial_root = f.read()
+
+        host, port = self.server_address[0], self.server_address[1]
+        assert isinstance(host, str)
+        client_data = ClientInitData(
+            f"http://{host}:{port}/{static_dir}/metadata/",
+            f"http://{host}:{port}/{static_dir}/targets/",
+            initial_root,
+        )
+
+        with open(os.path.join(sub_dir, "targetpath")) as f:
+            targetpath = f.readline().strip("\n")
+
+        return client_data, targetpath
+
+    def debug_dump(self, test_name: str) -> None:
+        pass  # not implemented
