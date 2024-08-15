@@ -1,5 +1,5 @@
 from securesystemslib.signer import CryptoSigner
-from tuf.api.metadata import Root, Snapshot, Targets, Timestamp
+from tuf.api.metadata import Root, Snapshot
 
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.repository_simulator import RepositorySimulator
@@ -45,10 +45,7 @@ def test_root_has_keys_but_not_snapshot(
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
-    client.refresh(init_data)
-    # Sanity checks
-    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
-    assert client.version(Snapshot.type) == 1
+    assert client.refresh(init_data) == 0
 
     initial_setup_for_key_threshold(client, repo, init_data)
 
@@ -56,12 +53,14 @@ def test_root_has_keys_but_not_snapshot(
     repo.root.roles[Snapshot.type].threshold = 5
     repo.bump_root_by_one()  # v5
 
-    # Updating should fail. Root should bump, but not snapshot
+    # Refresh should fail: root updates but there's no new snapshot:
+    # The existing snapshot does not meet threshold anymore.
+    # NOTE: we don't actually expect clients to delete the
+    # file from trusted_roles() at this point
     assert client.refresh(init_data) == 1
     assert client.version(Root.type) == 5
-    assert client.version(Snapshot.type) == 3
 
-    # Add two invalid keys only to root and expect the client
+    # Add two keyids only to root and expect the client
     # to fail updating
     signer = CryptoSigner.generate_ecdsa()
 
@@ -137,16 +136,14 @@ def test_snapshot_threshold(client: ClientRunner, server: SimulatorServer) -> No
 
 
 def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> None:
-    # Set/keep a threshold of 10 keys. All the keyids are different,
-    # but the keys are all identical. As such, the snapshot metadata
-    # has been signed by 1 key.
+    """Test multiple identical keyids, try to fake threshold
+
+    Client should either not accept metadata with duplicate keyids in a role,
+    or it should not allow the duplicate keyids to count in threshold calculation
+    """
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
-    client.refresh(init_data)
-    # Sanity checks
-    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
-    assert client.version(Snapshot.type) == 1
 
     signer = CryptoSigner.generate_ecdsa()
 
@@ -156,27 +153,15 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
 
     repo.add_signer(Snapshot.type, signer)
 
-    repo.bump_root_by_one()
-    assert len(repo.root.roles["snapshot"].keyids) == 10
-
     # Set a threshold that will be covered but only by
     # the same key multiple times and not separate keys.
     repo.root.roles[Snapshot.type].threshold = 6
     repo.bump_root_by_one()
 
-    repo.update_timestamp()
-    repo.update_snapshot()  # v2
-
-    # Sanity check that the clients snapshot
-    # metadata is version 1
-    assert client.version(Snapshot.type) == 1
-
-    # This should fail because the metadata should not have
-    # the same key in more than 1 keyids. We check failure
-    # here, and further down we check that the clients
-    # metadata has not been updated.
+    # This should fail for one of two reasons:
+    # 1. client does not accept root v2 metadata that contains duplicate keyids or
+    # 2. client did accept root v2 but then snapshot threshold is not reached
     assert client.refresh(init_data) == 1
 
-    # The clients snapshot metadata should still
-    # be version 1
-    assert client.version(Snapshot.type) == 1
+    # client should not have accepted snapshot
+    assert client.version(Snapshot.type) is None

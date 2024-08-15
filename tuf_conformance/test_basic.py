@@ -111,17 +111,17 @@ def test_unsigned_initial_root(client: ClientRunner, server: SimulatorServer) ->
 #  * rolename that will be improperly signed
 #  * expected trusted metadata versions after refresh fails
 unsigned_cases = [
-    ("root", {"root": 1, "timestamp": None, "snapshot": None, "targets": None}),
-    ("timestamp", {"root": 1, "timestamp": None, "snapshot": None, "targets": None}),
-    ("snapshot", {"root": 1, "timestamp": 1, "snapshot": None, "targets": None}),
-    ("targets", {"root": 1, "timestamp": 1, "snapshot": 1, "targets": None}),
+    ("root", [("root", 1)]),
+    ("timestamp", [("root", 1)]),
+    ("snapshot", [("root", 1), ("timestamp", 1)]),
+    ("targets", [("root", 1), ("snapshot", 1), ("timestamp", 1)]),
 ]
 unsigned_ids = [case[0] for case in unsigned_cases]
 
 
-@pytest.mark.parametrize("role, trusted_md", unsigned_cases, ids=unsigned_ids)
+@pytest.mark.parametrize("role, trusted", unsigned_cases, ids=unsigned_ids)
 def test_unsigned_metadata(
-    client: ClientRunner, server: SimulatorServer, role: str, trusted_md: dict[str, int]
+    client: ClientRunner, server: SimulatorServer, role: str, trusted: tuple[str, int]
 ) -> None:
     """Test refresh when a top-level role is incorrectly signed.
 
@@ -141,8 +141,7 @@ def test_unsigned_metadata(
 
     # Verify that refresh fails and that current trusted metadata is as expected
     assert client.refresh(init_data) == 1
-    for trusted_role, ver in trusted_md.items():
-        assert client.version(trusted_role) == ver
+    assert client.trusted_roles() == trusted
 
 
 def test_timestamp_content_changes(
@@ -156,8 +155,6 @@ def test_timestamp_content_changes(
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    # Sanity check
-    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
 
     initial_timestamp_meta_ver = repo.timestamp.snapshot_meta.version
     # Change timestamp without bumping its version in order to test if a new
@@ -177,8 +174,6 @@ def test_new_targets_hash_mismatch(
 
     assert client.init_client(init_data) == 0
     client.refresh(init_data)
-    # Sanity check
-    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type])
 
     repo.compute_metafile_hashes_length = True
     repo.update_snapshot()
@@ -200,17 +195,19 @@ def test_new_targets_hash_mismatch(
 def test_new_targets_version_mismatch(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
-    # Check against snapshot role's targets version
+    """Create new targets version. Check that client does not
+    download it as the version is not in snapshot.meta
+    """
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
-    client.refresh(init_data)
-    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
+    assert client.refresh(init_data) == 0
 
     repo.targets.version += 1
-    client.refresh(init_data)
-    # Check that the client still has the correct metadata files
-    assert client._files_exist([Root.type, Timestamp.type, Snapshot.type, Targets.type])
+    assert client.refresh(init_data) == 0
+    # Check that the client still has the correct targets version
+    assert client.version(Targets.type) == 1
+    assert repo.metadata_statistics[-1] == (Timestamp.type, None)
 
 
 def test_timestamp_eq_versions_check(
