@@ -211,12 +211,11 @@ def test_new_timestamp_fast_forward_recovery(
     assert client.version(Timestamp.type) == 1
 
 
-def test_snapshot_rollback_with_local_snapshot_hash_mismatch(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    # Test triggering snapshot rollback check on a newly downloaded snapshot
-    # when the local snapshot is loaded even when there is a hash mismatch
-    # with timestamp.snapshot_meta.
+def test_targets_rollback(client: ClientRunner, server: SimulatorServer) -> None:
+    """Test targets rollback
+
+    the targets version info in local snapshot.meta should get used in a rollback check.
+    """
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
@@ -224,21 +223,51 @@ def test_snapshot_rollback_with_local_snapshot_hash_mismatch(
     # Initialize all metadata and assign targets
     # version higher than 1.
     repo.targets.version = 2
-    repo.update_snapshot()
+    repo.update_snapshot()  # v2
     assert client.refresh(init_data) == 0
-    assert client.version(Targets.type) == 2
-
-    # By raising this flag on timestamp update the simulator would:
-    # 1) compute the hash of the new modified version of snapshot
-    # 2) assign the hash to timestamp.snapshot_meta
-    # The purpose is to create a hash mismatch between timestamp.meta and
-    # the local snapshot, but to have hash match between timestamp.meta and
-    # the next snapshot version.
-    repo.compute_metafile_hashes_length = True
 
     # The new targets must have a lower version than the local trusted one.
     repo.targets.version = 1
-    repo.update_snapshot()
+    repo.update_snapshot()  # v3
 
-    # Client refresh should fail because there is a hash mismatch.
+    # Client refresh should fail because of targets rollback
     assert client.refresh(init_data) == 1
+    assert client.version(Snapshot.type) == 2
+    assert client.version(Targets.type) == 2
+
+
+def test_targets_rollback_with_local_snapshot_hash_mismatch(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    """Test targets rollback attack check when metafile hashes are used.
+
+    the targets version info in local (old) snapshot.meta should get used in a rollback
+    check even though the local (old) snapshot hash does not match the info in new
+    timestamp.snapshot_meta.
+    """
+    init_data, repo = server.new_test(client.test_name)
+
+    # By raising this flag on timestamp update the simulator would:
+    # 1) compute the hash of new snapshots
+    # 2) assign the hash to timestamp.snapshot_meta
+    # The purpose is to create a hash mismatch between timestamp.meta and
+    # the local snapshot, but to have hash match between timestamp.meta and
+    # a future snapshot version.
+    repo.compute_metafile_hashes_length = True
+
+    assert client.init_client(init_data) == 0
+
+    # Initialize all metadata and assign targets
+    # version higher than 1.
+    repo.targets.version = 2
+    repo.update_snapshot()  # v2
+    assert client.refresh(init_data) == 0
+
+    # The new targets must have a lower version than the local trusted one.
+    repo.targets.version = 1
+    repo.update_snapshot()  # v3
+
+    # Client refresh should fail because of targets rollback
+    assert client.refresh(init_data) == 1
+    assert client.version(Snapshot.type) == 2
+    assert client.version(Targets.type) == 2
