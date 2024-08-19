@@ -62,8 +62,9 @@ logger = logging.getLogger(__name__)
 SPEC_VER = ".".join(SPECIFICATION_VERSION)
 
 # Generate some signers once (to avoid all tests generating them)
-RSA_SIGNERS = [
-    CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256") for _ in range(8)
+NUM_SIGNERS = 8
+RSA_PKCS_SIGNERS = [
+    CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256") for _ in range(NUM_SIGNERS)
 ]
 
 
@@ -109,7 +110,7 @@ class RepositorySimulator:
         now = datetime.datetime.utcnow()
         self.safe_expiry = now.replace(microsecond=0) + datetime.timedelta(days=30)
 
-        self._rsa_signers = RSA_SIGNERS.copy()
+        self._rsa_pkcs_signers = RSA_PKCS_SIGNERS.copy()
 
         # initialize a basic repository structure
         self._initialize()
@@ -147,6 +148,20 @@ class RepositorySimulator:
             if role not in [Root.type, Timestamp.type, Snapshot.type]:
                 yield role, md.signed
 
+    def new_signer(
+        self, keytype: str = "rsa", scheme: str = "rsa-pkcs1v15-sha256"
+    ) -> CryptoSigner:
+        """Return a Signer (from a set of pre-generated signers)."""
+        try:
+            if keytype == "rsa" and scheme == "rsa-pkcs1v15-sha256":
+                return self._rsa_pkcs_signers.pop()
+        except IndexError:
+            raise RuntimeError(
+                f"Test ran out of {keytype}/{scheme} keys (NUM_SIGNERS = {NUM_SIGNERS})"
+            )
+
+        raise ValueError("{keytype}/{scheme} not supported yet")
+
     def add_signer(self, role: str, signer: CryptoSigner) -> None:
         if role not in self.signers:
             self.signers[role] = {}
@@ -158,7 +173,7 @@ class RepositorySimulator:
         self.root.roles[role].keyids.clear()
         self.signers[role].clear()
         for _ in range(0, self.root.roles[role].threshold):
-            signer = self._rsa_signers.pop()
+            signer = self.new_signer()
             self.root.add_key(signer.public_key, role)
             self.add_signer(role, signer)
 
@@ -171,7 +186,7 @@ class RepositorySimulator:
         self.mds[Root.type] = MetadataTest(RootTest(expires=self.safe_expiry))
 
         for role in TOP_LEVEL_ROLE_NAMES:
-            signer = self._rsa_signers.pop()
+            signer = self.new_signer()
             self.root.add_key(signer.public_key, role)
             self.add_signer(role, signer)
 
@@ -345,7 +360,7 @@ class RepositorySimulator:
         delegator.delegations.roles[role.name] = role
 
         # By default add one new key for the role
-        signer = self._rsa_signers.pop()
+        signer = self.new_signer()
         delegator.add_key(signer.public_key, role.name)
         self.add_signer(role.name, signer)
 
@@ -371,7 +386,7 @@ class RepositorySimulator:
         ):
             raise ValueError("Can't add a succinct_roles when delegated roles are used")
 
-        signer = self._rsa_signers.pop()
+        signer = self.new_signer()
         succinct_roles = SuccinctRoles([], 1, bit_length, name_prefix)
         delegator.delegations = Delegations({}, None, succinct_roles)
 
@@ -411,7 +426,7 @@ class RepositorySimulator:
 
     def add_key(self, role: str, delegator_name: str = Root.type) -> None:
         """add new public key to delegating metadata and store the signer for role"""
-        signer = self._rsa_signers.pop()
+        signer = self.new_signer()
 
         # Add key to delegating metadata
         delegator = self.mds[delegator_name].signed

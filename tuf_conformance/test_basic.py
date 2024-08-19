@@ -15,7 +15,6 @@ def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -
     Run a refresh, verify client trusted metadata and requests made by the client
     """
     init_data, repo = server.new_test(client.test_name)
-    print(init_data.trusted_root)
     # Run the test: step 1:  initialize client
     assert client.init_client(init_data) == 0
 
