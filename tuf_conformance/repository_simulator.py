@@ -61,6 +61,11 @@ logger = logging.getLogger(__name__)
 
 SPEC_VER = ".".join(SPECIFICATION_VERSION)
 
+# Generate some signers once (to avoid all tests generating them)
+RSA_SIGNERS = [
+    CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256") for _ in range(8)
+]
+
 
 @dataclass
 class Artifact:
@@ -103,6 +108,8 @@ class RepositorySimulator:
 
         now = datetime.datetime.utcnow()
         self.safe_expiry = now.replace(microsecond=0) + datetime.timedelta(days=30)
+
+        self._rsa_signers = RSA_SIGNERS.copy()
 
         # initialize a basic repository structure
         self._initialize()
@@ -151,7 +158,7 @@ class RepositorySimulator:
         self.root.roles[role].keyids.clear()
         self.signers[role].clear()
         for _ in range(0, self.root.roles[role].threshold):
-            signer = CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256")
+            signer = self._rsa_signers.pop()
             self.root.add_key(signer.public_key, role)
             self.add_signer(role, signer)
 
@@ -164,7 +171,7 @@ class RepositorySimulator:
         self.mds[Root.type] = MetadataTest(RootTest(expires=self.safe_expiry))
 
         for role in TOP_LEVEL_ROLE_NAMES:
-            signer = CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256")
+            signer = self._rsa_signers.pop()
             self.root.add_key(signer.public_key, role)
             self.add_signer(role, signer)
 
@@ -338,7 +345,7 @@ class RepositorySimulator:
         delegator.delegations.roles[role.name] = role
 
         # By default add one new key for the role
-        signer = CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256")
+        signer = self._rsa_signers.pop()
         delegator.add_key(signer.public_key, role.name)
         self.add_signer(role.name, signer)
 
@@ -364,7 +371,7 @@ class RepositorySimulator:
         ):
             raise ValueError("Can't add a succinct_roles when delegated roles are used")
 
-        signer = CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256")
+        signer = self._rsa_signers.pop()
         succinct_roles = SuccinctRoles([], 1, bit_length, name_prefix)
         delegator.delegations = Delegations({}, None, succinct_roles)
 
@@ -404,7 +411,7 @@ class RepositorySimulator:
 
     def add_key(self, role: str, delegator_name: str = Root.type) -> None:
         """add new public key to delegating metadata and store the signer for role"""
-        signer = CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256")
+        signer = self._rsa_signers.pop()
 
         # Add key to delegating metadata
         delegator = self.mds[delegator_name].signed
