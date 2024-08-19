@@ -151,7 +151,7 @@ class RepositorySimulator:
         self.root.roles[role].keyids.clear()
         self.signers[role].clear()
         for _ in range(0, self.root.roles[role].threshold):
-            signer = CryptoSigner.generate_ecdsa()
+            signer = CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256")
             self.root.add_key(signer.public_key, role)
             self.add_signer(role, signer)
 
@@ -164,7 +164,7 @@ class RepositorySimulator:
         self.mds[Root.type] = MetadataTest(RootTest(expires=self.safe_expiry))
 
         for role in TOP_LEVEL_ROLE_NAMES:
-            signer = CryptoSigner.generate_ecdsa()
+            signer = CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256")
             self.root.add_key(signer.public_key, role)
             self.add_signer(role, signer)
 
@@ -338,7 +338,7 @@ class RepositorySimulator:
         delegator.delegations.roles[role.name] = role
 
         # By default add one new key for the role
-        signer = CryptoSigner.generate_ecdsa()
+        signer = CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256")
         delegator.add_key(signer.public_key, role.name)
         self.add_signer(role.name, signer)
 
@@ -364,7 +364,7 @@ class RepositorySimulator:
         ):
             raise ValueError("Can't add a succinct_roles when delegated roles are used")
 
-        signer = CryptoSigner.generate_ecdsa()
+        signer = CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256")
         succinct_roles = SuccinctRoles([], 1, bit_length, name_prefix)
         delegator.delegations = Delegations({}, None, succinct_roles)
 
@@ -404,7 +404,7 @@ class RepositorySimulator:
 
     def add_key(self, role: str, delegator_name: str = Root.type) -> None:
         """add new public key to delegating metadata and store the signer for role"""
-        signer = CryptoSigner.generate_ecdsa()
+        signer = CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256")
 
         # Add key to delegating metadata
         delegator = self.mds[delegator_name].signed

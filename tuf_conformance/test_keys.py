@@ -62,7 +62,7 @@ def test_root_has_keys_but_not_snapshot(
 
     # Add two keyids only to root and expect the client
     # to fail updating
-    signer = CryptoSigner.generate_ecdsa()
+    signer = CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256")
 
     repo.root.roles[Snapshot.type].keyids.append(signer.public_key.keyid)
 
@@ -145,7 +145,7 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
 
     assert client.init_client(init_data) == 0
 
-    signer = CryptoSigner.generate_ecdsa()
+    signer = CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256")
 
     # Add one key 9 times to root
     for n in range(0, 9):
