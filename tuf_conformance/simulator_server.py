@@ -88,10 +88,12 @@ class SimulatorServer(ThreadingHTTPServer):
 class StaticServer(ThreadingHTTPServer):
     """Web server to serve static repositories"""
 
+    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static_data")
+
     def __init__(self) -> None:
         class _StaticReqHandler(BaseHTTPRequestHandler):
             def do_GET(self) -> None:  # noqa: N802
-                filepath = os.path.join("tuf_conformance", "static_data", self.path[1:])
+                filepath = os.path.join(StaticServer.data_dir, self.path[1:])
                 try:
                     with open(filepath, "rb") as f:
                         data = f.read()
@@ -108,7 +110,7 @@ class StaticServer(ThreadingHTTPServer):
         self.timeout = 0
 
     def new_test(self, static_dir: str) -> tuple[ClientInitData, str]:
-        sub_dir = os.path.join("tuf_conformance", "static_data", static_dir)
+        sub_dir = os.path.join(self.data_dir, static_dir)
         with open(os.path.join(sub_dir, "initial_root.json"), "rb") as f:
             initial_root = f.read()
 

@@ -6,8 +6,8 @@ from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import StaticServer
 
 static_repos = []
-for static_dir in os.listdir(os.path.join("tuf_conformance", "static_data")):
-    if os.path.isdir(os.path.join("tuf_conformance", "static_data", static_dir)):
+for static_dir in os.listdir(StaticServer.data_dir):
+    if os.path.isdir(os.path.join(StaticServer.data_dir, static_dir)):
         static_repos.append(static_dir)
 
 
