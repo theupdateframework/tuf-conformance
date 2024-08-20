@@ -88,9 +88,13 @@ def test_root_has_keys_but_not_snapshot(
     assert len(repo.root.roles[Snapshot.type].keyids) == 5
     assert len(repo.mds[Snapshot.type].signatures) == 4
 
+    # Bump root and snapshot so client will see there is an update
+    repo.bump_root_by_one()  # v4
+    repo.update_snapshot()
+
     # Updating should fail. Root should bump, but not snapshot
     assert client.refresh(init_data) == 1
-    assert client.version(Root.type) == 3
+    assert client.version(Root.type) == 4
     assert client.version(Snapshot.type) == 2
 
 
