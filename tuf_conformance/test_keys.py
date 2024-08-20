@@ -21,7 +21,7 @@ def initial_setup_for_key_threshold(
     repo.add_key(Snapshot.type)
     repo.add_key(Snapshot.type)
     repo.update_timestamp()
-    repo.update_snapshot()
+    repo.update_snapshot()  # v2
     repo.bump_root_by_one()  # v2
 
     assert len(repo.root.roles[Snapshot.type].keyids) == 4
@@ -34,24 +34,22 @@ def initial_setup_for_key_threshold(
 def test_root_has_keys_but_not_snapshot(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
-    """This test adds keys to the repo root MD to test for a case
-    where a client might calculate the threshold from only the
-    roots keys and not check that the snapshot MD also has the
-    same keys. For example, the goal is to bring the repository
-    into a state where:
+    """This test adds keys for snapshot metadata only to the
+    repo root MD to test for a case where a client might
+    calculate the threshold from only the key in the root MD
+    and not check that the snapshot MD also has the same keys.
+    For example, the goal is to bring the repository into a state where:
 
     1. repo.root.roles.snapshot.keyids has the following keyids:
       1.a: ccce1a69b4eea9daf315d8a9c43fffd8ee541bfb41fdcb773657192af51d3cfa
       1.b: 4f7c454c55a81918fa1fc1f513d510f36c3efa796711d9f5883602f91a5b9da7
       1.c: 146e0dc5038d3b8772f5d4bd6626fe1436f656494b501628a2b54d6aa6a6edfe
       1.d: 3c80449ebd33c67ff8d9befce23c534b50d97ed805e52da8c746e6a1daefab8e
-      1.e: 11ba9251933057a171bac4c1e6d3d9f32ba49fce5dade28a54d5c779538e802d
-    2: repo.root.roles.snapshot.threshold is 5
+    2: repo.root.roles.snapshot.threshold is 4
     3: repo.snapshot.signatures has the following keyids:
       3.a: ccce1a69b4eea9daf315d8a9c43fffd8ee541bfb41fdcb773657192af51d3cfa
       3.b: 4f7c454c55a81918fa1fc1f513d510f36c3efa796711d9f5883602f91a5b9da7
       3.c: 146e0dc5038d3b8772f5d4bd6626fe1436f656494b501628a2b54d6aa6a6edfe
-      3.d: 3c80449ebd33c67ff8d9befce23c534b50d97ed805e52da8c746e6a1daefab8e
 
     The test ensures that clients do not update snapshot in this scenario.
     """
@@ -62,39 +60,20 @@ def test_root_has_keys_but_not_snapshot(
 
     initial_setup_for_key_threshold(client, repo, init_data)
 
-    # Increase the threshold to a number higher
-    # than the keys available
-    repo.root.roles[Snapshot.type].threshold = 5
+    # Set the threshold to 4 and remove a signer from snapshot
+    # metadata so that root has 4 keys and snapshot has 3
+    repo.root.roles[Snapshot.type].threshold = 4
+    repo.signers[Snapshot.type].popitem()
     repo.bump_root_by_one()  # v3
+    repo.update_snapshot()  # v3
 
-    # Refresh should fail: There is a new root version but
-    # no new snapshot metadata.
-    # The existing snapshot does not meet the threshold
-    # anymore, because there are three keys,
-    # and the threshold is 5.
+    # The snapshot does not meet the threshold anymore,
+    # because there are 3 snapshot signers keys, and the
+    # threshold is 4.
     # NOTE: we don't actually expect clients to delete the
     # file from trusted_roles() at this point
     assert client.refresh(init_data) == 1
     assert client.version(Root.type) == 3
-
-    # Add one keyid to root but not to snapshot.
-    signer = repo.new_signer()
-    repo.root.roles[Snapshot.type].keyids.append(signer.public_key.keyid)
-
-    # Sanity check
-    # At this point, there are five keyids in
-    # root.signed.roles.snapshot.keyids which covers the threshold,
-    # but there are only 4 keyids in the snapshot metadata.
-    assert len(repo.root.roles[Snapshot.type].keyids) == 5
-    assert len(repo.mds[Snapshot.type].signatures) == 4
-
-    # Bump root and snapshot so client will see there is an update
-    repo.bump_root_by_one()  # v4
-    repo.update_snapshot()
-
-    # Updating should fail. Root should bump, but not snapshot
-    assert client.refresh(init_data) == 1
-    assert client.version(Root.type) == 4
     assert client.version(Snapshot.type) == 2
 
 
