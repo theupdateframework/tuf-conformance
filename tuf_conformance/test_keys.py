@@ -75,18 +75,17 @@ def test_root_has_keys_but_not_snapshot(
 
 def test_wrong_hashing_algorithm(client: ClientRunner, server: SimulatorServer) -> None:
     """This test sets a wrong but valid hashing algorithm for a key
-    in the root MD. The client should not care and still update"""
+    in the root MD. The client should not care and still update,
+    because the "keyid_hash_algorithms" field is not a part of the
+    TUF spec.
+    The metadata meets the threshold with 4/4 keys, but one of the
+    keys has the wrong algorithm."""
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     assert client.refresh(init_data) == 0
 
     initial_setup_for_key_threshold(client, repo, init_data)
-    repo.add_key(Snapshot.type)
-
-    # Increase the threshold but it is met
-    assert len(repo.root.roles[Snapshot.type].keyids) == 5
-    repo.root.roles[Snapshot.type].threshold = 5
 
     # Set one of the keys' "keyid_hash_algorithms" to an
     # incorrect algorithm.
