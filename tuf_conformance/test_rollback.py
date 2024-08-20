@@ -127,7 +127,7 @@ def test_new_targets_fast_forward_recovery(
     repo.targets.version = 1
     repo.update_snapshot()  # v3
 
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
     assert client.version(Targets.type) == 1
 
 
@@ -151,7 +151,7 @@ def test_new_snapshot_fast_forward_recovery(
     repo.update_timestamp()
 
     # client refreshes the metadata and see the new snapshot version
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
     assert client.version(Snapshot.type) == 99999
 
     repo.rotate_keys(Snapshot.type)
@@ -162,7 +162,7 @@ def test_new_snapshot_fast_forward_recovery(
     repo.snapshot.version = 1
     repo.update_timestamp()
 
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
     assert client.version(Snapshot.type) == 1
 
 
@@ -204,7 +204,7 @@ def test_new_timestamp_fast_forward_recovery(
     repo.timestamp.version = 99999
 
     # client refreshes the metadata and see the new timestamp version
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
     assert client.version(Timestamp.type) == 99999
 
     # repository rotates timestamp keys,
@@ -214,7 +214,7 @@ def test_new_timestamp_fast_forward_recovery(
     repo.timestamp.version = 1
 
     # client refresh the metadata and see the initial timestamp version
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
     assert client.version(Timestamp.type) == 1
 
 

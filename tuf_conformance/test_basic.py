@@ -153,14 +153,14 @@ def test_timestamp_content_changes(
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
 
     initial_timestamp_meta_ver = repo.timestamp.snapshot_meta.version
     # Change timestamp without bumping its version in order to test if a new
     # timestamp with the same version will be persisted.
     repo.timestamp.snapshot_meta.version = 100
 
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
 
     assert client.version(Timestamp.type) == initial_timestamp_meta_ver
 
@@ -219,13 +219,13 @@ def test_timestamp_eq_versions_check(
     assert client.init_client(init_data) == 0
 
     # Make a successful update of valid metadata which stores it in cache
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
     initial_timestamp_meta_ver = repo.timestamp.snapshot_meta.version
 
     # Change timestamp without bumping its version in order to test if a new
     # timestamp with the same version will be persisted.
     repo.timestamp.snapshot_meta.version = 100
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
 
     # If the local timestamp md file has the same snapshot_meta.version as
     # the initial one, then the new modified timestamp has not been stored.
