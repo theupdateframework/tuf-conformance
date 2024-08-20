@@ -15,7 +15,6 @@ def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -
     Run a refresh, verify client trusted metadata and requests made by the client
     """
     init_data, repo = server.new_test(client.test_name)
-
     # Run the test: step 1:  initialize client
     assert client.init_client(init_data) == 0
 
@@ -166,29 +165,29 @@ def test_timestamp_content_changes(
     assert client.version(Timestamp.type) == initial_timestamp_meta_ver
 
 
-def test_new_targets_hash_mismatch(
+def test_basic_metadata_hash_support(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
-    # Check against snapshot role's targets hashes
+    """Verify that clients supports hashes for metadata"""
     init_data, repo = server.new_test(client.test_name)
 
-    assert client.init_client(init_data) == 0
-    client.refresh(init_data)
-
+    # Construct repository with hashes in timestamp/snapshot
     repo.compute_metafile_hashes_length = True
-    repo.update_snapshot()
+    repo.update_snapshot()  # v2
 
-    client.refresh(init_data)
+    assert client.init_client(init_data) == 0
+    # Verify client accepts correct hashes
+    assert client.refresh(init_data) == 0
 
-    # Modify targets contents without updating
-    # snapshot's targets hashes
-    repo.targets.version += 1
+    # Modify targets metadata, leave hashes in snapshot to wrong values
+    repo.targets.version += 1  # v2
     repo.snapshot.meta["targets.json"].version = repo.targets.version
-    repo.snapshot.version += 1
+    repo.snapshot.version += 1  # v3
     repo.update_timestamp()
 
-    client.refresh(init_data)
-    assert client.version(Snapshot.type) == 1
+    # Verify client refuses targets that does not match hashes
+    assert client.refresh(init_data) == 1
+    assert client.version(Snapshot.type) == 3
     assert client.version(Targets.type) == 1
 
 

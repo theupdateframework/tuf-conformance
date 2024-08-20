@@ -1,4 +1,3 @@
-from securesystemslib.signer import CryptoSigner
 from tuf.api.metadata import Root, Snapshot
 
 from tuf_conformance.client_runner import ClientRunner
@@ -62,8 +61,7 @@ def test_root_has_keys_but_not_snapshot(
 
     # Add two keyids only to root and expect the client
     # to fail updating
-    signer = CryptoSigner.generate_ecdsa()
-
+    signer = repo.new_signer()
     repo.root.roles[Snapshot.type].keyids.append(signer.public_key.keyid)
 
     # Sanity check
@@ -145,7 +143,7 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
 
     assert client.init_client(init_data) == 0
 
-    signer = CryptoSigner.generate_ecdsa()
+    signer = repo.new_signer()
 
     # Add one key 9 times to root
     for n in range(0, 9):
