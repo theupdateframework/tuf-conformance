@@ -31,14 +31,17 @@ def initial_setup_for_key_threshold(
     assert client.version(Root.type) == 2
 
 
-def test_root_has_keys_but_not_snapshot(
+def test_root_meets_threshold_but_snapshot_does_not(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
-    """This test adds keys for snapshot metadata only to the
-    repo root MD to test for a case where a client might
-    calculate the threshold from only the key in the root MD
-    and not check that the snapshot MD also has the same keys.
-    For example, the goal is to bring the repository into a state where:
+    """In this test, repo.root.roles.snapshot.threshold is 5,
+    and there are 5 keyids in repo.root.roles.snapshot.keyids
+    which meets the threshold. However, repo.snapshot.signatures
+    only has 4 of the 5 keys listed in repo.root.roles.snapshot.keyids,
+    so repo.snapshot.signatures does not meet the threshold. The client
+    should therefore not refresh the snapshot metadata from the repo.
+
+    Specifically, the goal is to bring the repository into a state where:
 
     1. repo.root.roles.snapshot.keyids has the following keyids:
       1.a: ccce1a69b4eea9daf315d8a9c43fffd8ee541bfb41fdcb773657192af51d3cfa
@@ -60,8 +63,9 @@ def test_root_has_keys_but_not_snapshot(
 
     initial_setup_for_key_threshold(client, repo, init_data)
 
-    # Set the threshold to 4 and remove a signer from snapshot
-    # metadata so that root has 4 keys and snapshot has 3
+    # Set repo.root.roles.snapshot.threshold to 4 and remove
+    # a signer from snapshot metadata. The snapshot metadata
+    # then only has 3 signers which is below the threshold.
     repo.root.roles[Snapshot.type].threshold = 4
     repo.signers[Snapshot.type].popitem()
     repo.bump_root_by_one()  # v3
