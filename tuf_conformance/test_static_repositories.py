@@ -1,17 +1,10 @@
-import os
-
 import pytest
 
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import StaticServer
 
-static_repos = []
-for static_dir in os.listdir(StaticServer.data_dir):
-    if os.path.isdir(os.path.join(StaticServer.data_dir, static_dir)):
-        static_repos.append(static_dir)
 
-
-@pytest.mark.parametrize("static_repo", static_repos)
+@pytest.mark.parametrize("static_repo", StaticServer.static_test_names())
 def test_static_repository(
     static_client: ClientRunner, static_server: StaticServer, static_repo: str
 ) -> None:

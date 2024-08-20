@@ -90,6 +90,15 @@ class StaticServer(ThreadingHTTPServer):
 
     data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static_data")
 
+    @classmethod
+    def static_test_names(cls) -> list[str]:
+        """Return list of static test names (subdirectories of 'static_data/')."""
+        static_tests = []
+        for static_dir in os.listdir(StaticServer.data_dir):
+            if os.path.isdir(os.path.join(StaticServer.data_dir, static_dir)):
+                static_tests.append(static_dir)
+        return static_tests
+
     def __init__(self) -> None:
         class _StaticReqHandler(BaseHTTPRequestHandler):
             def do_GET(self) -> None:  # noqa: N802
