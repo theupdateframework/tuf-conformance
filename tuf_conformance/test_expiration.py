@@ -15,16 +15,16 @@ def test_root_expired(client: ClientRunner, server: SimulatorServer) -> None:
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
 
     repo.bump_root_by_one()  # v2
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
 
     repo.root.expires = utils.get_date_n_days_in_past(1)
     repo.bump_root_by_one()  # v3
     repo.targets.version += 1  # v2
 
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 1
 
     # Clients should check for a freeze attack after persisting (5.3.10),
     # so root should update, but no other MD should update
@@ -65,7 +65,7 @@ def test_targets_expired(client: ClientRunner, server: SimulatorServer) -> None:
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
 
     repo.targets.expires = utils.get_date_n_days_in_past(5)
     repo.update_snapshot()
@@ -100,7 +100,7 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
     repo.timestamp.expires = now + datetime.timedelta(days=7)
 
     # Refresh
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
 
     repo.targets.version += 1
     repo.timestamp.expires = now + datetime.timedelta(days=21)
@@ -108,7 +108,7 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
 
     # Mocking time so that local timestamp has expired
     # but the new timestamp has not
-    client.refresh(init_data, days_in_future=18)
+    assert client.refresh(init_data, days_in_future=18) == 0
 
     # Assert that the final version of timestamp/snapshot is version 2
     # which means a successful refresh is performed
@@ -128,7 +128,7 @@ def test_timestamp_expired(client: ClientRunner, server: SimulatorServer) -> Non
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
 
     repo.timestamp.expires = utils.get_date_n_days_in_past(5)
     repo.update_timestamp()  # v2

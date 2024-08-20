@@ -79,7 +79,7 @@ def test_wrong_hashing_algorithm(client: ClientRunner, server: SimulatorServer) 
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
 
     initial_setup_for_key_threshold(client, repo, init_data)
     repo.add_key(Snapshot.type)
@@ -111,7 +111,7 @@ def test_snapshot_threshold(client: ClientRunner, server: SimulatorServer) -> No
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
 
     # Add 4 Snapshot keys so that there are 5 in total.
     repo.add_key(Snapshot.type)
