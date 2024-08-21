@@ -59,9 +59,8 @@ def test_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> None
 
 
 def test_targets_expired(client: ClientRunner, server: SimulatorServer) -> None:
-    """Tests a case where the targets metadata is expired.
-    Checks whether the clients updates the targets metadata
-    if the repo has a newer version, but it is expired"""
+    """Ensures that the client does not update the targets
+    metadata when the repo has a newer version that is expired."""
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
