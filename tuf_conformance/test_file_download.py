@@ -25,8 +25,6 @@ def test_client_downloads_expected_file(
     assert client.get_downloaded_target_bytes() == []
 
     assert client.download_target(init_data, target_path) == 0
-
-    # assert that the downloaded file contents are correct
     assert client.get_downloaded_target_bytes() == [target_content]
 
 
@@ -46,13 +44,7 @@ def test_client_downloads_expected_file_in_sub_dir(
     target_content = b"target file contents"
     repo.add_artifact(Targets.type, target_content, target_path)
 
-    # Client updates, sanity check that nothing was downloaded
-    assert client.refresh(init_data) == 0
-    assert client.get_downloaded_target_bytes() == []
-
     assert client.download_target(init_data, target_path) == 0
-
-    # assert that the downloaded file contents are correct
     assert client.get_downloaded_target_bytes() == [target_content]
 
 
@@ -73,9 +65,6 @@ def test_repository_substitutes_target_file(
     target_content_2 = b"content"
     repo.add_artifact(Targets.type, target_content_1, target_path_1)
     repo.add_artifact(Targets.type, target_content_2, target_path_2)
-
-    # Client updates
-    assert client.refresh(init_data) == 0
 
     # Download one of the artifacts
     assert client.download_target(init_data, target_path_1) == 0
@@ -125,9 +114,6 @@ def test_multiple_changes_to_target(
     target_content = b"target file contents"
     repo.add_artifact(Targets.type, target_content, target_path)
 
-    # Client updates
-    assert client.refresh(init_data) == 0
-
     # Client downloads the file
     assert client.download_target(init_data, target_path) == 0
     # check file contents
@@ -139,7 +125,7 @@ def test_multiple_changes_to_target(
     # It modifies the targets file in the targets metadata including
     # the hashes and length, and it also makes the corresponding
     # content changes in the file itself.
-    for i in range(10):
+    for i in range(11):
         # Modify the existing artifact legitimately:
         modified_contents = f"modified file contents {i}".encode()
         repo.add_artifact(Targets.type, modified_contents, target_path)
@@ -152,35 +138,34 @@ def test_multiple_changes_to_target(
         # Bump repo snapshot
         repo.update_snapshot()
 
-        # Client updates
-        assert client.refresh(init_data) == 0
+        # Client only sees every fifth targets version
+        if i % 5 == 0:
+            # Client downloads the modified artifact
+            assert client.download_target(init_data, target_path) == 0
+            # the previous content is no longer there, modified content is there
+            expected_downloads.remove(previous_content)
+            expected_downloads.append(modified_contents)
+            previous_content = modified_contents
+            assert client.get_downloaded_target_bytes() == expected_downloads
 
-        # Client downloads the modified artifact
-        assert client.download_target(init_data, target_path) == 0
-        # the previous content is no longer there, modified content is there
-        expected_downloads.remove(previous_content)
-        expected_downloads.append(modified_contents)
-        previous_content = modified_contents
-        assert client.get_downloaded_target_bytes() == expected_downloads
+            # Client downloads the new artifact
+            assert client.download_target(init_data, new_target_path) == 0
+            expected_downloads.append(new_file_contents)
 
-        # Client downloads the new artifact
-        assert client.download_target(init_data, new_target_path) == 0
-        expected_downloads.append(new_file_contents)
+            # check downloaded contents
+            assert client.get_downloaded_target_bytes() == expected_downloads
 
-        # check downloaded contents
-        assert client.get_downloaded_target_bytes() == expected_downloads
+            # Modify artifact content without updating the hashes/length in metadata.
+            malicious_file_contents = f"malicious contents {i}".encode()
+            repo.artifacts[target_path].data = malicious_file_contents
+            repo.targets.version += 1
 
-        # Modify artifact content without updating the hashes/length in metadata.
-        malicious_file_contents = f"malicious contents {i}".encode()
-        repo.artifacts[target_path].data = malicious_file_contents
-        repo.targets.version += 1
+            # Bump repo snapshot
+            repo.update_snapshot()
 
-        # Bump repo snapshot
-        repo.update_snapshot()
+            # ask client to download (this call may fail or succeed, see
+            # test_repository_substitutes_target_file)
+            client.download_target(init_data, target_path)
 
-        # ask client to download (this may fail or succeed, see
-        # test_repository_substitutes_target_file)
-        client.download_target(init_data, target_path)
-
-        # Check that the client did not download the malicious file
-        assert client.get_downloaded_target_bytes() == expected_downloads
+            # Check that the client did not download the malicious file
+            assert client.get_downloaded_target_bytes() == expected_downloads
