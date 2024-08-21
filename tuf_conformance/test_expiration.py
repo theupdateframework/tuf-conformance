@@ -98,9 +98,9 @@ def test_targets_expired(client: ClientRunner, server: SimulatorServer) -> None:
     ]
 
 
-def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None:
-    """Verifies that expired local timestamp/snapshot can be used for
-    updating from remote.
+def test_expired_timestamp(client: ClientRunner, server: SimulatorServer) -> None:
+    """Ensures that the client can update to the latest remote timestamp
+    when the local timestamp has expired.
 
     The updates and verifications are performed with the following timing:
      - Timestamp v1 expiry set to day 7
@@ -113,12 +113,15 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
 
     assert client.init_client(init_data) == 0
 
+    # Repo timestamp v1 expires in 7 days
     now = datetime.datetime.now(timezone.utc)
     repo.timestamp.expires = now + datetime.timedelta(days=7)
 
     # Refresh
     assert client.refresh(init_data) == 0
 
+    # Bump targets + snapshot version
+    # Set next version of repo timestamp to expire in 21 days
     repo.targets.version += 1
     repo.timestamp.expires = now + datetime.timedelta(days=21)
     repo.update_snapshot()
