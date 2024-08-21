@@ -129,7 +129,7 @@ def test_multiple_changes_to_target(
     assert client.refresh(init_data) == 0
 
     # Client downloads the file
-    client.download_target(init_data, target_path)
+    assert client.download_target(init_data, target_path) == 0
     # check file contents
     expected_downloads = [target_content]
     previous_content = target_content
