@@ -188,9 +188,9 @@ def test_graph_traversal(
     init_repo(repo, graphs)
 
     # Call explicitly refresh to simplify the expected_calls list
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
     repo.metadata_statistics.clear()
-    client.download_target(init_data, "missingpath")
+    assert client.download_target(init_data, "missingpath") == 1
     # "('root', 2), ('timestamp', None)" gets prepended
     # in every case, so we compare from the 3rd item in the list.
     assert repo.metadata_statistics[2:] == exp_calls
