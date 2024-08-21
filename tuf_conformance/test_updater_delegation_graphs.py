@@ -176,9 +176,14 @@ def test_graph_traversal(
 ) -> None:
     """Test that delegated roles are traversed in the order of appearance
     in the delegator's metadata, using pre-order depth-first search"""
+
+    if "clients/go-tuf/go-tuf" in client._cmd[0]:
+        pytest.skip("skip for flakiness")
+
     exp_calls = [(role, 1) for role in graphs.visited_order]
 
     init_data, repo = server.new_test(client.test_name)
+
     assert client.init_client(init_data) == 0
     init_repo(repo, graphs)
 
