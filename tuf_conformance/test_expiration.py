@@ -33,12 +33,30 @@ def test_root_expired(client: ClientRunner, server: SimulatorServer) -> None:
     assert client.version(Snapshot.type) == 1
 
 
-def test_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> None:
-    """Tests a case where the snapshot metadata is expired.
+def test_timestamp_expired(client: ClientRunner, server: SimulatorServer) -> None:
+    """Ensures that the client does not update the timestamp
+    metadata when the repo has a newer version that is expired."""
+    init_data, repo = server.new_test(client.test_name)
 
-    Assert that client does not accept snapshot metadata that is a newer version but is
-    expired
-    """
+    assert client.init_client(init_data) == 0
+    assert client.refresh(init_data) == 0
+
+    repo.timestamp.expires = utils.get_date_n_days_in_past(5)
+    repo.update_timestamp()  # v2
+
+    # Check that client does not accept expired timestamp
+    assert client.refresh(init_data) == 1
+    assert client.trusted_roles() == [
+        (Root.type, 1),
+        (Snapshot.type, 1),
+        (Targets.type, 1),
+        (Timestamp.type, 1),
+    ]
+
+
+def test_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> None:
+    """Ensures that the client does not update the snapshot
+    metadata when the repo has a newer version that is expired."""
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
@@ -117,26 +135,4 @@ def test_expired_metadata(client: ClientRunner, server: SimulatorServer) -> None
         (Snapshot.type, 2),
         (Targets.type, 2),
         (Timestamp.type, 2),
-    ]
-
-
-def test_timestamp_expired(client: ClientRunner, server: SimulatorServer) -> None:
-    """Tests a case where the timestamp metadata is expired.
-    Checks whether the clients updates the timestamp metadata
-    if the repo has a newer version, but it is expired"""
-    init_data, repo = server.new_test(client.test_name)
-
-    assert client.init_client(init_data) == 0
-    assert client.refresh(init_data) == 0
-
-    repo.timestamp.expires = utils.get_date_n_days_in_past(5)
-    repo.update_timestamp()  # v2
-
-    # Check that client does not accept expired timestamp
-    assert client.refresh(init_data) == 1
-    assert client.trusted_roles() == [
-        (Root.type, 1),
-        (Snapshot.type, 1),
-        (Targets.type, 1),
-        (Timestamp.type, 1),
     ]
