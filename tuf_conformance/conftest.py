@@ -91,5 +91,6 @@ def conformance_xfail(
     if xfail_option is None:
         return
 
-    if request.node.originalname in xfail_option.split(" "):
+    xfails = xfail_option.split(" ")
+    if request.node.originalname in xfails or request.node.name in xfails:
         request.node.add_marker(pytest.mark.xfail(strict=True))
