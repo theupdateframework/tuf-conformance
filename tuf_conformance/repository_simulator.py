@@ -436,9 +436,15 @@ class RepositorySimulator:
             with open(os.path.join(dest_dir, f"{quoted_role}.json"), "wb") as f:
                 f.write(self.fetch_metadata(role))
 
-    def add_key(self, role: str, delegator_name: str = Root.type) -> None:
+    def add_key(
+        self,
+        role: str,
+        delegator_name: str = Root.type,
+        signer: CryptoSigner | None = None,
+    ) -> None:
         """add new public key to delegating metadata and store the signer for role"""
-        signer = self.new_signer()
+        if signer is None:
+            signer = self.new_signer()
 
         # Add key to delegating metadata
         delegator = self.mds[delegator_name].signed

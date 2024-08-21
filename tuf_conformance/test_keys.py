@@ -1,4 +1,5 @@
-from tuf.api.metadata import Root, Snapshot
+import pytest
+from tuf.api.metadata import Metadata, Root, Snapshot
 
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.repository_simulator import RepositorySimulator
@@ -170,3 +171,57 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
 
     # client should not have accepted snapshot
     assert client.version(Snapshot.type) is None
+
+
+# keytype, scheme and an example signature from this type of key
+standard_keytypes = [
+    (
+        "rsa",
+        "rsassa-pss-sha256",
+        "b123346abdead7069ab07eb3cae8ba6323222fb448b4903061f481066b0393dde6268eba7696b73b20586fc2cb3e3f68317863a8a9ee85824cfffdc70762821fa8afbcb7a5fd5c520b77f95b8cc6df4a52b3b7896c388b5b7fbed972337a15089e70f2313bbd511ea0d694356d8837e4b1515bb79a16a31e22e9ab15be5b26ad39abcf45311e025d76d372d44f9e51474d27b71c23f63e24c60544a9f9dbf073f52812d68b5d26b230ec711ce03d9ae765c62eb1f33269437650132318a356224bbdc7de27c88d7552db1d14f4f4c52165feaebd5735e9928cd9703ced5271abb29415eeabf03067dbae3d71bc24bd5b9d2a24af3f92eafa85e933ed76284c8cf1a466c1314583d15ec12b00b06836305dca3c84f00468bbc8e4de8f19c2184200f46458a24d94c4abfb090df3d09b79ecfc384d4041e3b5687d5b5bc97d0888ea27641b3862b64d3c892ef352e68edfe952c89e9c4e957185647133e6aa58141ff80c03de5c3aa4cf9b5da6444bceec43c08a433abe11b25d3ef6aab8d83485",
+    ),
+    (
+        "ecdsa",
+        "ecdsa-sha2-nistp256",
+        "3046022100fa1f62d38e0f5c565fa23e5d230086258427d87f024c146071966deefde55468022100b3347b4bd9ba6701ca6cef949d04b5742394b9f8c4417933e5d4fa76c3ca3a98",
+    ),
+    (
+        "ed25519",
+        "ed25519",
+        "b61589620c287e23a00abf0e653421010a0ad33869e5a096d604e08d7b4f8eb9c58ebb8a02124576be776f86ab5a3b05dbb6f27cc47f4b144f32ba4012d4b302",
+    ),
+]
+
+ids = [f"{keytype}/{scheme}" for keytype, scheme, _ in standard_keytypes]
+
+
+@pytest.mark.parametrize("keytype, scheme, bad_sig", standard_keytypes, ids=ids)
+def test_keytype_and_scheme(
+    client: ClientRunner,
+    server: SimulatorServer,
+    keytype: str,
+    scheme: str,
+    bad_sig: str,
+) -> None:
+    """Test that client supports keytypes referenced in the TUF specification"""
+    init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+    # Add a new root signer with given keytype.
+    # Increase root threshold so the new key is required
+    signer = repo.new_signer(keytype, scheme)
+    repo.add_key(Root.type, signer=signer)
+    repo.root.roles[Root.type].threshold += 1
+    repo.bump_root_by_one()
+
+    assert client.refresh(init_data) == 0
+    assert client.version(Root.type) == 2
+
+    # Create new root version. Replace the correct signature with one that looks
+    # reasonable for the keytype but is incorrect. Expect client to refuse the new root.
+    repo.bump_root_by_one()
+    root_md = Metadata.from_bytes(repo.signed_roots.pop())
+    root_md.signatures[signer.public_key.keyid].signature = bad_sig
+    repo.signed_roots.append(root_md.to_bytes())
+
+    assert client.refresh(init_data) == 1
+    assert client.version(Root.type) == 2
