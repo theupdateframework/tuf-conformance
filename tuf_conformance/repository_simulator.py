@@ -63,9 +63,21 @@ SPEC_VER = ".".join(SPECIFICATION_VERSION)
 
 # Generate some signers once (to avoid all tests generating them)
 NUM_SIGNERS = 8
-RSA_PKCS_SIGNERS = [
-    CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256") for _ in range(NUM_SIGNERS)
-]
+SIGNERS = {
+    ("rsa", "rsassa-pss-sha256"): [
+        CryptoSigner.generate_rsa() for _ in range(NUM_SIGNERS)
+    ],
+    ("rsa", "rsa-pkcs1v15-sha256"): [
+        CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256")
+        for _ in range(NUM_SIGNERS)
+    ],
+    ("ecdsa", "ecdsa-sha2-nistp256"): [
+        CryptoSigner.generate_ecdsa() for _ in range(NUM_SIGNERS)
+    ],
+    ("ed25519", "ed25519"): [
+        CryptoSigner.generate_ed25519() for _ in range(NUM_SIGNERS)
+    ],
+}
 
 
 @dataclass
@@ -110,7 +122,8 @@ class RepositorySimulator:
         now = datetime.datetime.utcnow()
         self.safe_expiry = now.replace(microsecond=0) + datetime.timedelta(days=30)
 
-        self._rsa_pkcs_signers = RSA_PKCS_SIGNERS.copy()
+        # Make a semi-deep copy of generated signers
+        self._generated_signers = {k: v.copy() for k, v in SIGNERS.items()}
 
         # initialize a basic repository structure
         self._initialize()
@@ -153,14 +166,13 @@ class RepositorySimulator:
     ) -> CryptoSigner:
         """Return a Signer (from a set of pre-generated signers)."""
         try:
-            if keytype == "rsa" and scheme == "rsa-pkcs1v15-sha256":
-                return self._rsa_pkcs_signers.pop()
+            return self._generated_signers[(keytype, scheme)].pop()
+        except KeyError:
+            raise ValueError(f"Unsupported keytype/scheme: {keytype}/{scheme}")
         except IndexError:
             raise RuntimeError(
                 f"Test ran out of {keytype}/{scheme} keys (NUM_SIGNERS = {NUM_SIGNERS})"
             )
-
-        raise ValueError("{keytype}/{scheme} not supported yet")
 
     def add_signer(self, role: str, signer: CryptoSigner) -> None:
         if role not in self.signers:
@@ -424,9 +436,15 @@ class RepositorySimulator:
             with open(os.path.join(dest_dir, f"{quoted_role}.json"), "wb") as f:
                 f.write(self.fetch_metadata(role))
 
-    def add_key(self, role: str, delegator_name: str = Root.type) -> None:
+    def add_key(
+        self,
+        role: str,
+        delegator_name: str = Root.type,
+        signer: CryptoSigner | None = None,
+    ) -> None:
         """add new public key to delegating metadata and store the signer for role"""
-        signer = self.new_signer()
+        if signer is None:
+            signer = self.new_signer()
 
         # Add key to delegating metadata
         delegator = self.mds[delegator_name].signed
