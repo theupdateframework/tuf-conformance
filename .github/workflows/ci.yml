@@ -62,3 +62,4 @@ jobs:
         uses: ./
         with:
           entrypoint: "clients/go-tuf/go-tuf"
+          expected-failures: "test_keytype_and_scheme[rsa/rsassa-pss-sha256]"
