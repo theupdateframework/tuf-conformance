@@ -47,15 +47,6 @@ class ClientRunner:
 
         return artifact_bytes
 
-    def get_downloaded_target_path(self) -> str:
-        """Returns list of downloaded artifact contents in order of modification time"""
-        artifacts = glob.glob(f"{self.artifact_dir}/**", recursive=True)
-        for artifact in sorted(artifacts, key=os.path.getmtime):
-            if not os.path.isfile(artifact):
-                continue
-            return artifact
-        return ""
-
     def _run(self, cmd: list[str]) -> int:
         popen = subprocess.Popen(cmd)  # noqa: S603
         while popen.poll() is None:

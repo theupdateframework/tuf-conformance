@@ -4,15 +4,13 @@ import pytest
 from tuf.api.metadata import (
     SPECIFICATION_VERSION,
     DelegatedRole,
-    TOP_LEVEL_ROLE_NAMES,
-    DelegatedRole,
-    TargetFile,
     Targets,
 )
 
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.repository_simulator import RepositorySimulator
 from tuf_conformance.simulator_server import SimulatorServer
+
 
 @dataclass
 class DelegationTester:
@@ -50,6 +48,7 @@ class DelegationsTestCase:
 
 # DataSet is only here so type hints can be used.
 DataSet = dict[str, DelegationsTestCase]
+DataSetTarget = dict[str, TargetTestCase]
 
 
 graphs: DataSet = {
@@ -225,15 +224,15 @@ delegations_tree = DelegationsTestCase(
         DelegationTester("B", "D", paths=["releases/y/*.zip"]),
     ],
     target_files=[
-        TestTarget("targets", b"targetfile content", "targetfile"),
-        TestTarget("A", b"README by A", "README.md"),
-        TestTarget("C", b"x release by C", "releases/x/x_v1"),
-        TestTarget("D", b"y release by D", "releases/y/y_v1.zip"),
-        TestTarget("D", b"z release by D", "releases/z/z_v1.zip"),
+        TargetTest("targets", b"targetfile content", "targetfile"),
+        TargetTest("A", b"README by A", "README.md"),
+        TargetTest("C", b"x release by C", "releases/x/x_v1"),
+        TargetTest("D", b"y release by D", "releases/y/y_v1.zip"),
+        TargetTest("D", b"z release by D", "releases/z/z_v1.zip"),
     ],
 )
 
-targets: DataSet = {
+targets: DataSetTarget = {
     "no delegations": TargetTestCase("targetfile", True, []),
     "targetpath matches wildcard": TargetTestCase("README.md", True, ["A"]),
     "targetpath with separators x": TargetTestCase("releases/x/x_v1", True, ["B", "C"]),
@@ -254,31 +253,24 @@ targets_cases = targets.values()
 def test_targetfile_search(
     client: ClientRunner, server: SimulatorServer, target: TargetTestCase
 ) -> None:
-    exp_files = [*TOP_LEVEL_ROLE_NAMES, *target.visited_order]
     exp_calls = [(role, 1) for role in target.visited_order]
 
     init_data, repo = server.new_test(client.test_name)
     assert client.init_client(init_data) == 0
     init_repo(repo, delegations_tree)
-    exp_target = repo.artifacts[target.targetpath].target_file
 
     # Call explicitly refresh to simplify the expected_calls list
-    client.refresh(init_data)
+    assert client.refresh(init_data) == 0
     repo.metadata_statistics.clear()
-    client.download_target(init_data, target.targetpath)
     if target.found:
         assert client.download_target(init_data, target.targetpath) == 0
-        downloaded_target_path = client.get_downloaded_target_path()
-        downloaded_target_bytes = client.get_downloaded_target_bytes()[0]
-        local_target_file = TargetFile.from_data(
-            downloaded_target_path, downloaded_target_bytes
-        )
-        assert local_target_file.to_dict() == exp_target.to_dict()
+        assert client.get_downloaded_target_bytes() == [
+            repo.artifacts[target.targetpath].data
+        ]
     else:
         assert client.download_target(init_data, target.targetpath) == 1
 
-    # repo prepends and appends [('root', 2), ('timestamp', None)]
+    # repo prepends [('root', 2), ('timestamp', None)]
     # so we compare equality from the 2nd call to the 3rd-last
     # call.
-    assert repo.metadata_statistics[2:-2] == exp_calls
-    assert client._files_exist(exp_files)
+    assert repo.metadata_statistics[2:] == exp_calls
