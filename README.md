@@ -157,10 +157,9 @@ Checklist for making a new tuf-conformance release
   ```
       git tag --sign v1.1.1 -m "v1.1.1"
       git push origin v1.1.1
-
       # now rewrite the major tag: yes rewriting tags is awful, it's also what GitHub recommends...
       git tag --delete v1
-      git push --force origin v1
+      git push --delete origin v1
       git tag --sign v1 -m "v1.1.1"
       git push origin v1
   ```
