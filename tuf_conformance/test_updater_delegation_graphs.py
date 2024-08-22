@@ -30,6 +30,13 @@ class TargetTest:
 
 
 @dataclass
+class TargetTestCase:
+    targetpath: str
+    found: bool
+    visited_order: list[str] = field(default_factory=list)
+
+
+@dataclass
 class DelegationsTestCase:
     """A delegations graph as lists of delegations and target files
     and the expected order of traversal as a list of role names."""
@@ -41,6 +48,7 @@ class DelegationsTestCase:
 
 # DataSet is only here so type hints can be used.
 DataSet = dict[str, DelegationsTestCase]
+DataSetTarget = dict[str, TargetTestCase]
 
 
 graphs: DataSet = {
@@ -193,4 +201,76 @@ def test_graph_traversal(
     assert client.download_target(init_data, "missingpath") == 1
     # "('root', 2), ('timestamp', None)" gets prepended
     # in every case, so we compare from the 3rd item in the list.
+    assert repo.metadata_statistics[2:] == exp_calls
+
+
+r"""
+Create a single repository with the following delegations:
+
+          targets
+*.doc, *md / \ release/*/*
+          A   B
+ release/x/* / \ release/y/*.zip
+            C   D
+
+Test that Updater successfully finds the target files metadata,
+traversing the delegations as expected.
+"""
+delegations_tree = DelegationsTestCase(
+    delegations=[
+        DelegationTester("targets", "A", paths=["*.doc", "*.md"]),
+        DelegationTester("targets", "B", paths=["releases/*/*"]),
+        DelegationTester("B", "C", paths=["releases/x/*"]),
+        DelegationTester("B", "D", paths=["releases/y/*.zip"]),
+    ],
+    target_files=[
+        TargetTest("targets", b"targetfile content", "targetfile"),
+        TargetTest("A", b"README by A", "README.md"),
+        TargetTest("C", b"x release by C", "releases/x/x_v1"),
+        TargetTest("D", b"y release by D", "releases/y/y_v1.zip"),
+        TargetTest("D", b"z release by D", "releases/z/z_v1.zip"),
+    ],
+)
+
+targets: DataSetTarget = {
+    "no delegations": TargetTestCase("targetfile", True, []),
+    "targetpath matches wildcard": TargetTestCase("README.md", True, ["A"]),
+    "targetpath with separators x": TargetTestCase("releases/x/x_v1", True, ["B", "C"]),
+    "targetpath with separators y": TargetTestCase(
+        "releases/y/y_v1.zip", True, ["B", "D"]
+    ),
+    "targetpath is not delegated by all roles in the chain": TargetTestCase(
+        "releases/z/z_v1.zip", False, ["B"]
+    ),
+}
+
+
+targets_ids = targets.keys()
+targets_cases = targets.values()
+
+
+@pytest.mark.parametrize("target", targets_cases, ids=targets_ids)
+def test_targetfile_search(
+    client: ClientRunner, server: SimulatorServer, target: TargetTestCase
+) -> None:
+    exp_calls = [(role, 1) for role in target.visited_order]
+
+    init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+    init_repo(repo, delegations_tree)
+
+    # Call explicitly refresh to simplify the expected_calls list
+    assert client.refresh(init_data) == 0
+    repo.metadata_statistics.clear()
+    if target.found:
+        assert client.download_target(init_data, target.targetpath) == 0
+        assert client.get_downloaded_target_bytes() == [
+            repo.artifacts[target.targetpath].data
+        ]
+    else:
+        assert client.download_target(init_data, target.targetpath) == 1
+
+    # repo prepends [('root', 2), ('timestamp', None)]
+    # so we compare equality from the 2nd call to the 3rd-last
+    # call.
     assert repo.metadata_statistics[2:] == exp_calls
