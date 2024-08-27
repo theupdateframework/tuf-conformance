@@ -1,6 +1,8 @@
-from tuf.api.metadata import Targets
+import pytest
+from tuf.api.metadata import TargetFile, Targets
 
 from tuf_conformance.client_runner import ClientRunner
+from tuf_conformance.repository_simulator import Artifact
 from tuf_conformance.simulator_server import SimulatorServer
 
 
@@ -169,3 +171,65 @@ def test_multiple_changes_to_target(
 
             # Check that the client did not download the malicious file
             assert client.get_downloaded_target_bytes() == expected_downloads
+
+
+hash_algos = [
+    ["sha256"],
+    ["sha512"],
+    ["sha256", "sha512"],
+]
+
+
+@pytest.mark.parametrize("hashes", hash_algos)
+def test_download_with_hash_algorithms(
+    client: ClientRunner, server: SimulatorServer, hashes: list[str]
+) -> None:
+    """Test support of hash algorithms. The specification does not require any
+    specific algorithms, and only mentions sha256.
+
+    Clients can use --expected-failures to mark tests that fail because of algorithms
+    they do not intend to support."""
+    init_data, repo = server.new_test(client.test_name)
+
+    # Create a legitimate test artifact
+    target_path = "target_file.txt"
+    target_content = b"target file contents"
+
+    # Add target manually and not with repo.add_artifact() so we can choose hashes
+    target = TargetFile.from_data(target_path, target_content, hashes)
+    repo.targets.targets[target_path] = target
+    repo.artifacts[target_path] = Artifact(target_content, target)
+
+    assert client.init_client(init_data) == 0
+    assert client.download_target(init_data, target_path) == 0
+
+    # downloading using any of the hashes repository advertized is accepted:
+    possible_dls = [(target_path, h) for h in target.hashes.values()]
+    assert len(repo.artifact_statistics) == 1
+    assert repo.artifact_statistics[0] in possible_dls
+    assert client.get_downloaded_target_bytes() == [target_content]
+
+
+def test_download_with_unknown_hash_algorithm(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    """Use an unknown hash algorithm: client should not accept the artifact"""
+    init_data, repo = server.new_test(client.test_name)
+
+    # Create a legitimate test artifact
+    target_path = "target_file.txt"
+    target_content = b"target file contents"
+
+    # Add target manually, use a hash algorithm that does not exist
+    # Use repo.add_artifact() so we can modify hashes
+    target = TargetFile.from_data(target_path, target_content, ["sha512"])
+    target.hashes["unknown-hash"] = target.hashes["sha512"]
+    del target.hashes["sha512"]
+    repo.targets.targets[target_path] = target
+    repo.artifacts[target_path] = Artifact(target_content, target)
+
+    assert client.init_client(init_data) == 0
+    # Note that we allow the client to actually download the artifact from repo
+    # and only then realize hash cannot be verified
+    assert client.download_target(init_data, target_path) == 1
+    assert client.get_downloaded_target_bytes() == []
