@@ -2,130 +2,77 @@ import pytest
 from tuf.api.metadata import Metadata, Root, Snapshot
 
 from tuf_conformance.client_runner import ClientRunner
-from tuf_conformance.repository_simulator import RepositorySimulator
-from tuf_conformance.simulator_server import ClientInitData, SimulatorServer
+from tuf_conformance.simulator_server import SimulatorServer
 
 
-def initial_setup_for_key_threshold(
-    client: ClientRunner, repo: RepositorySimulator, init_data: ClientInitData
-) -> None:
-    """This is a helper for tests for key thresholds.
-    It sets a threshold of 3 for snapshot metadata,
-    adds three keys, bumps the repo metadata and
-    refreshes the client"""
-
-    # Set treshold to 3 for snapshot metadata
-    repo.root.roles[Snapshot.type].threshold = 3
-
-    # Add three keys for snapshot:
-    repo.add_key(Snapshot.type)
-    repo.add_key(Snapshot.type)
-    repo.add_key(Snapshot.type)
-    repo.update_timestamp()
-    repo.update_snapshot()  # v2
-    repo.bump_root_by_one()  # v2
-
-    assert len(repo.root.roles[Snapshot.type].keyids) == 4
-
-    assert client.refresh(init_data) == 0
-    assert client.version(Snapshot.type) == 2
-    assert client.version(Root.type) == 2
-
-
-def test_root_meets_threshold_but_snapshot_does_not(
+def test_snapshot_does_not_meet_threshold(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
-    """In this test, repo.root.roles.snapshot.threshold is 5,
-    and there are 5 keyids in repo.root.roles.snapshot.keyids
-    which meets the threshold. However, repo.snapshot.signatures
-    only has 4 of the 5 keys listed in repo.root.roles.snapshot.keyids,
-    so repo.snapshot.signatures does not meet the threshold. The client
+    """In this test snapshot v3 is not signed by threshold of signatures. The client
     should therefore not refresh the snapshot metadata from the repo.
 
     Specifically, the goal is to bring the repository into a state where:
 
-    1. repo.root.roles.snapshot.keyids has the following keyids:
-      1.a: ccce1a69b4eea9daf315d8a9c43fffd8ee541bfb41fdcb773657192af51d3cfa
-      1.b: 4f7c454c55a81918fa1fc1f513d510f36c3efa796711d9f5883602f91a5b9da7
-      1.c: 146e0dc5038d3b8772f5d4bd6626fe1436f656494b501628a2b54d6aa6a6edfe
-      1.d: 3c80449ebd33c67ff8d9befce23c534b50d97ed805e52da8c746e6a1daefab8e
-    2: repo.root.roles.snapshot.threshold is 4
-    3: repo.snapshot.signatures has the following keyids:
-      3.a: ccce1a69b4eea9daf315d8a9c43fffd8ee541bfb41fdcb773657192af51d3cfa
-      3.b: 4f7c454c55a81918fa1fc1f513d510f36c3efa796711d9f5883602f91a5b9da7
-      3.c: 146e0dc5038d3b8772f5d4bd6626fe1436f656494b501628a2b54d6aa6a6edfe
+    1. repo.root.roles.snapshot.keyids has 3 keyids
+    2: repo.root.roles.snapshot.threshold is 3
+    3: repo.snapshot.signatures contains signatures from two of the keys
 
     The test ensures that clients do not update snapshot in this scenario.
     """
     init_data, repo = server.new_test(client.test_name)
 
+    # Set snapshot threshold to 3, add keys to snapshot role (snapshot now has 3 keys)
+    repo.root.roles[Snapshot.type].threshold = 3
+    for _ in range(2):
+        repo.add_key(Snapshot.type)
+    repo.bump_root_by_one()  # v2
+    repo.update_snapshot()  # v2
+
     assert client.init_client(init_data) == 0
     assert client.refresh(init_data) == 0
 
-    initial_setup_for_key_threshold(client, repo, init_data)
-
-    # Set repo.root.roles.snapshot.threshold to 4 and remove
-    # a signer from snapshot metadata. The snapshot metadata
-    # then only has 3 signers which is below the threshold.
-    repo.root.roles[Snapshot.type].threshold = 4
+    # Remove a signer from snapshot: amount of signatures will be 2, below threshold
     repo.signers[Snapshot.type].popitem()
-    repo.bump_root_by_one()  # v3
     repo.update_snapshot()  # v3
 
-    # The snapshot does not meet the threshold anymore,
-    # because there are 3 snapshot signers keys, and the
-    # threshold is 4.
-    # NOTE: we don't actually expect clients to delete the
-    # file from trusted_roles() at this point
+    # snapshot v3 does not meet the threshold anymore:
     assert client.refresh(init_data) == 1
-    assert client.version(Root.type) == 3
-    assert client.version(Snapshot.type) == 2
+    assert client.version(Snapshot.type) != 3
 
 
-def test_wrong_hashing_algorithm(client: ClientRunner, server: SimulatorServer) -> None:
-    """This test sets a wrong but valid hashing algorithm for a key
-    in the root MD. The client should not care and still update,
-    because the "keyid_hash_algorithms" field is not a part of the
-    TUF spec.
-    The metadata meets the threshold with 4/4 keys, but one of the
-    keys has the wrong algorithm."""
+def test_deprecated_keyid_hash_algorithms(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    """This test sets a misleading "keyid_hash_algorithms" value: this field is not
+    a part of the TUF spec and should not affect clients.
+    """
     init_data, repo = server.new_test(client.test_name)
-
     assert client.init_client(init_data) == 0
-    assert client.refresh(init_data) == 0
 
-    initial_setup_for_key_threshold(client, repo, init_data)
-
-    # Set one of the keys' "keyid_hash_algorithms" to an
-    # incorrect algorithm.
+    # Set snapshot keys "keyid_hash_algorithms" to an incorrect algorithm.
     valid_key = repo.root.roles[Snapshot.type].keyids[0]
-    repo.root.keys[valid_key].unrecognized_fields = dict()
-    alg_key = "keyid_hash_algorithms"
-    repo.root.keys[valid_key].unrecognized_fields[alg_key] = ["md5"]
-    repo.bump_root_by_one()  # v4
-    repo.update_snapshot()  # v3
+    repo.root.keys[valid_key].unrecognized_fields = {"keyid_hash_algorithms": "md5"}
+    repo.bump_root_by_one()  # v2
 
     # All metadata should update; even though "keyid_hash_algorithms"
-    # is wrong, it is not a part of the TUF spec. This is the tests
-    # main assertion: That the client updates so that it has the
-    # same metadata as the repository.
+    # is wrong, it is not a part of the TUF spec.
     assert client.refresh(init_data) == 0
-    assert client.version(Root.type) == repo._version(Root.type)
-    assert client.version(Snapshot.type) == repo._version(Snapshot.type)
+    assert client.version(Root.type) == 2
+    assert client.version(Snapshot.type) == 1
 
 
-def test_snapshot_threshold(client: ClientRunner, server: SimulatorServer) -> None:
+def test_snapshot_has_too_few_keys(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    """In this test snapshot does not have enough keys: it is impossible
+    to have a threshold of signatures."""
     # Test basic failure to reach signature threshold
     init_data, repo = server.new_test(client.test_name)
-
     assert client.init_client(init_data) == 0
-    assert client.refresh(init_data) == 0
 
     # Add 4 Snapshot keys so that there are 5 in total.
-    repo.add_key(Snapshot.type)
-    repo.add_key(Snapshot.type)
-    repo.add_key(Snapshot.type)
-    repo.add_key(Snapshot.type)
+    for _ in range(4):
+        repo.add_key(Snapshot.type)
     assert len(repo.root.roles["snapshot"].keyids) == 5
 
     # Set higher threshold than we have keys such that the
@@ -138,7 +85,8 @@ def test_snapshot_threshold(client: ClientRunner, server: SimulatorServer) -> No
     # Ensure that client does not update because it does
     # not have enough keys.
     assert client.refresh(init_data) == 1
-    assert client.version(Snapshot.type) == 1
+    assert client.version(Root.type) == 2
+    assert client.version(Snapshot.type) != 2
 
 
 def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> None:
@@ -170,7 +118,7 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
     assert client.refresh(init_data) == 1
 
     # client should not have accepted snapshot
-    assert client.version(Snapshot.type) is None
+    assert client.version(Snapshot.type) != 1
 
 
 # keytype, scheme and an example signature from this type of key

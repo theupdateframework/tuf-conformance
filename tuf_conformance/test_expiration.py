@@ -129,6 +129,7 @@ def test_expired_local_root(client: ClientRunner, server: SimulatorServer) -> No
     assert client.refresh(init_data, days_in_future=18) == 0
     assert client.version(Root.type) == 3
 
+
 def test_expired_local_timestamp(client: ClientRunner, server: SimulatorServer) -> None:
     """Ensures that the client can update to the latest remote timestamp
     when the local timestamp has expired.

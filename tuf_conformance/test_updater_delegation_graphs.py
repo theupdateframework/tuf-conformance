@@ -195,13 +195,9 @@ def test_graph_traversal(
     assert client.init_client(init_data) == 0
     init_repo(repo, graphs)
 
-    # Call explicitly refresh to simplify the expected_calls list
-    assert client.refresh(init_data) == 0
-    repo.metadata_statistics.clear()
     assert client.download_target(init_data, "missingpath") == 1
-    # "('root', 2), ('timestamp', None)" gets prepended
-    # in every case, so we compare from the 3rd item in the list.
-    assert repo.metadata_statistics[2:] == exp_calls
+    # skip the top level metadata (root, timestamp, snapshot, targets) in statistics
+    assert repo.metadata_statistics[4:] == exp_calls
 
 
 r"""
@@ -259,9 +255,6 @@ def test_targetfile_search(
     assert client.init_client(init_data) == 0
     init_repo(repo, delegations_tree)
 
-    # Call explicitly refresh to simplify the expected_calls list
-    assert client.refresh(init_data) == 0
-    repo.metadata_statistics.clear()
     if target.found:
         assert client.download_target(init_data, target.targetpath) == 0
         assert client.get_downloaded_target_bytes() == [
@@ -270,7 +263,5 @@ def test_targetfile_search(
     else:
         assert client.download_target(init_data, target.targetpath) == 1
 
-    # repo prepends [('root', 2), ('timestamp', None)]
-    # so we compare equality from the 2nd call to the 3rd-last
-    # call.
-    assert repo.metadata_statistics[2:] == exp_calls
+    # skip the top level metadata (root, timestamp, snapshot, targets) in statistics
+    assert repo.metadata_statistics[4:] == exp_calls
