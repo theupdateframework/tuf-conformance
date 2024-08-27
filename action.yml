@@ -10,10 +10,6 @@ inputs:
       but if you call this action in a job matrix, make sure each call gets a unique name"
     default: ""
     required: false
-  expected-failures:
-    description: "Optional list test names expected to fail"
-    default: ""
-    required: false
 
 runs:
   using: "composite"
@@ -36,7 +32,6 @@ runs:
       id: tuf-conformance
       env:
         ENTRYPOINT: ${{ inputs.entrypoint }}
-        EXPECTED_FAILURES: ${{ inputs.expected-failures }}
         TEST_LOCATION: ${{ github.action_path }}/tuf_conformance
         NAME: ${{ inputs.artifact-name }}
       run: |
@@ -50,7 +45,6 @@ runs:
         # run test suite
         pytest -v "$TEST_LOCATION" \
           --entrypoint "$ENTRYPOINT" \
-          --expected-failures "$EXPECTED_FAILURES" \
           --repository-dump-dir ./test-repositories \
       shell: bash
 

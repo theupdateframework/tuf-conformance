@@ -17,13 +17,6 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         type=str,
     )
     parser.addoption(
-        "--expected-failures",
-        action="store",
-        help="Optional space delimited list of test names expected to fail",
-        required=False,
-        type=str,
-    )
-    parser.addoption(
         "--repository-dump-dir",
         action="store",
         help="Optional path to dump repository versions for each test for debugging",
@@ -90,14 +83,25 @@ def static_client(
     return ClientRunner(entrypoint, static_server, request.node.name)
 
 
+@cache
+def read_xfails(pytestconfig: pytest.Config) -> list[str]:
+    # Find expected failures from .xfails file
+    xfail_file = f"{pytestconfig.getoption('--entrypoint')}.xfails"
+    if not os.path.isabs(xfail_file):
+        xfail_file = os.path.join(pytestconfig.invocation_params.dir, xfail_file)
+
+    try:
+        with open(xfail_file) as f:
+            return f.read().splitlines()
+    except FileNotFoundError:
+        return []
+
+
 @pytest.fixture(autouse=True)
 def conformance_xfail(
     pytestconfig: pytest.Config, request: pytest.FixtureRequest
 ) -> None:
-    xfail_option = pytestconfig.getoption("--expected-failures")
-    if xfail_option is None:
-        return
+    xfails = read_xfails(pytestconfig)
 
-    xfails = xfail_option.split(" ")
     if request.node.originalname in xfails or request.node.name in xfails:
         request.node.add_marker(pytest.mark.xfail(strict=True))
