@@ -98,7 +98,39 @@ def test_targets_expired(client: ClientRunner, server: SimulatorServer) -> None:
     ]
 
 
-def test_expired_timestamp(client: ClientRunner, server: SimulatorServer) -> None:
+def test_expired_local_root(client: ClientRunner, server: SimulatorServer) -> None:
+    """Ensures that client can update to latest root when the local root is expired.
+
+    The updates and verifications are performed with the following timing:
+     - root v2 expiry set to day 7
+     - First updater refresh performed on day 0
+
+     - Repository bumps snapshot and targets to v2 on day 0
+     - Timestamp v2 expiry set to day 21
+     - Second updater refresh performed on day 18,
+       it is successful and timestamp/snaphot final versions are v2"""
+    init_data, repo = server.new_test(client.test_name)
+
+    assert client.init_client(init_data) == 0
+
+    # root v2 expires in 7 days
+    now = datetime.datetime.now(timezone.utc)
+    repo.root.expires = now + datetime.timedelta(days=7)
+    repo.bump_root_by_one()
+
+    # Refresh
+    assert client.refresh(init_data) == 0
+
+    # root v3 expires in 21 days
+    repo.root.expires = now + datetime.timedelta(days=21)
+    repo.bump_root_by_one()
+
+    # Mocking time so that local root (v2) has expired but v3 from repo has not
+    assert client.refresh(init_data, days_in_future=18) == 0
+    assert client.version(Root.type) == 3
+
+
+def test_expired_local_timestamp(client: ClientRunner, server: SimulatorServer) -> None:
     """Ensures that the client can update to the latest remote timestamp
     when the local timestamp has expired.
 
