@@ -1,5 +1,5 @@
 import os
-from collections.abc import Iterator
+from functools import cache
 
 import pytest
 
@@ -32,25 +32,32 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    _simulator_server("").server_close()
+    _static_server().server_close()
+
+
+@cache
+def _simulator_server(dump_dir: str) -> SimulatorServer:
+    return SimulatorServer(dump_dir)
+
+
+@cache
+def _static_server() -> StaticServer:
+    return StaticServer()
+
+
 @pytest.fixture
-def server(pytestconfig: pytest.Config) -> Iterator[SimulatorServer]:
-    """
-    Parametrize each test with the server under test.
-    """
+def server(pytestconfig: pytest.Config) -> SimulatorServer:
+    """HTTP Server for all simulated repositories"""
     dump_dir = pytestconfig.getoption("--repository-dump-dir")
-    server = SimulatorServer(dump_dir)
-    yield server
-    server.server_close()
+    return _simulator_server(dump_dir)
 
 
 @pytest.fixture
-def static_server(pytestconfig: pytest.Config) -> Iterator[StaticServer]:
-    """
-    Server that serves static repositories
-    """
-    server = StaticServer()
-    yield server
-    server.server_close()
+def static_server(pytestconfig: pytest.Config) -> StaticServer:
+    """HTTP Server for all static repositories"""
+    return _static_server()
 
 
 @pytest.fixture
