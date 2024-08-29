@@ -62,7 +62,6 @@ PHONY: test-go-tuf
 test-go-tuf: dev build-go-tuf faketime
 	./env/bin/pytest tuf_conformance \
 		--entrypoint "./clients/go-tuf/go-tuf" \
-		--expected-failures "test_keytype_and_scheme[rsa/rsassa-pss-sha256]" \
 		--repository-dump-dir $(DUMP_DIR)
 	@echo Repository dump in $(DUMP_DIR)
 PHONY: build-go-tuf

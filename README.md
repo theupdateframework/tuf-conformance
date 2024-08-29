@@ -32,6 +32,14 @@ There are two required steps:
               entrypoint: path/to/my/test/executable
     ```
 
+### Expected failures
+
+The test suite also contains tests that are not strictly speaking specification requirements (such as
+tests for specific keytype or hash algorithm suport). Clients can mark tests as "expected failures"
+if they do not intend to support this specific feature.
+
+The tests that are expected to fail can be listed in `<entrypoint>.xfails` file. In the previous
+workflow example the xfails file would be `path/to/my/test/executable.xfails`
 
 ## Development
 

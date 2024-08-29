@@ -187,8 +187,8 @@ def test_download_with_hash_algorithms(
     """Test support of hash algorithms. The specification does not require any
     specific algorithms, and only mentions sha256.
 
-    Clients can use --expected-failures to mark tests that fail because of algorithms
-    they do not intend to support."""
+    Clients can use the .xfail file to mark tests as "expected to fail".
+    """
     init_data, repo = server.new_test(client.test_name)
 
     # Create a legitimate test artifact
