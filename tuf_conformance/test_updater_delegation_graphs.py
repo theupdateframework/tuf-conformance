@@ -4,7 +4,9 @@ import pytest
 from tuf.api.metadata import (
     SPECIFICATION_VERSION,
     DelegatedRole,
+    Snapshot,
     Targets,
+    Timestamp,
 )
 
 from tuf_conformance.client_runner import ClientRunner
@@ -171,11 +173,15 @@ def init_repo(repo: RepositorySimulator, test_case: DelegationsTestCase) -> None
         # unpack 'd' but skip "delegator"
         role = DelegatedRole(*astuple(d)[1:])
         repo.add_delegation(d.delegator, role, targets)
+        repo.publish([d.delegator])
+        repo.publish([d.rolename])
 
     for target in test_case.target_files:
         repo.add_artifact(*astuple(target))
+        repo.publish([target.rolename])
 
     repo.update_snapshot()
+    repo.publish([Targets.type, Timestamp.type, Snapshot.type])
 
 
 @pytest.mark.parametrize("graphs", graph_cases, ids=graph_ids)

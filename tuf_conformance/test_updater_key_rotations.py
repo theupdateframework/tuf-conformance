@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import pytest
 from securesystemslib.signer import CryptoSigner
-from tuf.api.metadata import Root
+from tuf.api.metadata import Root, Snapshot, Targets, Timestamp
 
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import SimulatorServer
@@ -149,10 +149,10 @@ def test_root_rotation(
 
     # initialize a simulator with repository content we need
     init_data, repo = server.new_test(client.test_name)
-    repo.signed_roots.clear()
+    repo.signed_mds[Root.type].clear()
     repo.root.version = 0
 
-    repo.signed_roots.clear()
+    repo.signed_mds[Root.type].clear()
     for rootver in root_versions:
         # clear root keys, signers
         repo.root.roles[Root.type].keyids.clear()
@@ -163,8 +163,8 @@ def test_root_rotation(
             repo.root.add_key(signers[i].public_key, Root.type)
         for i in rootver.sigs:
             repo.add_signer(Root.type, signers[i])
-        repo.root.version += 1
-        repo.publish_root()
+        repo.publish([Timestamp.type, Snapshot.type, Targets.type])
+        repo.publish([Root.type], bump_version=True)
 
     # Make sure our initial root is the v1 we just created
     init_data.trusted_root = repo.fetch_metadata("root", 1)
@@ -173,14 +173,15 @@ def test_root_rotation(
     assert client.init_client(init_data) == 0
     expected_result = root_versions[-1].res
     if expected_result:
-        expected_local_root = repo.signed_roots[-1]
+        expected_local_root = repo.signed_mds[Root.type][-1]
         assert client.refresh(init_data) == 0
     else:
-        expected_local_root = repo.signed_roots[-2]
+        expected_local_root = repo.signed_mds[Root.type][-2]
         assert client.refresh(init_data) == 1
 
     with open(os.path.join(client.metadata_dir, "root.json"), "rb") as f:
-        assert f.read() == expected_local_root
+        client_root_md = f.read()
+        assert client_root_md == expected_local_root
 
 
 @pytest.mark.parametrize("md_version", non_rotation_cases, ids=non_rotation_ids)
@@ -221,8 +222,8 @@ def test_non_root_rotations(
         for i in md_version.sigs:
             repo.add_signer(role, signers[i])
 
-        repo.root.version += 1
-        repo.publish_root()
+        repo.publish([Timestamp.type, Snapshot.type, Targets.type])
+        repo.publish([Root.type], bump_version=True)
 
         # run client workflow, assert success/failure
         expected_result = md_version.res

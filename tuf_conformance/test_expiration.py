@@ -17,11 +17,11 @@ def test_root_expired(client: ClientRunner, server: SimulatorServer) -> None:
     assert client.init_client(init_data) == 0
     assert client.refresh(init_data) == 0
 
-    repo.bump_root_by_one()  # v2
+    repo.publish([Root.type], bump_version=True)  # v2
     assert client.refresh(init_data) == 0
 
     repo.root.expires = utils.get_date_n_days_in_past(1)
-    repo.bump_root_by_one()  # v3
+    repo.publish([Root.type], bump_version=True)  # v3
     repo.targets.version += 1  # v2
 
     assert client.refresh(init_data) == 1
@@ -43,6 +43,7 @@ def test_timestamp_expired(client: ClientRunner, server: SimulatorServer) -> Non
 
     repo.timestamp.expires = utils.get_date_n_days_in_past(5)
     repo.update_timestamp()  # v2
+    repo.publish([Timestamp.type])
 
     # Check that client does not accept expired timestamp
     assert client.refresh(init_data) == 1
@@ -64,6 +65,8 @@ def test_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> None
 
     repo.snapshot.expires = utils.get_date_n_days_in_past(5)
     repo.update_snapshot()
+    repo.publish([Snapshot.type])
+    repo.publish([Timestamp.type])
 
     assert client.refresh(init_data) == 1
 
@@ -86,6 +89,7 @@ def test_targets_expired(client: ClientRunner, server: SimulatorServer) -> None:
 
     repo.targets.expires = utils.get_date_n_days_in_past(5)
     repo.update_snapshot()
+    repo.publish([Snapshot.type, Timestamp.type])
 
     assert client.refresh(init_data) == 0
 
@@ -116,14 +120,14 @@ def test_expired_local_root(client: ClientRunner, server: SimulatorServer) -> No
     # root v2 expires in 7 days
     now = datetime.datetime.now(timezone.utc)
     repo.root.expires = now + datetime.timedelta(days=7)
-    repo.bump_root_by_one()
+    repo.publish([Root.type], bump_version=True)
 
     # Refresh
     assert client.refresh(init_data) == 0
 
     # root v3 expires in 21 days
     repo.root.expires = now + datetime.timedelta(days=21)
-    repo.bump_root_by_one()
+    repo.publish([Root.type], bump_version=True)
 
     # Mocking time so that local root (v2) has expired but v3 from repo has not
     assert client.refresh(init_data, days_in_future=18) == 0
@@ -157,6 +161,7 @@ def test_expired_local_timestamp(client: ClientRunner, server: SimulatorServer) 
     repo.targets.version += 1
     repo.timestamp.expires = now + datetime.timedelta(days=21)
     repo.update_snapshot()
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
     # Mocking time so that local timestamp has expired
     # but the new timestamp has not

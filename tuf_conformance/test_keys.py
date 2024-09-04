@@ -1,5 +1,5 @@
 import pytest
-from tuf.api.metadata import Metadata, Root, Snapshot
+from tuf.api.metadata import Metadata, Root, Snapshot, Targets, Timestamp
 
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import SimulatorServer
@@ -25,8 +25,9 @@ def test_snapshot_does_not_meet_threshold(
     repo.root.roles[Snapshot.type].threshold = 3
     for _ in range(2):
         repo.add_key(Snapshot.type)
-    repo.bump_root_by_one()  # v2
+    repo.publish([Root.type], bump_version=True)  # v2
     repo.update_snapshot()  # v2
+    repo.publish([Targets.type, Timestamp.type, Snapshot.type])
 
     assert client.init_client(init_data) == 0
     assert client.refresh(init_data) == 0
@@ -34,6 +35,7 @@ def test_snapshot_does_not_meet_threshold(
     # Remove a signer from snapshot: amount of signatures will be 2, below threshold
     repo.signers[Snapshot.type].popitem()
     repo.update_snapshot()  # v3
+    repo.publish([Targets.type, Timestamp.type, Snapshot.type])
 
     # snapshot v3 does not meet the threshold anymore:
     assert client.refresh(init_data) == 1
@@ -52,7 +54,7 @@ def test_deprecated_keyid_hash_algorithms(
     # Set snapshot keys "keyid_hash_algorithms" to an incorrect algorithm.
     valid_key = repo.root.roles[Snapshot.type].keyids[0]
     repo.root.keys[valid_key].unrecognized_fields = {"keyid_hash_algorithms": "md5"}
-    repo.bump_root_by_one()  # v2
+    repo.publish([Root.type], bump_version=True)  # v2
 
     # All metadata should update; even though "keyid_hash_algorithms"
     # is wrong, it is not a part of the TUF spec.
@@ -79,8 +81,9 @@ def test_snapshot_has_too_few_keys(
     # client should not successfully update.
     repo.root.roles[Snapshot.type].threshold = 6
 
-    repo.bump_root_by_one()  # v2
+    repo.publish([Root.type], bump_version=True)  # v2
     repo.update_snapshot()  # v2
+    repo.publish([Targets.type, Timestamp.type, Snapshot.type])
 
     # Ensure that client does not update because it does
     # not have enough keys.
@@ -107,10 +110,12 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
 
     repo.add_signer(Snapshot.type, signer)
 
+    repo.publish([Snapshot.type])
+
     # Set a threshold that will be covered but only by
     # the same key multiple times and not separate keys.
     repo.root.roles[Snapshot.type].threshold = 6
-    repo.bump_root_by_one()
+    repo.publish([Root.type], bump_version=True)
 
     # This should fail for one of two reasons:
     # 1. client does not accept root v2 metadata that contains duplicate keyids or
@@ -159,17 +164,17 @@ def test_keytype_and_scheme(
     signer = repo.new_signer(keytype, scheme)
     repo.add_key(Root.type, signer=signer)
     repo.root.roles[Root.type].threshold += 1
-    repo.bump_root_by_one()
+    repo.publish([Root.type], bump_version=True)
 
     assert client.refresh(init_data) == 0
     assert client.version(Root.type) == 2
 
     # Create new root version. Replace the correct signature with one that looks
     # reasonable for the keytype but is incorrect. Expect client to refuse the new root.
-    repo.bump_root_by_one()
-    root_md = Metadata.from_bytes(repo.signed_roots.pop())
+    repo.publish([Root.type], bump_version=True)
+    root_md = Metadata.from_bytes(repo.signed_mds[Root.type].pop())
     root_md.signatures[signer.public_key.keyid].signature = bad_sig
-    repo.signed_roots.append(root_md.to_bytes())
+    repo.signed_mds[Root.type].append(root_md.to_bytes())
 
     assert client.refresh(init_data) == 1
     assert client.version(Root.type) == 2

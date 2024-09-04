@@ -20,7 +20,6 @@ def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -
 
     # Run the test: step 2: Refresh
     assert client.refresh(init_data) == 0
-
     # Verify that expected requests were made
     assert repo.metadata_statistics == [
         ("root", 2),
@@ -128,13 +127,15 @@ def test_unsigned_metadata(
     Expect the refresh to succeed until that point, but not continue from that point.
     """
 
-    init_data, repo = server.new_test(client.test_name)
+    init_data, repo = server.new_test(client.test_name, publish_all=False)
 
     # remove signing key for role, increase version
     repo.signers[role].popitem()
     repo.mds[role].signed.version += 1
     if role == "root":
-        repo.publish_root()
+        repo.publish([Root.type])
+    else:
+        repo.publish([Timestamp.type, Snapshot.type, Targets.type])
 
     assert client.init_client(init_data) == 0
 
@@ -174,6 +175,7 @@ def test_basic_metadata_hash_support(
     # Construct repository with hashes in timestamp/snapshot
     repo.compute_metafile_hashes_length = True
     repo.update_snapshot()  # v2
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
     assert client.init_client(init_data) == 0
     # Verify client accepts correct hashes
@@ -183,7 +185,9 @@ def test_basic_metadata_hash_support(
     repo.targets.version += 1  # v2
     repo.snapshot.meta["targets.json"].version = repo.targets.version
     repo.snapshot.version += 1  # v3
+    repo.publish([Snapshot.type])
     repo.update_timestamp()
+    repo.publish([Timestamp.type])
 
     # Verify client refuses targets that does not match hashes
     assert client.refresh(init_data) == 1
@@ -251,7 +255,7 @@ def test_custom_fields(client: ClientRunner, server: SimulatorServer) -> None:
     keyid = repo.root.roles[Root.type].keyids[0]
     repo.root.keys[keyid].unrecognized_fields["extra-field"] = {"a": 1, "b": 2}
     repo.root.roles[Root.type].unrecognized_fields["another-field"] = "value"
-    repo.bump_root_by_one()
+    repo.publish([Root.type], bump_version=True)
 
     # client should accept new root: The signed content contains the unknown fields
     assert client.refresh(init_data) == 0

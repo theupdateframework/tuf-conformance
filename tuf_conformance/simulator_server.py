@@ -4,6 +4,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from os import path
 from urllib import parse
 
+from tuf.api.metadata import Snapshot, Targets, Timestamp
+
 from tuf_conformance.repository_simulator import RepositorySimulator
 
 
@@ -61,7 +63,9 @@ class SimulatorServer(ThreadingHTTPServer):
         # key is test name, value is the repository sim for that test
         self.repos: dict[str, RepositorySimulator] = {}
 
-    def new_test(self, name: str) -> tuple[ClientInitData, RepositorySimulator]:
+    def new_test(
+        self, name: str, publish_all: bool = True
+    ) -> tuple[ClientInitData, RepositorySimulator]:
         """Return a tuple of
         * A new repository simulator (for test case to control)
         * client initialization parameters (so client can find the simulated repo)
@@ -78,6 +82,12 @@ class SimulatorServer(ThreadingHTTPServer):
             f"http://{host}:{port}/{safe_name}/targets/",
             repo.fetch_metadata("root", 1),
         )
+
+        # The repository simulator publishes the root.
+        # If the test needs to publish all metadata, we publish the
+        # remaining here:
+        if publish_all:
+            repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
         return client_data, repo
 
