@@ -212,8 +212,7 @@ class RepositorySimulator:
     def publish(
         self, roles: list[str] = ALL_TOPLEVEL_TYPES, bump_version: bool = False
     ) -> None:
-        for r in roles:
-            role = parse.unquote(r, encoding="utf-8")
+        for role in roles:
             md = self.mds.get(role)
             if md is None:
                 raise ValueError(f"Unknown role {role}")
