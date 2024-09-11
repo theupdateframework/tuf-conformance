@@ -163,7 +163,7 @@ def test_root_rotation(
             repo.root.add_key(signers[i].public_key, Root.type)
         for i in rootver.sigs:
             repo.add_signer(Root.type, signers[i])
-        repo.publish([Timestamp.type, Snapshot.type, Targets.type])
+        repo.publish([Targets.type, Snapshot.type, Timestamp.type])
         repo.publish([Root.type], bump_version=True)
 
     # Make sure our initial root is the v1 we just created
@@ -222,7 +222,7 @@ def test_non_root_rotations(
         for i in md_version.sigs:
             repo.add_signer(role, signers[i])
 
-        repo.publish([Timestamp.type, Snapshot.type, Targets.type])
+        repo.publish([Targets.type, Snapshot.type, Timestamp.type])
         repo.publish([Root.type], bump_version=True)
 
         # run client workflow, assert success/failure

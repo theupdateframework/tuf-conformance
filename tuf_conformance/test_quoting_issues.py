@@ -35,7 +35,7 @@ def test_unusual_role_name(
 
     repo.targets.version += 1
     repo.update_snapshot()
-    repo.publish([role, Timestamp.type, Snapshot.type, Targets.type])
+    repo.publish([role, Targets.type, Snapshot.type, Timestamp.type])
 
     client.init_client(init_data)
     assert client.download_target(init_data, "nonexistent target") == 1

@@ -181,7 +181,7 @@ def init_repo(repo: RepositorySimulator, test_case: DelegationsTestCase) -> None
         repo.publish([target.rolename])
 
     repo.update_snapshot()
-    repo.publish([Targets.type, Timestamp.type, Snapshot.type])
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
 
 @pytest.mark.parametrize("graphs", graph_cases, ids=graph_ids)

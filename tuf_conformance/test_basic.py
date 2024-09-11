@@ -135,7 +135,7 @@ def test_unsigned_metadata(
     if role == "root":
         repo.publish([Root.type])
     else:
-        repo.publish([Timestamp.type, Snapshot.type, Targets.type])
+        repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
     assert client.init_client(init_data) == 0
 

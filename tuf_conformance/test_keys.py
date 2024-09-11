@@ -27,7 +27,7 @@ def test_snapshot_does_not_meet_threshold(
         repo.add_key(Snapshot.type)
     repo.publish([Root.type], bump_version=True)  # v2
     repo.update_snapshot()  # v2
-    repo.publish([Targets.type, Timestamp.type, Snapshot.type])
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
     assert client.init_client(init_data) == 0
     assert client.refresh(init_data) == 0
@@ -35,7 +35,7 @@ def test_snapshot_does_not_meet_threshold(
     # Remove a signer from snapshot: amount of signatures will be 2, below threshold
     repo.signers[Snapshot.type].popitem()
     repo.update_snapshot()  # v3
-    repo.publish([Targets.type, Timestamp.type, Snapshot.type])
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
     # snapshot v3 does not meet the threshold anymore:
     assert client.refresh(init_data) == 1
@@ -83,7 +83,7 @@ def test_snapshot_has_too_few_keys(
 
     repo.publish([Root.type], bump_version=True)  # v2
     repo.update_snapshot()  # v2
-    repo.publish([Targets.type, Timestamp.type, Snapshot.type])
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
     # Ensure that client does not update because it does
     # not have enough keys.

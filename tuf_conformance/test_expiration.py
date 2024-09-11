@@ -65,8 +65,7 @@ def test_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> None
 
     repo.snapshot.expires = utils.get_date_n_days_in_past(5)
     repo.update_snapshot()
-    repo.publish([Snapshot.type])
-    repo.publish([Timestamp.type])
+    repo.publish([Snapshot.type, Timestamp.type])
 
     assert client.refresh(init_data) == 1
 
