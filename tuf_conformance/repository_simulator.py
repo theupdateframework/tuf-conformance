@@ -100,7 +100,7 @@ class RepositorySimulator:
         # All signed metadata
         self.signed_mds: dict[str, list[bytes]] = {}
 
-        # signers are used on-demand at fetch time to sign metadata
+        # signers are used to sign metadata
         # keys are roles, values are dicts of {keyid: signer}
         self.signers: dict[str, dict[str, Signer]] = {}
 
