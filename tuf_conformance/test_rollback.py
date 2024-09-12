@@ -152,7 +152,7 @@ def test_new_snapshot_fast_forward_recovery(
     - Bump and publish root
     - Bump the timestamp
     """
-    init_data, repo = server.new_test(client.test_name, publish_all=False)
+    init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
     repo.snapshot.version = 99999

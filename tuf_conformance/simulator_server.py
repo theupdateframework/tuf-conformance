@@ -64,7 +64,7 @@ class SimulatorServer(ThreadingHTTPServer):
         self.repos: dict[str, RepositorySimulator] = {}
 
     def new_test(
-        self, name: str, publish_all: bool = True
+        self, name: str
     ) -> tuple[ClientInitData, RepositorySimulator]:
         """Return a tuple of
         * A new repository simulator (for test case to control)
@@ -84,10 +84,8 @@ class SimulatorServer(ThreadingHTTPServer):
         )
 
         # The repository simulator publishes the root.
-        # If the test needs to publish all metadata, we publish the
-        # remaining here:
-        if publish_all:
-            repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+        # Here, we publish the remaining metadata:
+        repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
         return client_data, repo
 

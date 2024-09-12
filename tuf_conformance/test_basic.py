@@ -127,7 +127,7 @@ def test_unsigned_metadata(
     Expect the refresh to succeed until that point, but not continue from that point.
     """
 
-    init_data, repo = server.new_test(client.test_name, publish_all=False)
+    init_data, repo = server.new_test(client.test_name)
 
     # remove signing key for role, increase version
     repo.signers[role].popitem()
