@@ -175,7 +175,7 @@ def test_basic_metadata_hash_support(
     # Construct repository with hashes in timestamp/snapshot
     repo.compute_metafile_hashes_length = True
     repo.update_snapshot()  # v2
-    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    #repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
     assert client.init_client(init_data) == 0
     # Verify client accepts correct hashes

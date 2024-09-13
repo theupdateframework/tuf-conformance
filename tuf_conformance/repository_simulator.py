@@ -276,7 +276,6 @@ class RepositorySimulator:
 
         If hash is None, then consistent_snapshot is not used.
         """
-
         repo_target = self.artifacts.get(target_path)
         if repo_target is None:
             raise ValueError(f"No target {target_path}")
@@ -302,6 +301,8 @@ class RepositorySimulator:
         # Non-root mds:
         if len(self.signed_mds[role]) == 0:
             raise ValueError(f"The repository has not published metadata for '{role}'")
+        #if version is not None:
+        #    return self.signed_mds[role][version - 1]
         return self.signed_mds[role][-1]
 
     def _version(self, role: str) -> int:
@@ -310,7 +311,7 @@ class RepositorySimulator:
         return signed.version
 
     def _compute_hashes_and_length(self, role: str) -> tuple[dict[str, str], int]:
-        md = self.mds[role]
+        md = Metadata.from_bytes(self.signed_mds[role][-1])
         md.signatures.clear()
         for signer in self.signers[role].values():
             md.sign(signer, append=True)
@@ -329,13 +330,16 @@ class RepositorySimulator:
         if self.compute_metafile_hashes_length:
             hashes, length = self._compute_hashes_and_length(Snapshot.type)
 
-        self.timestamp.snapshot_meta = MetaFile(self.snapshot.version, length, hashes)
+        md = self.mds[Timestamp.type]
+        md.signed.snapshot_meta = MetaFile(self.snapshot.version, length, hashes)
 
         self.timestamp.version += 1
+        self.publish([Timestamp.type])
 
     def update_snapshot(self) -> None:
         """Update snapshot, assign targets versions and update timestamp."""
         for role, delegate in self.all_targets():
+            self.publish([role])
             hashes = None
             length = None
             if self.compute_metafile_hashes_length:
@@ -346,6 +350,7 @@ class RepositorySimulator:
             )
 
         self.snapshot.version += 1
+        self.publish([Snapshot.type])
         self.update_timestamp()
 
     def add_artifact(self, role: str, data: bytes, path: str) -> None:
