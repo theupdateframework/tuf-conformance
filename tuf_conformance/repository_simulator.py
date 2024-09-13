@@ -437,22 +437,14 @@ class RepositorySimulator:
 
         for ver in range(1, len(self.signed_mds[Root.type]) + 1):
             with open(os.path.join(dest_dir, f"{ver}.root.json"), "wb") as f:
-                try:
-                    data = self.fetch_metadata(Root.type, ver)
-                except ValueError:
-                    data = b"No metadata found"
-                f.write(data)
+                f.write(self.fetch_metadata(Root.type, ver))
 
-        for role in self.mds:
+        for role in self.signed_mds:
             if role == Root.type:
                 continue
             quoted_role = parse.quote(role, "")
             with open(os.path.join(dest_dir, f"{quoted_role}.json"), "wb") as f:
-                try:
-                    data = self.fetch_metadata(role)
-                except ValueError:
-                    data = b"No metadata found"
-                f.write(data)
+                f.write(self.fetch_metadata(role))
 
     def add_key(
         self,
