@@ -4,8 +4,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from os import path
 from urllib import parse
 
-from tuf.api.metadata import Snapshot, Targets, Timestamp
-
 from tuf_conformance.repository_simulator import RepositorySimulator
 
 

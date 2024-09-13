@@ -51,15 +51,15 @@ class TestRepositorySimulator(unittest.TestCase):
         )
 
         self.assertEqual(
-            Metadata[Timestamp].from_bytes(
-                repo.signed_mds[Timestamp.type][-1]
-            ).signed.snapshot_meta.length,
+            Metadata[Timestamp]
+            .from_bytes(repo.signed_mds[Timestamp.type][-1])
+            .signed.snapshot_meta.length,
             expected_length,
         )
         self.assertEqual(
-            Metadata[Timestamp].from_bytes(
-                repo.signed_mds[Timestamp.type][-1]
-            ).signed.snapshot_meta.hashes,
+            Metadata[Timestamp]
+            .from_bytes(repo.signed_mds[Timestamp.type][-1])
+            .signed.snapshot_meta.hashes,
             expected_hashes,
         )
 
