@@ -127,7 +127,7 @@ def test_new_targets_fast_forward_recovery(
     assert client.version(Targets.type) == 99999
 
     repo.rotate_keys(Snapshot.type)
-        repo.publish([Snapshot.type, Timestamp.type])
+    repo.publish([Snapshot.type, Timestamp.type])
     repo.publish([Root.type], bump_version=True)
 
     repo.targets.version = 1

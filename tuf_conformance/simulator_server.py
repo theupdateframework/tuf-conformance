@@ -63,9 +63,7 @@ class SimulatorServer(ThreadingHTTPServer):
         # key is test name, value is the repository sim for that test
         self.repos: dict[str, RepositorySimulator] = {}
 
-    def new_test(
-        self, name: str
-    ) -> tuple[ClientInitData, RepositorySimulator]:
+    def new_test(self, name: str) -> tuple[ClientInitData, RepositorySimulator]:
         """Return a tuple of
         * A new repository simulator (for test case to control)
         * client initialization parameters (so client can find the simulated repo)
