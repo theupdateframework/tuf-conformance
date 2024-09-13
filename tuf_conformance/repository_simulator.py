@@ -329,8 +329,7 @@ class RepositorySimulator:
         if self.compute_metafile_hashes_length:
             hashes, length = self._compute_hashes_and_length(Snapshot.type)
 
-        md = self.mds[Timestamp.type]
-        md.signed.snapshot_meta = MetaFile(self.snapshot.version, length, hashes)
+        self.timestamp.snapshot_meta = MetaFile(self.snapshot.version, length, hashes)
 
         self.timestamp.version += 1
         self.publish([Timestamp.type])
