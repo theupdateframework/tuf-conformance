@@ -51,19 +51,19 @@ class TestRepositorySimulator(unittest.TestCase):
         )
 
         self.assertEqual(
-            Metadata.from_bytes(
+            Metadata[Timestamp].from_bytes(
                 repo.signed_mds[Timestamp.type][-1]
             ).signed.snapshot_meta.length,
             expected_length,
         )
         self.assertEqual(
-            Metadata.from_bytes(
+            Metadata[Timestamp].from_bytes(
                 repo.signed_mds[Timestamp.type][-1]
             ).signed.snapshot_meta.hashes,
             expected_hashes,
         )
 
-    def test_timestamp_expired_unittest(self) -> None:
+    def test_update_timestamp(self) -> None:
         tmp_dir = TemporaryDirectory()
         server = SimulatorServer(dump_dir=tmp_dir.name)
         init_data, repo = server.new_test("test_timestamp_expired")
