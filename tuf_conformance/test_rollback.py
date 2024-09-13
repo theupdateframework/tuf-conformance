@@ -21,7 +21,6 @@ def test_simple_snapshot_rollback(
 
     # Repository performs legitimate update to snapshot
     repo.update_snapshot()  # v2
-    repo.publish([Snapshot.type, Timestamp.type])
     assert client.refresh(init_data) == 0
 
     # Repository attempts rollback attack (note that the snapshot version in
@@ -50,7 +49,6 @@ def test_new_timestamp_version_rollback(
 
     # Repository performs legitimate update to timestamp
     repo.update_timestamp()  # v2
-    repo.publish([Timestamp.type])
     assert client.refresh(init_data) == 0
 
     # Sanity check that client saw the timestamp update:
@@ -87,14 +85,12 @@ def test_snapshot_rollback(
 
     # Start snapshot version at 2
     repo.update_snapshot()  # v2, timestamp = v2
-    repo.publish([Snapshot.type, Timestamp.type])
 
     assert client.refresh(init_data) == 0
 
     # Repo attempts rollback attack
     repo.snapshot.version = 1
     repo.update_timestamp()  # v3
-    repo.publish([Snapshot.type, Timestamp.type])
 
     assert client.refresh(init_data) == 1
 
@@ -253,13 +249,11 @@ def test_targets_rollback(
     # version higher than 1.
     repo.targets.version = 2
     repo.update_snapshot()  # v2
-    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
     assert client.refresh(init_data) == 0
 
     # The new targets must have a lower version than the local trusted one.
     repo.targets.version = 1
     repo.update_snapshot()  # v3
-    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
     # Client refresh should fail because of targets rollback
     assert client.refresh(init_data) == 1
