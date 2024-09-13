@@ -81,10 +81,6 @@ class SimulatorServer(ThreadingHTTPServer):
             repo.fetch_metadata("root", 1),
         )
 
-        # The repository simulator publishes the root.
-        # Here, we publish the remaining metadata:
-        repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-
         return client_data, repo
 
     def debug_dump(self, test_name: str) -> None:
