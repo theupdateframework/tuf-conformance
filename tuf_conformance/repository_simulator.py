@@ -300,8 +300,8 @@ class RepositorySimulator:
         # Non-root mds:
         if len(self.signed_mds[role]) == 0:
             raise ValueError(f"The repository has not published metadata for '{role}'")
-        # if version is not None:
-        #    return self.signed_mds[role][version - 1]
+        if version is not None:
+            return self.signed_mds[role][version - 1]
         return self.signed_mds[role][-1]
 
     def _version(self, role: str) -> int:

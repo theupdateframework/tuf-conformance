@@ -128,6 +128,10 @@ def test_unsigned_metadata(
     """
 
     init_data, repo = server.new_test(client.test_name)
+    # Removed published roles:
+    del repo.signed_mds[Targets.type]
+    del repo.signed_mds[Snapshot.type]
+    del repo.signed_mds[Timestamp.type]
 
     # remove signing key for role, increase version
     repo.signers[role].popitem()
