@@ -7,7 +7,7 @@ name = "tuf-conformance"
 dependencies = [
     "securesystemslib[crypto, pynacl]==1.1.0" ,
     "tuf==5.0.0",
-    "pytest==8.3.2"
+    "pytest==8.3.3"
 ]
 dynamic = ["version"]
 requires-python = ">= 3.10"
@@ -15,7 +15,7 @@ requires-python = ">= 3.10"
 [project.optional-dependencies]
 lint = [
     "mypy==1.11.2",
-    "ruff==0.6.4"
+    "ruff==0.6.5"
 ]
 
 [tool.hatch.version]
