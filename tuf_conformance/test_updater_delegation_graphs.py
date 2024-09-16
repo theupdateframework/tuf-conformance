@@ -173,15 +173,16 @@ def init_repo(repo: RepositorySimulator, test_case: DelegationsTestCase) -> None
         # unpack 'd' but skip "delegator"
         role = DelegatedRole(*astuple(d)[1:])
         repo.add_delegation(d.delegator, role, targets)
-        repo.publish([d.delegator])
         repo.publish([d.rolename])
 
     for target in test_case.target_files:
         repo.add_artifact(*astuple(target))
-        repo.publish([target.rolename])
 
-    repo.update_snapshot()
+    repo.timestamp.version += 1
+    repo.snapshot.version += 1
+    repo.targets.version += 1
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.update_snapshot()
 
 
 @pytest.mark.parametrize("graphs", graph_cases, ids=graph_ids)

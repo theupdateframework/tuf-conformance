@@ -21,7 +21,11 @@ def test_client_downloads_expected_file(
     target_path = "target_file.txt"
     target_content = b"target file contents"
     repo.add_artifact(Targets.type, target_content, target_path)
+    repo.timestamp.version += 1
+    repo.snapshot.version += 1
+    repo.targets.version += 1
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.update_snapshot()  # v2
 
     # Client updates, sanity check that nothing was downloaded
     assert client.refresh(init_data) == 0
@@ -46,7 +50,11 @@ def test_client_downloads_expected_file_in_sub_dir(
     target_path = "path/to/a/target_file.txt"
     target_content = b"target file contents"
     repo.add_artifact(Targets.type, target_content, target_path)
+    repo.timestamp.version += 1
+    repo.snapshot.version += 1
+    repo.targets.version += 1
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.update_snapshot()
 
     assert client.download_target(init_data, target_path) == 0
     assert client.get_downloaded_target_bytes() == [target_content]
@@ -69,7 +77,11 @@ def test_repository_substitutes_target_file(
     target_content_2 = b"content"
     repo.add_artifact(Targets.type, target_content_1, target_path_1)
     repo.add_artifact(Targets.type, target_content_2, target_path_2)
+    repo.timestamp.version += 1
+    repo.snapshot.version += 1
+    repo.targets.version += 1
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.update_snapshot()  # v2
 
     # Download one of the artifacts
     assert client.download_target(init_data, target_path_1) == 0
@@ -118,7 +130,11 @@ def test_multiple_changes_to_target(
     target_path = "target_file.txt"
     target_content = b"target file contents"
     repo.add_artifact(Targets.type, target_content, target_path)
+    repo.timestamp.version += 1
+    repo.snapshot.version += 1
+    repo.targets.version += 1
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.update_snapshot()  # v2
 
     # Client downloads the file
     assert client.download_target(init_data, target_path) == 0
@@ -131,6 +147,7 @@ def test_multiple_changes_to_target(
     # It modifies the targets file in the targets metadata including
     # the hashes and length, and it also makes the corresponding
     # content changes in the file itself.
+
     for i in range(11):
         # Modify the existing artifact legitimately:
         modified_contents = f"modified file contents {i}".encode()
@@ -139,11 +156,14 @@ def test_multiple_changes_to_target(
         new_file_contents = f"new file contents {i}".encode()
         new_target_path = f"new-target-{i}"
         repo.add_artifact(Targets.type, new_file_contents, new_target_path)
-        repo.targets.version += 1
 
         # Bump repo snapshot
-        repo.update_snapshot()
+        repo.timestamp.version += 1
+        repo.snapshot.version += 1
+        repo.targets.version += 1
         repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+        repo.update_snapshot()
+
         # Client only sees every fifth targets version
         if i % 5 == 0:
             # Client downloads the modified artifact
@@ -164,12 +184,13 @@ def test_multiple_changes_to_target(
             # Modify artifact content without updating the hashes/length in metadata.
             malicious_file_contents = f"malicious contents {i}".encode()
             repo.artifacts[target_path].data = malicious_file_contents
-            repo.targets.version += 1
 
             # Bump repo snapshot
-            repo.update_snapshot()
+            repo.timestamp.version += 1
+            repo.snapshot.version += 1
+            repo.targets.version += 1
             repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-
+            repo.update_snapshot()
             # ask client to download (this call may fail or succeed, see
             # test_repository_substitutes_target_file)
             client.download_target(init_data, target_path)
@@ -204,7 +225,11 @@ def test_download_with_hash_algorithms(
     target = TargetFile.from_data(target_path, target_content, hashes)
     repo.targets.targets[target_path] = target
     repo.artifacts[target_path] = Artifact(target_content, target)
+    repo.timestamp.version += 1
+    repo.snapshot.version += 1
+    repo.targets.version += 1
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.update_snapshot()  # v2
     repo.publish([Root.type], bump_version=True)
 
     assert client.init_client(init_data) == 0
@@ -234,7 +259,11 @@ def test_download_with_unknown_hash_algorithm(
     del target.hashes["sha512"]
     repo.targets.targets[target_path] = target
     repo.artifacts[target_path] = Artifact(target_content, target)
+    repo.timestamp.version += 1
+    repo.snapshot.version += 1
+    repo.targets.version += 1
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.update_snapshot()
 
     assert client.init_client(init_data) == 0
     # Note that we allow the client to actually download the artifact from repo

@@ -33,9 +33,12 @@ def test_unusual_role_name(
     # Add signer, add the key to roles delegation
     repo.add_key(role, Targets.type)
 
+    #repo.targets.version += 1
+    repo.timestamp.version += 1
+    repo.snapshot.version += 1
     repo.targets.version += 1
-    repo.update_snapshot()
     repo.publish([role, Targets.type, Snapshot.type, Timestamp.type])
+    repo.update_snapshot()
 
     client.init_client(init_data)
     assert client.download_target(init_data, "nonexistent target") == 1

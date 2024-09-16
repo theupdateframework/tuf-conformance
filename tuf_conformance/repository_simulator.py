@@ -157,9 +157,10 @@ class RepositorySimulator:
 
     def all_targets(self) -> Iterator[tuple[str, Targets]]:
         """Yield role name and signed portion of targets one by one."""
-        for role, md in self.mds.items():
-            if role not in [Root.type, Timestamp.type, Snapshot.type]:
-                yield role, md.signed
+        for role, mds in self.signed_mds.items():
+            for md in mds:
+                if role not in [Root.type, Timestamp.type, Snapshot.type]:
+                    yield role, Metadata.from_bytes(md).signed
 
     def new_signer(
         self, keytype: str = "rsa", scheme: str = "rsa-pkcs1v15-sha256"
@@ -337,7 +338,6 @@ class RepositorySimulator:
     def update_snapshot(self) -> None:
         """Update snapshot, assign targets versions and update timestamp."""
         for role, delegate in self.all_targets():
-            self.publish([role])
             hashes = None
             length = None
             if self.compute_metafile_hashes_length:

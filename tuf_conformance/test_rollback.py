@@ -185,7 +185,7 @@ def test_new_snapshot_version_mismatch(
 
     # Increase snapshot version without updating timestamp
     repo.snapshot.version += 1
-    repo.publish([Snapshot.type])
+    repo.publish([Snapshot.type, Timestamp.type])
 
     assert client.refresh(init_data) == 1
     assert client.trusted_roles() == [(Root.type, 1), (Timestamp.type, 1)]
@@ -248,14 +248,18 @@ def test_targets_rollback(
     # Initialize all metadata and assign targets
     # version higher than 1.
     repo.targets.version = 2
+    repo.timestamp.version += 1
+    repo.snapshot.version += 1
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
     repo.update_snapshot()  # v2
     assert client.refresh(init_data) == 0
 
     # The new targets must have a lower version than the local trusted one.
     repo.targets.version = 1
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
     repo.update_snapshot()  # v3
 
     # Client refresh should fail because of targets rollback
     assert client.refresh(init_data) == 1
-    assert client.version(Snapshot.type) == 2
+    assert client.version(Snapshot.type) == 3
     assert client.version(Targets.type) == 2

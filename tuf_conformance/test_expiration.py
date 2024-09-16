@@ -158,9 +158,11 @@ def test_expired_local_timestamp(client: ClientRunner, server: SimulatorServer) 
     # Bump targets + snapshot version
     # Set next version of repo timestamp to expire in 21 days
     repo.targets.version += 1
+    repo.snapshot.version += 1
+    repo.timestamp.version += 1
     repo.timestamp.expires = now + datetime.timedelta(days=21)
-    repo.update_snapshot()
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.update_snapshot()
 
     # Mocking time so that local timestamp has expired
     # but the new timestamp has not
@@ -171,7 +173,7 @@ def test_expired_local_timestamp(client: ClientRunner, server: SimulatorServer) 
     # with expired local metadata.
     assert client.trusted_roles() == [
         (Root.type, 1),
-        (Snapshot.type, 2),
+        (Snapshot.type, 3),
         (Targets.type, 2),
-        (Timestamp.type, 2),
+        (Timestamp.type, 3),
     ]
