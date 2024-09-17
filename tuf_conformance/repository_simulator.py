@@ -312,9 +312,6 @@ class RepositorySimulator:
 
     def _compute_hashes_and_length(self, role: str) -> tuple[dict[str, str], int]:
         md = Metadata.from_bytes(self.signed_mds[role][-1])
-        md.signatures.clear()
-        for signer in self.signers[role].values():
-            md.sign(signer, append=True)
         data = md.to_bytes(JSONSerializer())
         digest_object = sslib_hash.digest(sslib_hash.DEFAULT_HASH_ALGORITHM)
         digest_object.update(data)
