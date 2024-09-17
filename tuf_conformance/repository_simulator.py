@@ -210,7 +210,7 @@ class RepositorySimulator:
         self.publish([Targets.type, Snapshot.type, Timestamp.type, Root.type])
 
     def publish(
-        self, roles: list[str] = ALL_TOPLEVEL_TYPES, bump_version: bool = False
+        self, roles: list[str] = ALL_TOPLEVEL_TYPES, bump_version: bool = True
     ) -> None:
         for role in roles:
             md = self.mds.get(role)
