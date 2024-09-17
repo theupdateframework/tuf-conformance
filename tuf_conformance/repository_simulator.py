@@ -328,7 +328,6 @@ class RepositorySimulator:
 
         self.timestamp.snapshot_meta = MetaFile(self.snapshot.version, length, hashes)
 
-        self.timestamp.version += 1
         self.publish([Timestamp.type])
 
     def update_snapshot(self) -> None:
