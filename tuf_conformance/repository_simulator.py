@@ -342,7 +342,6 @@ class RepositorySimulator:
                 delegate.version, length, hashes
             )
 
-        self.snapshot.version += 1
         self.publish([Snapshot.type])
         self.update_timestamp()
 
