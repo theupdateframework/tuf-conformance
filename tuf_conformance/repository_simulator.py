@@ -155,7 +155,7 @@ class RepositorySimulator:
         assert isinstance(signed, Targets)
         return signed
 
-    def all_targets(self) -> Iterator[tuple[str, Targets]]:
+    def all_signed_targets(self) -> Iterator[tuple[str, Targets]]:
         """Yield role name and signed portion of targets one by one."""
         for role, mds in self.signed_mds.items():
             for md in mds:
@@ -334,7 +334,7 @@ class RepositorySimulator:
 
     def update_snapshot(self) -> None:
         """Update snapshot, assign targets versions and update timestamp."""
-        for role, delegate in self.all_targets():
+        for role, delegate in self.all_signed_targets():
             hashes = None
             length = None
             if self.compute_metafile_hashes_length:
