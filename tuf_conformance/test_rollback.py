@@ -56,7 +56,7 @@ def test_new_timestamp_version_rollback(
 
     # Repository attempts rollback attack:
     repo.timestamp.version -= 1  # v1
-    repo.publish([Timestamp.type])
+    repo.publish([Timestamp.type], bump_version=False)
     assert client.refresh(init_data) == 1
 
     # Check that client resisted rollback attack
@@ -116,22 +116,23 @@ def test_new_targets_fast_forward_recovery(
     init_data, repo = server.new_test(client.test_name)
     assert client.init_client(init_data) == 0
 
-    repo.targets.version = 99999
-    repo.update_snapshot()  # v2
+    for i in range(99):
+        repo.publish([Targets.type])
+    repo.update_snapshot()
 
     assert client.refresh(init_data) == 0
-    assert client.version(Targets.type) == 99999
+    assert client.version(Targets.type) == 100
 
     repo.rotate_keys(Snapshot.type)
     repo.publish([Snapshot.type, Timestamp.type])
-    repo.publish([Root.type], bump_version=True)
+    repo.publish([Root.type])
 
     repo.targets.version = 1
-    repo.update_snapshot()  # v3
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.update_snapshot()
 
     assert client.refresh(init_data) == 0
-    assert client.version(Targets.type) == 1
+    assert client.version(Targets.type) == 2
 
 
 def test_new_snapshot_fast_forward_recovery(
@@ -151,8 +152,8 @@ def test_new_snapshot_fast_forward_recovery(
 
     assert client.init_client(init_data) == 0
     repo.snapshot.version = 99999
-    repo.update_timestamp()
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.update_timestamp()
 
     # client refreshes the metadata and see the new snapshot version
     assert client.refresh(init_data) == 0
@@ -161,7 +162,7 @@ def test_new_snapshot_fast_forward_recovery(
     repo.rotate_keys(Snapshot.type)
     repo.rotate_keys(Timestamp.type)
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-    repo.publish([Root.type], bump_version=True)
+    repo.publish([Root.type])
 
     repo.snapshot.version = 1
     repo.update_timestamp()
@@ -207,20 +208,20 @@ def test_new_timestamp_fast_forward_recovery(
     assert client.init_client(init_data) == 0
 
     # attacker updates to a higher version
-    repo.timestamp.version = 99999
-    repo.publish([Timestamp.type])
+    for i in range(99):
+        repo.publish([Timestamp.type])
 
     # client refreshes the metadata and see the new timestamp version
     assert client.refresh(init_data) == 0
-    assert client.version(Timestamp.type) == 99999
+    assert client.version(Timestamp.type) == 100
 
     # repository rotates timestamp keys,
     # rolls back timestamp version
     repo.rotate_keys(Timestamp.type)
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-    repo.publish([Root.type], bump_version=True)
+    repo.publish([Root.type])
     repo.timestamp.version = 1
-    repo.publish([Timestamp.type])
+    repo.publish([Timestamp.type], bump_version=False)
 
     # client refresh the metadata and see the initial timestamp version
     assert client.refresh(init_data) == 0
@@ -247,9 +248,7 @@ def test_targets_rollback(
 
     # Initialize all metadata and assign targets
     # version higher than 1.
-    repo.targets.version = 2
-    repo.timestamp.version += 1
-    repo.snapshot.version += 1
+    repo.publish([Targets.type])
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
     repo.update_snapshot()  # v2
     assert client.refresh(init_data) == 0
@@ -262,4 +261,4 @@ def test_targets_rollback(
     # Client refresh should fail because of targets rollback
     assert client.refresh(init_data) == 1
     assert client.version(Snapshot.type) == 3
-    assert client.version(Targets.type) == 2
+    assert client.version(Targets.type) == 3
