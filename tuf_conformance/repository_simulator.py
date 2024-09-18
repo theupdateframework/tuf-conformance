@@ -207,7 +207,10 @@ class RepositorySimulator:
             signer = self.new_signer()
             self.root.add_key(signer.public_key, role)
             self.add_signer(role, signer)
-        self.publish([Targets.type, Snapshot.type, Timestamp.type, Root.type])
+
+        self.publish(
+            [Targets.type, Snapshot.type, Timestamp.type, Root.type], bump_version=False
+        )
 
     def publish(
         self, roles: list[str] = ALL_TOPLEVEL_TYPES, bump_version: bool = True
