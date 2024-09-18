@@ -21,9 +21,6 @@ def test_client_downloads_expected_file(
     target_path = "target_file.txt"
     target_content = b"target file contents"
     repo.add_artifact(Targets.type, target_content, target_path)
-    repo.timestamp.version += 1
-    repo.snapshot.version += 1
-    repo.targets.version += 1
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
     repo.update_snapshot()  # v2
 
@@ -50,9 +47,6 @@ def test_client_downloads_expected_file_in_sub_dir(
     target_path = "path/to/a/target_file.txt"
     target_content = b"target file contents"
     repo.add_artifact(Targets.type, target_content, target_path)
-    repo.timestamp.version += 1
-    repo.snapshot.version += 1
-    repo.targets.version += 1
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
     repo.update_snapshot()
 
@@ -77,9 +71,6 @@ def test_repository_substitutes_target_file(
     target_content_2 = b"content"
     repo.add_artifact(Targets.type, target_content_1, target_path_1)
     repo.add_artifact(Targets.type, target_content_2, target_path_2)
-    repo.timestamp.version += 1
-    repo.snapshot.version += 1
-    repo.targets.version += 1
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
     repo.update_snapshot()  # v2
 
@@ -130,9 +121,6 @@ def test_multiple_changes_to_target(
     target_path = "target_file.txt"
     target_content = b"target file contents"
     repo.add_artifact(Targets.type, target_content, target_path)
-    repo.timestamp.version += 1
-    repo.snapshot.version += 1
-    repo.targets.version += 1
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
     repo.update_snapshot()  # v2
 
@@ -158,9 +146,6 @@ def test_multiple_changes_to_target(
         repo.add_artifact(Targets.type, new_file_contents, new_target_path)
 
         # Bump repo snapshot
-        repo.timestamp.version += 1
-        repo.snapshot.version += 1
-        repo.targets.version += 1
         repo.publish([Targets.type, Snapshot.type, Timestamp.type])
         repo.update_snapshot()
 
@@ -186,9 +171,6 @@ def test_multiple_changes_to_target(
             repo.artifacts[target_path].data = malicious_file_contents
 
             # Bump repo snapshot
-            repo.timestamp.version += 1
-            repo.snapshot.version += 1
-            repo.targets.version += 1
             repo.publish([Targets.type, Snapshot.type, Timestamp.type])
             repo.update_snapshot()
             # ask client to download (this call may fail or succeed, see
@@ -225,9 +207,6 @@ def test_download_with_hash_algorithms(
     target = TargetFile.from_data(target_path, target_content, hashes)
     repo.targets.targets[target_path] = target
     repo.artifacts[target_path] = Artifact(target_content, target)
-    repo.timestamp.version += 1
-    repo.snapshot.version += 1
-    repo.targets.version += 1
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
     repo.update_snapshot()  # v2
     repo.publish([Root.type], bump_version=True)
@@ -259,9 +238,6 @@ def test_download_with_unknown_hash_algorithm(
     del target.hashes["sha512"]
     repo.targets.targets[target_path] = target
     repo.artifacts[target_path] = Artifact(target_content, target)
-    repo.timestamp.version += 1
-    repo.snapshot.version += 1
-    repo.targets.version += 1
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
     repo.update_snapshot()
 

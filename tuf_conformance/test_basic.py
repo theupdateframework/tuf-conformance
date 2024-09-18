@@ -195,7 +195,7 @@ def test_basic_metadata_hash_support(
 
     # Verify client refuses targets that does not match hashes
     assert client.refresh(init_data) == 1
-    assert client.version(Snapshot.type) == 3
+    assert client.version(Snapshot.type) == 2
     assert client.version(Targets.type) == 1
 
 
