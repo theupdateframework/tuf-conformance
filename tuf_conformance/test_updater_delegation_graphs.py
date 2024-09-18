@@ -2,11 +2,8 @@ from dataclasses import astuple, dataclass, field
 
 import pytest
 from tuf.api.metadata import (
-    SPECIFICATION_VERSION,
     DelegatedRole,
-    Snapshot,
     Targets,
-    Timestamp,
 )
 
 from tuf_conformance.client_runner import ClientRunner
@@ -164,24 +161,24 @@ graph_cases = graphs.values()
 
 
 def init_repo(repo: RepositorySimulator, test_case: DelegationsTestCase) -> None:
-    spec_version = ".".join(SPECIFICATION_VERSION)
+    modified_roles = set()
     for d in test_case.delegations:
         if d.rolename in repo.mds:
             targets = repo.mds[d.rolename].signed
         else:
-            targets = Targets(1, spec_version, repo.safe_expiry, {}, None)
+            targets = Targets(1, None, repo.safe_expiry, {}, None)
+            targets.version = 0  # let publish bump this to 1
+
         # unpack 'd' but skip "delegator"
         role = DelegatedRole(*astuple(d)[1:])
         repo.add_delegation(d.delegator, role, targets)
-        repo.publish([d.rolename])
+        modified_roles.add(d.rolename)
+        modified_roles.add(d.delegator)
 
     for target in test_case.target_files:
         repo.add_artifact(*astuple(target))
 
-    repo.timestamp.version += 1
-    repo.snapshot.version += 1
-    repo.targets.version += 1
-    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.publish(modified_roles)
     repo.update_snapshot()
 
 
