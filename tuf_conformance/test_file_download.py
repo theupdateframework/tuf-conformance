@@ -1,5 +1,5 @@
 import pytest
-from tuf.api.metadata import Root, Snapshot, TargetFile, Targets, Timestamp
+from tuf.api.metadata import Snapshot, TargetFile, Targets, Timestamp
 
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.repository_simulator import Artifact
@@ -22,7 +22,6 @@ def test_client_downloads_expected_file(
     target_content = b"target file contents"
     repo.add_artifact(Targets.type, target_content, target_path)
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-    repo.update_snapshot()  # v2
 
     # Client updates, sanity check that nothing was downloaded
     assert client.refresh(init_data) == 0
@@ -48,7 +47,6 @@ def test_client_downloads_expected_file_in_sub_dir(
     target_content = b"target file contents"
     repo.add_artifact(Targets.type, target_content, target_path)
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-    repo.update_snapshot()
 
     assert client.download_target(init_data, target_path) == 0
     assert client.get_downloaded_target_bytes() == [target_content]
@@ -72,7 +70,6 @@ def test_repository_substitutes_target_file(
     repo.add_artifact(Targets.type, target_content_1, target_path_1)
     repo.add_artifact(Targets.type, target_content_2, target_path_2)
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-    repo.update_snapshot()  # v2
 
     # Download one of the artifacts
     assert client.download_target(init_data, target_path_1) == 0
@@ -122,7 +119,6 @@ def test_multiple_changes_to_target(
     target_content = b"target file contents"
     repo.add_artifact(Targets.type, target_content, target_path)
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-    repo.update_snapshot()  # v2
 
     # Client downloads the file
     assert client.download_target(init_data, target_path) == 0
@@ -147,7 +143,6 @@ def test_multiple_changes_to_target(
 
         # Bump repo snapshot
         repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-        repo.update_snapshot()
 
         # Client only sees every fifth targets version
         if i % 5 == 0:
@@ -172,7 +167,7 @@ def test_multiple_changes_to_target(
 
             # Bump repo snapshot
             repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-            repo.update_snapshot()
+
             # ask client to download (this call may fail or succeed, see
             # test_repository_substitutes_target_file)
             client.download_target(init_data, target_path)
@@ -208,8 +203,6 @@ def test_download_with_hash_algorithms(
     repo.targets.targets[target_path] = target
     repo.artifacts[target_path] = Artifact(target_content, target)
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-    repo.update_snapshot()  # v2
-    repo.publish([Root.type], bump_version=True)
 
     assert client.init_client(init_data) == 0
     assert client.download_target(init_data, target_path) == 0
@@ -239,7 +232,6 @@ def test_download_with_unknown_hash_algorithm(
     repo.targets.targets[target_path] = target
     repo.artifacts[target_path] = Artifact(target_content, target)
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-    repo.update_snapshot()
 
     assert client.init_client(init_data) == 0
     # Note that we allow the client to actually download the artifact from repo

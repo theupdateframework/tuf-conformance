@@ -178,25 +178,25 @@ def test_basic_metadata_hash_support(
 
     # Construct repository with hashes in timestamp/snapshot
     repo.compute_metafile_hashes_length = True
-    repo.update_snapshot()  # v2
-    # repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.publish([Targets.type])  # v2
+    repo.publish([Snapshot.type, Timestamp.type])
 
     assert client.init_client(init_data) == 0
     # Verify client accepts correct hashes
     assert client.refresh(init_data) == 0
 
-    # Modify targets metadata, leave hashes in snapshot to wrong values
-    repo.targets.version += 1  # v2
-    repo.snapshot.meta["targets.json"].version = repo.targets.version
-    repo.snapshot.version += 1  # v3
-    repo.publish([Snapshot.type])
-    repo.update_timestamp()
-    repo.publish([Timestamp.type])
+    # Modify targets metadata, set hash in snapshot to wrong value
+    repo.publish([Targets.type])  # v3
+    assert repo.snapshot.meta["targets.json"].hashes
+    repo.snapshot.meta["targets.json"].hashes["sha256"] = (
+        "46419349341cfb2d95f6ae3d4cd5c3d3dd7f4673985dad42a45130be5e0531a0"
+    )
+    repo.publish([Snapshot.type, Timestamp.type])
 
-    # Verify client refuses targets that does not match hashes
+    # Verify client refuses targets v3 that does not match hashes
     assert client.refresh(init_data) == 1
-    assert client.version(Snapshot.type) == 2
-    assert client.version(Targets.type) == 1
+    assert client.version(Snapshot.type) == 3
+    assert client.version(Targets.type) == 2
 
 
 def test_new_targets_version_mismatch(

@@ -3,7 +3,9 @@ from dataclasses import astuple, dataclass, field
 import pytest
 from tuf.api.metadata import (
     DelegatedRole,
+    Snapshot,
     Targets,
+    Timestamp,
 )
 
 from tuf_conformance.client_runner import ClientRunner
@@ -177,8 +179,7 @@ def init_repo(repo: RepositorySimulator, test_case: DelegationsTestCase) -> None
     for target in test_case.target_files:
         repo.add_artifact(*astuple(target))
 
-    repo.publish(modified_roles)
-    repo.update_snapshot()
+    repo.publish([*modified_roles, Snapshot.type, Timestamp.type])
 
 
 @pytest.mark.parametrize("graphs", graph_cases, ids=graph_ids)

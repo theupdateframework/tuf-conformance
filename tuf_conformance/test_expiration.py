@@ -42,8 +42,7 @@ def test_timestamp_expired(client: ClientRunner, server: SimulatorServer) -> Non
     assert client.refresh(init_data) == 0
 
     repo.timestamp.expires = utils.get_date_n_days_in_past(5)
-    repo.update_timestamp()  # v2
-    repo.publish([Timestamp.type])
+    repo.publish([Timestamp.type])  # v2
 
     # Check that client does not accept expired timestamp
     assert client.refresh(init_data) == 1
@@ -64,7 +63,6 @@ def test_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> None
     assert client.refresh(init_data) == 0
 
     repo.snapshot.expires = utils.get_date_n_days_in_past(5)
-    repo.update_snapshot()
     repo.publish([Snapshot.type, Timestamp.type])
 
     assert client.refresh(init_data) == 1
@@ -74,7 +72,7 @@ def test_snapshot_expired(client: ClientRunner, server: SimulatorServer) -> None
         (Root.type, 1),
         (Snapshot.type, 1),
         (Targets.type, 1),
-        (Timestamp.type, 3),
+        (Timestamp.type, 2),
     ]
 
 
@@ -87,7 +85,6 @@ def test_targets_expired(client: ClientRunner, server: SimulatorServer) -> None:
     assert client.refresh(init_data) == 0
 
     repo.targets.expires = utils.get_date_n_days_in_past(5)
-    repo.update_snapshot()
     repo.publish([Snapshot.type, Timestamp.type])
 
     assert client.refresh(init_data) == 0
@@ -97,7 +94,7 @@ def test_targets_expired(client: ClientRunner, server: SimulatorServer) -> None:
         (Root.type, 1),
         (Snapshot.type, 2),
         (Targets.type, 1),
-        (Timestamp.type, 3),
+        (Timestamp.type, 2),
     ]
 
 
@@ -151,6 +148,7 @@ def test_expired_local_timestamp(client: ClientRunner, server: SimulatorServer) 
     # Repo timestamp v1 expires in 7 days
     now = datetime.datetime.now(timezone.utc)
     repo.timestamp.expires = now + datetime.timedelta(days=7)
+    repo.publish([Timestamp.type])  # v2
 
     # Refresh
     assert client.refresh(init_data) == 0
@@ -158,19 +156,18 @@ def test_expired_local_timestamp(client: ClientRunner, server: SimulatorServer) 
     # Bump targets + snapshot version
     # Set next version of repo timestamp to expire in 21 days
     repo.timestamp.expires = now + datetime.timedelta(days=21)
-    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-    repo.update_snapshot()
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])  # v2, v2, v3
 
     # Mocking time so that local timestamp has expired
     # but the new timestamp has not
     assert client.refresh(init_data, days_in_future=18) == 0
 
-    # Assert that the final version of timestamp/snapshot is version 2
+    # Assert final versions of timestamp/snapshot
     # which means a successful refresh is performed
     # with expired local metadata.
     assert client.trusted_roles() == [
         (Root.type, 1),
-        (Snapshot.type, 3),
+        (Snapshot.type, 2),
         (Targets.type, 2),
         (Timestamp.type, 3),
     ]

@@ -149,10 +149,8 @@ def test_root_rotation(
 
     # initialize a simulator with repository content we need
     init_data, repo = server.new_test(client.test_name)
-    repo.signed_mds[Root.type].clear()
-    repo.root.version = 0
+    del repo.signed_mds[Root.type]
 
-    repo.signed_mds[Root.type].clear()
     for rootver in root_versions:
         # clear root keys, signers
         repo.root.roles[Root.type].keyids.clear()
@@ -163,8 +161,8 @@ def test_root_rotation(
             repo.root.add_key(signers[i].public_key, Root.type)
         for i in rootver.sigs:
             repo.add_signer(Root.type, signers[i])
-        repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-        repo.publish([Root.type], bump_version=True)
+        repo.publish([Root.type])
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
     # Make sure our initial root is the v1 we just created
     init_data.trusted_root = repo.fetch_metadata("root", 1)
@@ -222,8 +220,7 @@ def test_non_root_rotations(
         for i in md_version.sigs:
             repo.add_signer(role, signers[i])
 
-        repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-        repo.publish([Root.type], bump_version=True)
+        repo.publish([Root.type, Targets.type, Snapshot.type, Timestamp.type])
 
         # run client workflow, assert success/failure
         expected_result = md_version.res

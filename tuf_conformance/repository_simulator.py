@@ -17,22 +17,19 @@ Example::
     # constructor creates repository with top-level metadata
     sim = RepositorySimulator()
 
-    # metadata can be modified directly: it is immediately available to clients
-    sim.snapshot.version += 1
+    # publish a new version of metadata
+    sim.root.expires = datetime.datetime.utcnow() + datetime.timedelta(days=7)
+    sim.publish([Root.type])
 
-    # As an exception, new root versions require explicit publishing
-    sim.publish("root", bump_version=True)
-
-    # there are helper functions
-    sim.add_target("targets", b"content", "targetpath")
-    sim.targets.version += 1
-    sim.update_snapshot()
+    # there are helper functions to do things like adding an artifact
+    sim.add_target(Targets.type, b"content", "targetpath")
+    sim.publish([Targets.type, Snapshot.type, Timestamp.type])
 """
 
 import datetime
 import logging
 import os
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
 from dataclasses import dataclass
 from urllib import parse
 
@@ -48,7 +45,6 @@ from tuf.api.metadata import (
     Root,
     Snapshot,
     SuccinctRoles,
-    T,
     TargetFile,
     Targets,
     Timestamp,
@@ -154,13 +150,6 @@ class RepositorySimulator:
         assert isinstance(signed, Targets)
         return signed
 
-    def all_signed_targets(self) -> Iterator[tuple[str, Metadata[T]]]:
-        """Yield role name and signed portion of targets one by one."""
-        for role, mds in self.signed_mds.items():
-            for md in mds:
-                if role not in [Root.type, Timestamp.type, Snapshot.type]:
-                    yield role, Metadata.from_bytes(md).signed
-
     def new_signer(
         self, keytype: str = "rsa", scheme: str = "rsa-pkcs1v15-sha256"
     ) -> CryptoSigner:
@@ -228,6 +217,22 @@ class RepositorySimulator:
             if role not in self.signed_mds:
                 self.signed_mds[role] = []
             self.signed_mds[role].append(md.to_bytes(JSONSerializer()))
+
+            hashes = None
+            length = None
+            if self.compute_metafile_hashes_length:
+                hashes, length = self._compute_hashes_and_length(role)
+
+            # for targets roles: update snapshot.meta
+            if role not in [Root.type, Timestamp.type, Snapshot.type]:
+                self.snapshot.meta[f"{role}.json"] = MetaFile(
+                    md.signed.version, length, hashes
+                )
+            # for snapshot: update timestamp.snapshot_meta
+            if role == Snapshot.type:
+                self.timestamp.snapshot_meta = MetaFile(
+                    md.signed.version, length, hashes
+                )
 
     def fetch(self, path: str) -> bytes:
         """Fetches and returns metadata/artifacts for the given url-path.
@@ -310,34 +315,6 @@ class RepositorySimulator:
         digest_object.update(data)
         hashes = {sslib_hash.DEFAULT_HASH_ALGORITHM: digest_object.hexdigest()}
         return hashes, len(data)
-
-    def update_timestamp(self) -> None:
-        """Update timestamp and assign snapshot version to snapshot_meta
-        version.
-        """
-        hashes = None
-        length = None
-        if self.compute_metafile_hashes_length:
-            hashes, length = self._compute_hashes_and_length(Snapshot.type)
-
-        self.timestamp.snapshot_meta = MetaFile(self.snapshot.version, length, hashes)
-
-        self.publish([Timestamp.type])
-
-    def update_snapshot(self) -> None:
-        """Update snapshot, assign targets versions and update timestamp."""
-        for role, delegate in self.all_signed_targets():
-            hashes = None
-            length = None
-            if self.compute_metafile_hashes_length:
-                hashes, length = self._compute_hashes_and_length(role)
-
-            self.snapshot.meta[f"{role}.json"] = MetaFile(
-                delegate.version, length, hashes
-            )
-
-        self.publish([Snapshot.type])
-        self.update_timestamp()
 
     def add_artifact(self, role: str, data: bytes, path: str) -> None:
         """Add `data` to artifact store and insert its hashes into metadata."""

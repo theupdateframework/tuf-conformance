@@ -1,7 +1,7 @@
 from urllib import parse
 
 import pytest
-from tuf.api.metadata import DelegatedRole, Targets
+from tuf.api.metadata import DelegatedRole, Snapshot, Targets, Timestamp
 
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import SimulatorServer
@@ -33,8 +33,7 @@ def test_unusual_role_name(
     # Add signer, add the key to roles delegation
     repo.add_key(role, Targets.type)
 
-    repo.publish([role, Targets.type])
-    repo.update_snapshot()
+    repo.publish([role, Targets.type, Snapshot.type, Timestamp.type])
 
     client.init_client(init_data)
     assert client.download_target(init_data, "nonexistent target") == 1

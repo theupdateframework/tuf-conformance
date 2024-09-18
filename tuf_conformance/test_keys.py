@@ -25,17 +25,14 @@ def test_snapshot_does_not_meet_threshold(
     repo.root.roles[Snapshot.type].threshold = 3
     for _ in range(2):
         repo.add_key(Snapshot.type)
-    repo.publish([Root.type], bump_version=True)  # v2
-    repo.update_snapshot()  # v2
-    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.publish([Root.type, Targets.type, Snapshot.type, Timestamp.type])  # v2
 
     assert client.init_client(init_data) == 0
     assert client.refresh(init_data) == 0
 
     # Remove a signer from snapshot: amount of signatures will be 2, below threshold
     repo.signers[Snapshot.type].popitem()
-    repo.update_snapshot()  # v3
-    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])  # v3
 
     # snapshot v3 does not meet the threshold anymore:
     assert client.refresh(init_data) == 1
@@ -80,10 +77,7 @@ def test_snapshot_has_too_few_keys(
     # Set higher threshold than we have keys such that the
     # client should not successfully update.
     repo.root.roles[Snapshot.type].threshold = 6
-
-    repo.publish([Root.type], bump_version=True)  # v2
-    repo.update_snapshot()  # v2
-    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.publish([Root.type, Snapshot.type, Timestamp.type])
 
     # Ensure that client does not update because it does
     # not have enough keys.
@@ -110,12 +104,10 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
 
     repo.add_signer(Snapshot.type, signer)
 
-    repo.publish([Snapshot.type])
-
     # Set a threshold that will be covered but only by
     # the same key multiple times and not separate keys.
     repo.root.roles[Snapshot.type].threshold = 6
-    repo.publish([Root.type], bump_version=True)
+    repo.publish([Root.type, Snapshot.type, Timestamp.type])
 
     # This should fail for one of two reasons:
     # 1. client does not accept root v2 metadata that contains duplicate keyids or

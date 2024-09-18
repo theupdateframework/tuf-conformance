@@ -41,7 +41,7 @@ class TestRepositorySimulator(unittest.TestCase):
         server = SimulatorServer(dump_dir=tmp_dir.name)
         init_data, repo = server.new_test("unittest_basic_metadata_hash_support")
         repo.compute_metafile_hashes_length = True
-        repo.update_snapshot()  # v2
+        repo.publish([Targets.type, Snapshot.type, Timestamp.type])  # v2
         self.assertEqual(
             Metadata.from_bytes(repo.signed_mds[Snapshot.type][-1]).signed.version, 2
         )
@@ -70,7 +70,7 @@ class TestRepositorySimulator(unittest.TestCase):
 
         five_days_in_path = utils.get_date_n_days_in_past(5)
         repo.timestamp.expires = five_days_in_path
-        repo.update_timestamp()  # v2
+        repo.publish([Timestamp.type])
         self.assertEqual(
             Metadata.from_bytes(repo.signed_mds[Timestamp.type][-1]).signed.expires,
             five_days_in_path,
