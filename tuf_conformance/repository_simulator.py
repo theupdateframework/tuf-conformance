@@ -48,6 +48,7 @@ from tuf.api.metadata import (
     Root,
     Snapshot,
     SuccinctRoles,
+    T,
     TargetFile,
     Targets,
     Timestamp,
@@ -153,7 +154,7 @@ class RepositorySimulator:
         assert isinstance(signed, Targets)
         return signed
 
-    def all_signed_targets(self) -> Iterator[tuple[str, Targets]]:
+    def all_signed_targets(self) -> Iterator[tuple[str, Metadata[T]]]:
         """Yield role name and signed portion of targets one by one."""
         for role, mds in self.signed_mds.items():
             for md in mds:
