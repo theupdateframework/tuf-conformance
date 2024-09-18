@@ -167,7 +167,6 @@ def init_repo(repo: RepositorySimulator, test_case: DelegationsTestCase) -> None
             targets = repo.mds[d.rolename].signed
         else:
             targets = Targets(1, None, repo.safe_expiry, {}, None)
-            targets.version = 0  # let publish bump this to 1
 
         # unpack 'd' but skip "delegator"
         role = DelegatedRole(*astuple(d)[1:])

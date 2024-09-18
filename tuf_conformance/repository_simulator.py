@@ -196,19 +196,12 @@ class RepositorySimulator:
         self.mds[Timestamp.type] = MetadataTest(Timestamp(expires=self.safe_expiry))
         self.mds[Root.type] = MetadataTest(RootTest(expires=self.safe_expiry))
 
-        self.signed_mds[Targets.type] = []
-        self.signed_mds[Snapshot.type] = []
-        self.signed_mds[Timestamp.type] = []
-        self.signed_mds[Root.type] = []
-
         for role in TOP_LEVEL_ROLE_NAMES:
             signer = self.new_signer()
             self.root.add_key(signer.public_key, role)
             self.add_signer(role, signer)
 
-        self.publish(
-            [Targets.type, Snapshot.type, Timestamp.type, Root.type], bump_version=False
-        )
+        self.publish([Targets.type, Snapshot.type, Timestamp.type, Root.type])
 
     def publish(self, roles: Iterable[str], bump_version: bool = True) -> None:
         for role in roles:
@@ -216,7 +209,8 @@ class RepositorySimulator:
             if md is None:
                 raise ValueError(f"Unknown role {role}")
 
-            if bump_version:
+            # only bump if there is a version already (this avoids bumping initial v1)
+            if bump_version and role in self.signed_mds:
                 md.signed.version += 1
 
             md.signatures.clear()
