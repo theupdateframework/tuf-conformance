@@ -32,7 +32,7 @@ Example::
 import datetime
 import logging
 import os
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from urllib import parse
 
@@ -59,8 +59,6 @@ from tuf_conformance.metadata import MetadataTest, RootTest
 logger = logging.getLogger(__name__)
 
 SPEC_VER = ".".join(SPECIFICATION_VERSION)
-
-ALL_TOPLEVEL_TYPES = [Root.type, Timestamp.type, Snapshot.type, Targets.type]
 
 # Generate some signers once (to avoid all tests generating them)
 NUM_SIGNERS = 9
@@ -212,9 +210,7 @@ class RepositorySimulator:
             [Targets.type, Snapshot.type, Timestamp.type, Root.type], bump_version=False
         )
 
-    def publish(
-        self, roles: list[str] = ALL_TOPLEVEL_TYPES, bump_version: bool = True
-    ) -> None:
+    def publish(self, roles: Iterable[str], bump_version: bool = True) -> None:
         for role in roles:
             md = self.mds.get(role)
             if md is None:
