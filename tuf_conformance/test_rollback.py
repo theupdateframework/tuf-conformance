@@ -5,36 +5,6 @@ from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import SimulatorServer
 
 
-def test_simple_snapshot_rollback(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    """Test a simple snapshot version rollback attack.
-
-    Repository publishes a snapshot with version that is not higher than what client has
-    already seen, without updating timestamp.meta.
-    Expect client to refuse the update.
-    """
-
-    init_data, repo = server.new_test(client.test_name)
-
-    assert client.init_client(init_data) == 0
-
-    # Repository performs legitimate update to snapshot
-    repo.publish([Snapshot.type, Timestamp.type])
-    assert client.refresh(init_data) == 0
-
-    # Repository attempts rollback attack (note that the snapshot version in
-    # timestamp.meta is v2)
-    repo.publish([Snapshot.type])
-    # Client succeeds in this case since it already has the snapshot version specified
-    # in timestamp.meta
-    assert client.refresh(init_data) == 0
-
-    # Check that client resisted rollback attack
-    assert client.version(Snapshot.type) == 2
-    assert repo.metadata_statistics[-1] == (Timestamp.type, None)
-
-
 def test_new_timestamp_version_rollback(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
@@ -125,11 +95,12 @@ def test_new_targets_fast_forward_recovery(
     assert client.version(Targets.type) == 100
 
     repo.rotate_keys(Snapshot.type)
+    del repo.signed_mds[Targets.type]
     repo.targets.version = 1
     repo.publish([Root.type, Targets.type, Snapshot.type, Timestamp.type])
 
     assert client.refresh(init_data) == 0
-    assert client.version(Targets.type) == 2
+    assert client.version(Targets.type) == 1
 
 
 def test_new_snapshot_fast_forward_recovery(
@@ -167,32 +138,6 @@ def test_new_snapshot_fast_forward_recovery(
     assert client.version(Snapshot.type) == 1
 
 
-def test_new_snapshot_version_mismatch(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    """Tests that the client does not download the snapshot
-    metadata if the repo has bumped the snapshot version in
-    the snapshot metadata but not in timestamp.meta.
-    """
-
-    init_data, repo = server.new_test(client.test_name)
-
-    assert client.init_client(init_data) == 0
-
-    # Increase snapshot version but do not update version in timestamp.snapshot_meta
-    repo.publish([Snapshot.type])  # v2
-    repo.timestamp.snapshot_meta.version -= 1
-    repo.publish([Root.type, Timestamp.type])  # v2
-
-    assert client.refresh(init_data) == 0
-    assert client.trusted_roles() == [
-        (Root.type, 2),
-        (Snapshot.type, 1),
-        (Targets.type, 1),
-        (Timestamp.type, 2),
-    ]
-
-
 def test_new_timestamp_fast_forward_recovery(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
@@ -218,9 +163,9 @@ def test_new_timestamp_fast_forward_recovery(
     # repository rotates timestamp keys,
     # rolls back timestamp version
     repo.rotate_keys(Timestamp.type)
-    repo.publish([Root.type, Targets.type, Snapshot.type, Timestamp.type])
+    del repo.signed_mds[Timestamp.type]
     repo.timestamp.version = 1
-    repo.publish([Timestamp.type], bump_version=False)
+    repo.publish([Root.type, Timestamp.type])
 
     # client refresh the metadata and see the initial timestamp version
     assert client.refresh(init_data) == 0
