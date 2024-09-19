@@ -215,8 +215,7 @@ def test_new_timestamp_fast_forward_recovery(
     # repository rotates timestamp keys,
     # rolls back timestamp version
     repo.rotate_keys(Timestamp.type)
-    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
-    repo.publish([Root.type])
+    repo.publish([Root.type, Targets.type, Snapshot.type, Timestamp.type])
     repo.timestamp.version = 1
     repo.publish([Timestamp.type], bump_version=False)
 
