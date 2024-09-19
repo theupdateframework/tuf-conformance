@@ -182,12 +182,15 @@ def test_new_snapshot_version_mismatch(
     # Increase snapshot version but do not update version in timestamp.snapshot_meta
     repo.publish([Snapshot.type])  # v2
     repo.timestamp.snapshot_meta.version -= 1
-    repo.publish([Timestamp.type])  # v2
+    repo.publish([Root.type, Timestamp.type])  # v2
 
-    # FIXME: the expected results are incorrect -- why would the refresh fail?
-    assert client.refresh(init_data) == 1
-    assert client.trusted_roles() == [(Root.type, 1), (Timestamp.type, 1)]
-    assert repo.metadata_statistics[-1] == (Snapshot.type, 1)
+    assert client.refresh(init_data) == 0
+    assert client.trusted_roles() == [
+        (Root.type, 2),
+        (Snapshot.type, 1),
+        (Targets.type, 1),
+        (Timestamp.type, 2),
+    ]
 
 
 def test_new_timestamp_fast_forward_recovery(
