@@ -184,7 +184,7 @@ def test_new_snapshot_version_mismatch(
     repo.timestamp.snapshot_meta.version -= 1
     repo.publish([Timestamp.type])  # v2
 
-    # FIXEM: the expected results are incorrect -- why would the refresh fail?
+    # FIXME: the expected results are incorrect -- why would the refresh fail?
     assert client.refresh(init_data) == 1
     assert client.trusted_roles() == [(Root.type, 1), (Timestamp.type, 1)]
     assert repo.metadata_statistics[-1] == (Snapshot.type, 1)
