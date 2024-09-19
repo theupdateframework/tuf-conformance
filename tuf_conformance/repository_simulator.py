@@ -194,6 +194,20 @@ class RepositorySimulator:
         self.publish([Targets.type, Snapshot.type, Timestamp.type, Root.type])
 
     def publish(self, roles: Iterable[str], bump_version: bool = True) -> None:
+        """Makes the repositorys metadata public and available to clients.
+
+        Tests run this helper after updating the repositorys metadata
+        and before clients should fetch the repositorys updated metadata.
+
+        publish bumps the version by default. The role must already exist
+        in repo.signed_mds for the repo to be able to bump it.
+
+        When publishing a role that is not root, timestamp or snapshot,
+        publish will create a metafile for the role and add it to snapshot.
+
+        When publishing snapshot, publish will create a metafile for snapshot
+        and add it to timestamp."""
+
         for role in roles:
             md = self.mds.get(role)
             if md is None:
