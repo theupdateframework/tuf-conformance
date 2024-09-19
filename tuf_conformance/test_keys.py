@@ -156,14 +156,14 @@ def test_keytype_and_scheme(
     signer = repo.new_signer(keytype, scheme)
     repo.add_key(Root.type, signer=signer)
     repo.root.roles[Root.type].threshold += 1
-    repo.publish([Root.type], bump_version=True)
+    repo.publish([Root.type])
 
     assert client.refresh(init_data) == 0
     assert client.version(Root.type) == 2
 
     # Create new root version. Replace the correct signature with one that looks
     # reasonable for the keytype but is incorrect. Expect client to refuse the new root.
-    repo.publish([Root.type], bump_version=True)
+    repo.publish([Root.type])
     root_md = Metadata.from_bytes(repo.signed_mds[Root.type].pop())
     root_md.signatures[signer.public_key.keyid].signature = bad_sig
     repo.signed_mds[Root.type].append(root_md.to_bytes())
