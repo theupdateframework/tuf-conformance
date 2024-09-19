@@ -21,8 +21,7 @@ def test_root_expired(client: ClientRunner, server: SimulatorServer) -> None:
     assert client.refresh(init_data) == 0
 
     repo.root.expires = utils.get_date_n_days_in_past(1)
-    repo.publish([Root.type])  # v3
-    repo.targets.version += 1  # v2
+    repo.publish([Root.type, Targets.type, Snapshot.type, Timestamp.type])
 
     assert client.refresh(init_data) == 1
 
@@ -85,9 +84,9 @@ def test_targets_expired(client: ClientRunner, server: SimulatorServer) -> None:
     assert client.refresh(init_data) == 0
 
     repo.targets.expires = utils.get_date_n_days_in_past(5)
-    repo.publish([Snapshot.type, Timestamp.type])
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
-    assert client.refresh(init_data) == 0
+    assert client.refresh(init_data) == 1
 
     # Check that the client still has not accepted expired targets
     assert client.trusted_roles() == [
