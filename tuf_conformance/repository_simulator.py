@@ -193,7 +193,7 @@ class RepositorySimulator:
 
         self.publish([Targets.type, Snapshot.type, Timestamp.type, Root.type])
 
-    def publish(self, roles: Iterable[str], bump_version: bool = True) -> None:
+    def publish(self, roles: Iterable[str], verify_version: bool = True) -> None:
         """Makes the repositorys metadata public and available to clients.
 
         Tests run this helper after updating the repositorys metadata
@@ -214,7 +214,7 @@ class RepositorySimulator:
                 raise ValueError(f"Unknown role {role}")
 
             # only bump if there is a version already (this avoids bumping initial v1)
-            if bump_version and role in self.signed_mds:
+            if role in self.signed_mds:
                 md.signed.version += 1
 
             md.signatures.clear()
@@ -230,6 +230,13 @@ class RepositorySimulator:
 
             if role not in self.signed_mds:
                 self.signed_mds[role] = []
+            expected_ver = len(self.signed_mds[role]) + 1
+            if verify_version and md.signed.version != expected_ver:
+                raise ValueError(
+                    f"RepositorySimulator Expected {role} v{expected_ver}, got "
+                    "v{md.signed.version}. Use verify_version=False if this is intended"
+                )
+
             self.signed_mds[role].append(md.to_bytes(JSONSerializer()))
 
             hashes = None

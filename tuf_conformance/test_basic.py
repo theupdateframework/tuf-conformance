@@ -135,7 +135,6 @@ def test_unsigned_metadata(
 
     # remove signing key for role, increase version
     repo.signers[role].popitem()
-    repo.mds[role].signed.version += 1
     if role == "root":
         repo.publish([Root.type])
     else:
