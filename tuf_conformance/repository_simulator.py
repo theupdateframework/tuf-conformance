@@ -301,7 +301,19 @@ class RepositorySimulator:
     def fetch_metadata(self, role: str, version: int | None = None) -> bytes:
         """Return signed metadata for 'role', using 'version' if it is given.
 
-        If version is None, non-versioned metadata is being requested.
+        If version is None, non-versioned metadata is being requested, and the
+        repository will return the metadata it has published last.
+
+        fetch_metadata versions its metadata by storing the version in
+        repo.signed_mds[role][version-1].
+
+        For the metadata to be available to the client, it must exist in
+        repo.signed_mds. repo.publish() is responsible for makeing the
+        metadata available in repo.signed_mds. The common workflow for
+        making changes in a test and fetching is:
+        1. Make changes to the metadata in the test
+        2. Publish the metadata by way of repo.publish([role])
+        3. The client can now fetch the updated metadata.
         """
 
         # decode role for the metadata
