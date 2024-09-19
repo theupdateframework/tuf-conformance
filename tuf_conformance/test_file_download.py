@@ -141,7 +141,7 @@ def test_multiple_changes_to_target(
         new_target_path = f"new-target-{i}"
         repo.add_artifact(Targets.type, new_file_contents, new_target_path)
 
-        # Bump repo snapshot
+        # Bump repo timestamp, snapshot and targets
         repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
         # Client only sees every fifth targets version
@@ -165,7 +165,7 @@ def test_multiple_changes_to_target(
             malicious_file_contents = f"malicious contents {i}".encode()
             repo.artifacts[target_path].data = malicious_file_contents
 
-            # Bump repo snapshot
+            # Bump repo timestamp, snapshot and targets
             repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
             # ask client to download (this call may fail or succeed, see
