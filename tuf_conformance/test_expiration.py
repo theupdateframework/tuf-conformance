@@ -116,14 +116,14 @@ def test_expired_local_root(client: ClientRunner, server: SimulatorServer) -> No
     # root v2 expires in 7 days
     now = datetime.datetime.now(timezone.utc)
     repo.root.expires = now + datetime.timedelta(days=7)
-    repo.publish([Root.type], bump_version=True)
+    repo.publish([Root.type])
 
     # Refresh
     assert client.refresh(init_data) == 0
 
     # root v3 expires in 21 days
     repo.root.expires = now + datetime.timedelta(days=21)
-    repo.publish([Root.type], bump_version=True)
+    repo.publish([Root.type])
 
     # Mocking time so that local root (v2) has expired but v3 from repo has not
     assert client.refresh(init_data, days_in_future=18) == 0

@@ -51,7 +51,7 @@ def test_deprecated_keyid_hash_algorithms(
     # Set snapshot keys "keyid_hash_algorithms" to an incorrect algorithm.
     valid_key = repo.root.roles[Snapshot.type].keyids[0]
     repo.root.keys[valid_key].unrecognized_fields = {"keyid_hash_algorithms": "md5"}
-    repo.publish([Root.type], bump_version=True)  # v2
+    repo.publish([Root.type])  # v2
 
     # All metadata should update; even though "keyid_hash_algorithms"
     # is wrong, it is not a part of the TUF spec.

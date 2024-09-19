@@ -258,7 +258,7 @@ def test_custom_fields(client: ClientRunner, server: SimulatorServer) -> None:
     keyid = repo.root.roles[Root.type].keyids[0]
     repo.root.keys[keyid].unrecognized_fields["extra-field"] = {"a": 1, "b": 2}
     repo.root.roles[Root.type].unrecognized_fields["another-field"] = "value"
-    repo.publish([Root.type], bump_version=True)
+    repo.publish([Root.type])
 
     # client should accept new root: The signed content contains the unknown fields
     assert client.refresh(init_data) == 0
