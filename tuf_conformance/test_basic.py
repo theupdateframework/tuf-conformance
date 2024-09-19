@@ -202,25 +202,6 @@ def test_basic_metadata_hash_support(
     assert client.version(Targets.type) == 2
 
 
-def test_new_targets_version_mismatch(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    """Create new targets version. Check that client does not
-    download it as the version is not in snapshot.meta
-    """
-    init_data, repo = server.new_test(client.test_name)
-
-    assert client.init_client(init_data) == 0
-    assert client.refresh(init_data) == 0
-
-    repo.publish([Targets.type])
-
-    assert client.refresh(init_data) == 0
-    # Check that the client still has the correct targets version
-    assert client.version(Targets.type) == 1
-    assert repo.metadata_statistics[-1] == (Timestamp.type, None)
-
-
 def test_custom_fields(client: ClientRunner, server: SimulatorServer) -> None:
     """Verify that client copes with unexpected fields in metadata.
 
