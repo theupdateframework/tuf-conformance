@@ -311,11 +311,8 @@ class RepositorySimulator:
         If version is None, non-versioned metadata is being requested, and the
         repository will return the metadata it has published last.
 
-        fetch_metadata versions its metadata by storing the version in
-        repo.signed_mds[role][version-1].
-
         For the metadata to be available to the client, it must exist in
-        repo.signed_mds. repo.publish() is responsible for makeing the
+        repo.signed_mds. repo.publish() is responsible for making the
         metadata available in repo.signed_mds. The common workflow for
         making changes in a test and fetching is:
         1. Make changes to the metadata in the test
@@ -326,14 +323,11 @@ class RepositorySimulator:
         # decode role for the metadata
         role = parse.unquote(role, encoding="utf-8")
 
-        if role == Root.type:
-            if version is None or version > len(self.signed_mds[Root.type]):
-                raise ValueError(f"Unknown root version {version}")
-            return self.signed_mds[Root.type][version - 1]
-        # Non-root mds:
         if len(self.signed_mds[role]) == 0:
             raise ValueError(f"The repository has not published metadata for '{role}'")
         if version is not None:
+            if version < 1 or version > len(self.signed_mds[role]):
+                raise ValueError(f"Unknown {role} version {version}")
             return self.signed_mds[role][version - 1]
         return self.signed_mds[role][-1]
 
