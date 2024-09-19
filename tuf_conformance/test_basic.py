@@ -159,7 +159,7 @@ def test_timestamp_content_changes(
     assert client.init_client(init_data) == 0
     assert client.refresh(init_data) == 0
 
-    # Change timestamp v1: client should not download a new one if it has v1 already
+    # Change timestamp v1: client should not use the new one if it already has a v1
     repo.timestamp.snapshot_meta.version = 100
     del repo.signed_mds[Timestamp.type]
     repo.publish([Timestamp.type])  # v1
