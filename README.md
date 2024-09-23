@@ -83,14 +83,18 @@ def test_targets_version(
     # Initialize our repository: modify targets version and make sure the version is included in snapshot
     init_data, repo = server.new_test(client.test_name)
     repo.targets.version = 7
-    repo.update_snapshot()  # snapshot v2
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
     # initialize client-under-test, run refresh
     client.init_client(init_data)
     client.refresh(init_data)
 ```
 
-we can now run the test:
+The test initializes the repo and the initial data. It then sets the repo targets version to 7 and publishes the Targets, Snapshot and Timestamp roles. Finally, it initializes the client and refreshes the clients local metadata.
+`repo.publish()` makes the repositorys data public to the client, and it bumps the version of the metadata in the list by one. When a test needs to publish and make the changes available to the client, the `repo.publish()` call must include the role it wants to publish as the first item in the list followed by the roles the client updates before it ordered by last to first. I.e. in order to publish the Targets role, we must also publish Snapshot and Timestamp in that order. `repo.publish()` can also publish the Root role.
+
+We can now run the test:
+
 ```bash
 ./env/bin/pytest tuf_conformance \
     -k test_targets_version                 # run a specific test only
@@ -102,12 +106,12 @@ cat /tmp/test-repos/test_targets_version/refresh-1/targets.json
 cat /tmp/test-repos/test_targets_version/refresh-1/snapshot.json
 ```
 
-The metadata looks as expected (targets version is 7) so we can add a modification to the end of the test:
+The metadata looks as expected (targets version is 8 because we set the version to 7 and then bumped when we invoked `repo.publish()`) so we can add a modification to the end of the test:
 
 ```python
     # Make an non-compliant change in repository
     repo.targets.version = 6
-    repo.update_snapshot() # snapshot v3
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
     # refresh client again
     client.refresh(init_data)
@@ -135,7 +139,7 @@ def test_targets_version(
     # Initialize our repository: modify targets version and make sure it's included in snapshot
     init_data, repo = server.new_test(client.test_name)
     repo.targets.version = 7
-    repo.update_snapshot()  # snapshot v2
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
     # initialize client-under-test
     client.init_client(init_data)
@@ -145,12 +149,12 @@ def test_targets_version(
 
     # Make a non-compliant change in repository
     repo.targets.version = 6
-    repo.update_snapshot() # snapshot v3
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
     # refresh client again, expect failure and refusal to accept snapshot and targets
     assert client.refresh(init_data) == 1
-    assert client.version(Snapshot.type) == 2
-    assert client.version(Targets.type) == 7
+    assert client.version(Snapshot.type) == 3
+    assert client.version(Targets.type) == 8
 ```
 
 ### Releasing
