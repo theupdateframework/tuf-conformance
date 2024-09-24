@@ -73,25 +73,20 @@ make fix
 
 ### Creating (and debugging) tests
 
-Let's say we want to test that clients will not accept a decreasing targets version. We start with a simple skeleton
-test that doesn't assert anything but sets up a repository and runs client refresh against it:
+Let's say we want to test that clients will not accept a decreasing targets version. We start with a simple skeleton test that sets up a repository and runs client refresh against it:
 
 ```python
-def test_targets_version(
+def test_targets_version_rollback(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
-    # Initialize our repository: modify targets version and make sure the version is included in snapshot
+    # Initialize our repository: modify targets version and make sure it's included in snapshot
     init_data, repo = server.new_test(client.test_name)
-    repo.targets.version = 7
-    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
-    # initialize client-under-test, run refresh
+    # initialize client-under-test
     client.init_client(init_data)
-    client.refresh(init_data)
+    # Run refresh on client-under-test, expect success
+    assert client.refresh(init_data) == 0
 ```
-
-The test initializes the repo and the initial data. It then sets the repo targets version to 7 and publishes the Targets, Snapshot and Timestamp roles. Finally, it initializes the client and refreshes the clients local metadata.
-`repo.publish()` makes the repositorys data public to the client, and it bumps the version of the metadata in the list by one. When a test needs to publish and make the changes available to the client, the `repo.publish()` call must include the role it wants to publish as the first item in the list followed by the roles the client updates before it ordered by last to first. I.e. in order to publish the Targets role, we must also publish Snapshot and Timestamp in that order. `repo.publish()` can also publish the Root role.
 
 We can now run the test:
 
@@ -106,15 +101,33 @@ cat /tmp/test-repos/test_targets_version/refresh-1/targets.json
 cat /tmp/test-repos/test_targets_version/refresh-1/snapshot.json
 ```
 
-The metadata looks as expected (targets version is 8 because we set the version to 7 and then bumped when we invoked `repo.publish()`) so we can add a modification to the end of the test:
+Now, the repository publishes Targets 6 times so that it is version 7. The client then refreshes and the test asserts that the client has Targets version 7. Next, the repository attempts a rollback attack; It attempts to make the client download metadata for the Targets role that is a lower version than the version the client already has. To do that, the test deletes the already published Targets and republishes 5 times. Now, the repositorys Targets version is 5. The test publishes Snapshot and Timestamp too so the client can see the latest Targets changes. The client now refreshes which must fail to make the client spec-compliant. Finally, the test asserts that the client still has version 7. 
 
 ```python
-    # Make an non-compliant change in repository
-    repo.targets.version = 6
-    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+  # Bump version of Targest 6 times.
+    for i in range(6):
+        repo.publish([Targets.type])
+    repo.publish([Snapshot.type, Timestamp.type])
+    
+    # Client refreshes and downloads Targets version 7
+    assert client.refresh(init_data) == 0
+    assert client.version(Targets.type) == 7
 
-    # refresh client again
-    client.refresh(init_data)
+    # The repository deletes all published Targets
+    # and republishes to version 5.
+    # This is a rollback attack.
+    del repo.signed_mds[Targets.type]
+    for i in range(5):
+        repo.publish([Targets.type], verify_version=False)
+    repo.publish([Snapshot.type, Timestamp.type])
+
+    # Now the client should fail because it has version 7
+    # locally and the repository is presenting it with
+    # version 5
+    assert client.refresh(init_data) == 1
+
+    # Make sure the client still has version 7
+    assert client.version(Targets.type) == 7
 ```
 
 Running the test again results in a second repository version being dumped (each client refresh leads to a dump): 
@@ -133,28 +146,41 @@ The repository metadata looks as expected (but not spec-compliant) so we can add
 The final test looks like this:
 
 ```python
-def test_targets_version(
+def test_targets_version_rollback(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
     # Initialize our repository: modify targets version and make sure it's included in snapshot
     init_data, repo = server.new_test(client.test_name)
-    repo.targets.version = 7
-    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
     # initialize client-under-test
     client.init_client(init_data)
-
     # Run refresh on client-under-test, expect success
     assert client.refresh(init_data) == 0
 
-    # Make a non-compliant change in repository
-    repo.targets.version = 6
-    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    # Bump version of Targest 6 times.
+    for i in range(6):
+        repo.publish([Targets.type])
+    repo.publish([Snapshot.type, Timestamp.type])
+    
+    # Client refreshes and downloads Targets version 7
+    assert client.refresh(init_data) == 0
+    assert client.version(Targets.type) == 7
 
-    # refresh client again, expect failure and refusal to accept snapshot and targets
+    # The repository deletes all published Targets
+    # and republishes to version 5.
+    # This is a rollback attack.
+    del repo.signed_mds[Targets.type]
+    for i in range(5):
+        repo.publish([Targets.type], verify_version=False)
+    repo.publish([Snapshot.type, Timestamp.type])
+
+    # Now the client should fail because it has version 7
+    # locally and the repository is presenting it with
+    # version 5
     assert client.refresh(init_data) == 1
-    assert client.version(Snapshot.type) == 3
-    assert client.version(Targets.type) == 8
+
+    # Make sure the client still has version 7
+    assert client.version(Targets.type) == 7
 ```
 
 ### Releasing
