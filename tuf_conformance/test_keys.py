@@ -115,7 +115,7 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
     assert client.refresh(init_data) == 1
 
     # client should not have accepted snapshot
-    assert client.version(Snapshot.type) != 1
+    assert client.version(Snapshot.type) is None
 
 
 # keytype, scheme and an example signature from this type of key
