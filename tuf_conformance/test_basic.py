@@ -147,6 +147,44 @@ def test_unsigned_metadata(
     assert client.trusted_roles() == trusted
 
 
+# tuples of
+#  * rolename that should have a version mismatch
+#  * expected trusted metadata versions after refresh fails
+mismatch_cases = [
+    ("root", [("root", 1)]),
+    ("snapshot", [("root", 2), ("timestamp", 2)]),
+    ("targets", [("root", 2), ("snapshot", 2), ("timestamp", 2)]),
+]
+mismatch_ids = [case[0] for case in mismatch_cases]
+
+
+@pytest.mark.parametrize("role, trusted", mismatch_cases, ids=mismatch_ids)
+def test_url_and_metadata_version_mismatch(
+    client: ClientRunner,
+    server: SimulatorServer,
+    role: str,
+    trusted: list[tuple[str, int]],
+) -> None:
+    """Publish metadata with a mismatch between the version in the metadata and the
+    published URL. Expect client to refuse the mismatching metadata update
+    """
+
+    init_data, repo = server.new_test(client.test_name)
+
+    # After publish roles metadata contains "version: 3" but the URL is going to be
+    # /2.<ROLE>.json. Use `verify_version=False` to silence warning about this
+    repo.mds[role].signed.version += 1
+    repo.publish(
+        [Root.type, Targets.type, Snapshot.type, Timestamp.type], verify_version=False
+    )
+
+    assert client.init_client(init_data) == 0
+
+    # Expect client to not accept version mismatch
+    assert client.refresh(init_data) == 1
+    assert client.trusted_roles() == trusted
+
+
 def test_timestamp_content_changes(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
