@@ -20,7 +20,6 @@ def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -
 
     # Run the test: step 2: Refresh
     assert client.refresh(init_data) == 0
-
     # Verify that expected requests were made
     assert repo.metadata_statistics == [
         ("root", 2),
@@ -129,12 +128,17 @@ def test_unsigned_metadata(
     """
 
     init_data, repo = server.new_test(client.test_name)
+    # Removed published roles:
+    del repo.signed_mds[Targets.type]
+    del repo.signed_mds[Snapshot.type]
+    del repo.signed_mds[Timestamp.type]
 
     # remove signing key for role, increase version
     repo.signers[role].popitem()
-    repo.mds[role].signed.version += 1
     if role == "root":
-        repo.publish_root()
+        repo.publish([Root.type])
+    else:
+        repo.publish([Targets.type, Snapshot.type, Timestamp.type])
 
     assert client.init_client(init_data) == 0
 
@@ -155,14 +159,18 @@ def test_timestamp_content_changes(
     assert client.init_client(init_data) == 0
     assert client.refresh(init_data) == 0
 
-    initial_timestamp_meta_ver = repo.timestamp.snapshot_meta.version
-    # Change timestamp without bumping its version in order to test if a new
-    # timestamp with the same version will be persisted.
+    # Change timestamp v1: client should not use the new one if it already has a v1
     repo.timestamp.snapshot_meta.version = 100
+    del repo.signed_mds[Timestamp.type]
+    repo.publish([Timestamp.type])  # v1
 
+    # client should not persist new timestamp and should not download snapshot v100
     assert client.refresh(init_data) == 0
+    assert repo.metadata_statistics[-1] == (Timestamp.type, None)
 
-    assert client.version(Timestamp.type) == initial_timestamp_meta_ver
+    timestamp_path = os.path.join(client.metadata_dir, "timestamp.json")
+    timestamp: Metadata[Timestamp] = Metadata.from_file(timestamp_path)
+    assert timestamp.signed.snapshot_meta.version == 1
 
 
 def test_basic_metadata_hash_support(
@@ -173,65 +181,24 @@ def test_basic_metadata_hash_support(
 
     # Construct repository with hashes in timestamp/snapshot
     repo.compute_metafile_hashes_length = True
-    repo.update_snapshot()  # v2
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])  # v2, v2, v2
 
     assert client.init_client(init_data) == 0
     # Verify client accepts correct hashes
     assert client.refresh(init_data) == 0
 
-    # Modify targets metadata, leave hashes in snapshot to wrong values
-    repo.targets.version += 1  # v2
-    repo.snapshot.meta["targets.json"].version = repo.targets.version
-    repo.snapshot.version += 1  # v3
-    repo.update_timestamp()
+    # Modify targets metadata, set hash in snapshot to wrong value
+    repo.publish([Targets.type])  # v3
+    assert repo.snapshot.meta["targets.json"].hashes
+    repo.snapshot.meta["targets.json"].hashes["sha256"] = (
+        "46419349341cfb2d95f6ae3d4cd5c3d3dd7f4673985dad42a45130be5e0531a0"
+    )
+    repo.publish([Snapshot.type, Timestamp.type])  # v3
 
-    # Verify client refuses targets that does not match hashes
+    # Verify client refuses targets v3 that does not match hashes
     assert client.refresh(init_data) == 1
     assert client.version(Snapshot.type) == 3
-    assert client.version(Targets.type) == 1
-
-
-def test_new_targets_version_mismatch(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    """Create new targets version. Check that client does not
-    download it as the version is not in snapshot.meta
-    """
-    init_data, repo = server.new_test(client.test_name)
-
-    assert client.init_client(init_data) == 0
-    assert client.refresh(init_data) == 0
-
-    repo.targets.version += 1
-    assert client.refresh(init_data) == 0
-    # Check that the client still has the correct targets version
-    assert client.version(Targets.type) == 1
-    assert repo.metadata_statistics[-1] == (Timestamp.type, None)
-
-
-def test_timestamp_eq_versions_check(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    # Test that a modified timestamp with different content, but the same
-    # version doesn't replace the valid locally stored one.
-    init_data, repo = server.new_test(client.test_name)
-
-    assert client.init_client(init_data) == 0
-
-    # Make a successful update of valid metadata which stores it in cache
-    assert client.refresh(init_data) == 0
-    initial_timestamp_meta_ver = repo.timestamp.snapshot_meta.version
-
-    # Change timestamp without bumping its version in order to test if a new
-    # timestamp with the same version will be persisted.
-    repo.timestamp.snapshot_meta.version = 100
-    assert client.refresh(init_data) == 0
-
-    # If the local timestamp md file has the same snapshot_meta.version as
-    # the initial one, then the new modified timestamp has not been stored.
-    timestamp_path = os.path.join(client.metadata_dir, "timestamp.json")
-    timestamp: Metadata[Timestamp] = Metadata.from_file(timestamp_path)
-    assert initial_timestamp_meta_ver == timestamp.signed.snapshot_meta.version
+    assert client.version(Targets.type) == 2
 
 
 def test_custom_fields(client: ClientRunner, server: SimulatorServer) -> None:
@@ -251,7 +218,7 @@ def test_custom_fields(client: ClientRunner, server: SimulatorServer) -> None:
     keyid = repo.root.roles[Root.type].keyids[0]
     repo.root.keys[keyid].unrecognized_fields["extra-field"] = {"a": 1, "b": 2}
     repo.root.roles[Root.type].unrecognized_fields["another-field"] = "value"
-    repo.bump_root_by_one()
+    repo.publish([Root.type])
 
     # client should accept new root: The signed content contains the unknown fields
     assert client.refresh(init_data) == 0

@@ -34,7 +34,7 @@ class _ReqHandler(BaseHTTPRequestHandler):
 
         try:
             data = repo.fetch(path)
-        except ValueError as e:
+        except (ValueError, IndexError) as e:
             self.send_error(404, str(e))
             return
         self.send_response(200)

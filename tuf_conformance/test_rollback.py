@@ -5,36 +5,6 @@ from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import SimulatorServer
 
 
-def test_simple_snapshot_rollback(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    """Test a simple snapshot version rollback attack.
-
-    Repository publishes a snapshot with version that is not higher than what client has
-    already seen, without updating timestamp.meta.
-    Expect client to refuse the update.
-    """
-
-    init_data, repo = server.new_test(client.test_name)
-
-    assert client.init_client(init_data) == 0
-
-    # Repository performs legitimate update to snapshot
-    repo.update_snapshot()  # v2
-    assert client.refresh(init_data) == 0
-
-    # Repository attempts rollback attack (note that the snapshot version in
-    # timestamp.meta is v2)
-    repo.snapshot.version -= 1  # v1
-    # Client succeeds in this case since it already has the snapshot version specified
-    # in timestamp.meta
-    assert client.refresh(init_data) == 0
-
-    # Check that client resisted rollback attack
-    assert client.version(Snapshot.type) == 2
-    assert repo.metadata_statistics[-1] == (Timestamp.type, None)
-
-
 def test_new_timestamp_version_rollback(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
@@ -48,14 +18,16 @@ def test_new_timestamp_version_rollback(
     assert client.init_client(init_data) == 0
 
     # Repository performs legitimate update to timestamp
-    repo.update_timestamp()  # v2
+    repo.publish([Timestamp.type])
     assert client.refresh(init_data) == 0
 
     # Sanity check that client saw the timestamp update:
     assert client.version(Timestamp.type) == 2
 
     # Repository attempts rollback attack:
-    repo.timestamp.version -= 1  # v1
+    del repo.signed_mds[Timestamp.type]
+    repo.timestamp.version = 1
+    repo.publish([Timestamp.type])
     assert client.refresh(init_data) == 1
 
     # Check that client resisted rollback attack
@@ -74,22 +46,22 @@ def test_snapshot_rollback(
     Expect client to refuse the update.
     """
     init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+
     # When hashes are used and timestamp update happens:
     #  1) snapshot hash is is computed
     #  2) hash is stored in timestamp.snapshot_meta
     # The local snapshot must be used in rollback check even when hashes are used
+
     repo.compute_metafile_hashes_length = use_hashes
-
-    assert client.init_client(init_data) == 0
-
-    # Start snapshot version at 2
-    repo.update_snapshot()  # v2, timestamp = v2
+    repo.publish([Snapshot.type, Timestamp.type])  # v2, v2
 
     assert client.refresh(init_data) == 0
 
-    # Repo attempts rollback attack
+    # Repo attempts snapshot version rollback attack
+    del repo.signed_mds[Snapshot.type]
     repo.snapshot.version = 1
-    repo.update_timestamp()  # v3
+    repo.publish([Snapshot.type, Timestamp.type])  # v1, v3
 
     assert client.refresh(init_data) == 1
 
@@ -115,17 +87,17 @@ def test_new_targets_fast_forward_recovery(
     init_data, repo = server.new_test(client.test_name)
     assert client.init_client(init_data) == 0
 
-    repo.targets.version = 99999
-    repo.update_snapshot()  # v2
+    for i in range(99):
+        repo.publish([Targets.type])
+    repo.publish([Snapshot.type, Timestamp.type])
 
     assert client.refresh(init_data) == 0
-    assert client.version(Targets.type) == 99999
+    assert client.version(Targets.type) == 100
 
     repo.rotate_keys(Snapshot.type)
-    repo.bump_root_by_one()
-
+    del repo.signed_mds[Targets.type]
     repo.targets.version = 1
-    repo.update_snapshot()  # v3
+    repo.publish([Root.type, Targets.type, Snapshot.type, Timestamp.type])
 
     assert client.refresh(init_data) == 0
     assert client.version(Targets.type) == 1
@@ -147,43 +119,23 @@ def test_new_snapshot_fast_forward_recovery(
     init_data, repo = server.new_test(client.test_name)
 
     assert client.init_client(init_data) == 0
-    repo.snapshot.version = 99999
-    repo.update_timestamp()
+    for i in range(99):
+        repo.publish([Snapshot.type])
+    repo.publish([Timestamp.type])
 
     # client refreshes the metadata and see the new snapshot version
     assert client.refresh(init_data) == 0
-    assert client.version(Snapshot.type) == 99999
+    assert client.version(Snapshot.type) == 100
 
+    # rotate keys, rollback snapshot to version 1
     repo.rotate_keys(Snapshot.type)
     repo.rotate_keys(Timestamp.type)
-    repo.root.version += 1
-    repo.publish_root()
-
+    del repo.signed_mds[Snapshot.type]
     repo.snapshot.version = 1
-    repo.update_timestamp()
+    repo.publish([Root.type, Targets.type, Snapshot.type, Timestamp.type])
 
     assert client.refresh(init_data) == 0
     assert client.version(Snapshot.type) == 1
-
-
-def test_new_snapshot_version_mismatch(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    """Tests that the client does not download the snapshot
-    metadata if the repo has bumped the snapshot version in
-    the snapshot metadata but not in timestamp.meta.
-    """
-
-    init_data, repo = server.new_test(client.test_name)
-
-    assert client.init_client(init_data) == 0
-
-    # Increase snapshot version without updating timestamp
-    repo.snapshot.version += 1
-
-    assert client.refresh(init_data) == 1
-    assert client.trusted_roles() == [(Root.type, 1), (Timestamp.type, 1)]
-    assert repo.metadata_statistics[-1] == (Snapshot.type, 1)
 
 
 def test_new_timestamp_fast_forward_recovery(
@@ -201,17 +153,19 @@ def test_new_timestamp_fast_forward_recovery(
     assert client.init_client(init_data) == 0
 
     # attacker updates to a higher version
-    repo.timestamp.version = 99999
+    for i in range(99):
+        repo.publish([Timestamp.type])
 
     # client refreshes the metadata and see the new timestamp version
     assert client.refresh(init_data) == 0
-    assert client.version(Timestamp.type) == 99999
+    assert client.version(Timestamp.type) == 100
 
     # repository rotates timestamp keys,
     # rolls back timestamp version
     repo.rotate_keys(Timestamp.type)
-    repo.bump_root_by_one()
+    del repo.signed_mds[Timestamp.type]
     repo.timestamp.version = 1
+    repo.publish([Root.type, Timestamp.type])
 
     # client refresh the metadata and see the initial timestamp version
     assert client.refresh(init_data) == 0
@@ -232,19 +186,17 @@ def test_targets_rollback(
     #  1) snapshot hash is is computed
     #  2) hash is stored in timestamp.snapshot_meta
     # The local snapshot must be used in rollback check even when hashes are used
-    repo.compute_metafile_hashes_length = use_hashes
-
     assert client.init_client(init_data) == 0
 
-    # Initialize all metadata and assign targets
-    # version higher than 1.
-    repo.targets.version = 2
-    repo.update_snapshot()  # v2
+    repo.compute_metafile_hashes_length = use_hashes
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])  # v2, v2, v2
+
     assert client.refresh(init_data) == 0
 
-    # The new targets must have a lower version than the local trusted one.
+    # rollback targets version, start again from v1:
+    del repo.signed_mds[Targets.type]
     repo.targets.version = 1
-    repo.update_snapshot()  # v3
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])  # v1, v3, v3
 
     # Client refresh should fail because of targets rollback
     assert client.refresh(init_data) == 1

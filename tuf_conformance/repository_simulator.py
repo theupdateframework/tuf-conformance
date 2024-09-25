@@ -17,23 +17,19 @@ Example::
     # constructor creates repository with top-level metadata
     sim = RepositorySimulator()
 
-    # metadata can be modified directly: it is immediately available to clients
-    sim.snapshot.version += 1
+    # publish a new version of metadata
+    sim.root.expires = datetime.datetime.utcnow() + datetime.timedelta(days=7)
+    sim.publish([Root.type])
 
-    # As an exception, new root versions require explicit publishing
-    sim.root.version += 1
-    sim.publish_root()
-
-    # there are helper functions
-    sim.add_target("targets", b"content", "targetpath")
-    sim.targets.version += 1
-    sim.update_snapshot()
+    # there are helper functions to do things like adding an artifact
+    sim.add_target(Targets.type, b"content", "targetpath")
+    sim.publish([Targets.type, Snapshot.type, Timestamp.type])
 """
 
 import datetime
 import logging
 import os
-from collections.abc import Iterator
+from collections.abc import Iterable
 from dataclasses import dataclass
 from urllib import parse
 
@@ -96,11 +92,10 @@ class RepositorySimulator:
         # All current metadata
         self.mds: dict[str, Metadata] = {}
 
-        # other metadata is signed on-demand (when fetched) but roots must be
-        # explicitly published with publish_root() which maintains this list
-        self.signed_roots: list[bytes] = []
+        # All signed metadata
+        self.signed_mds: dict[str, list[bytes]] = {}
 
-        # signers are used on-demand at fetch time to sign metadata
+        # signers are used to sign metadata
         # keys are roles, values are dicts of {keyid: signer}
         self.signers: dict[str, dict[str, Signer]] = {}
 
@@ -155,12 +150,6 @@ class RepositorySimulator:
         assert isinstance(signed, Targets)
         return signed
 
-    def all_targets(self) -> Iterator[tuple[str, Targets]]:
-        """Yield role name and signed portion of targets one by one."""
-        for role, md in self.mds.items():
-            if role not in [Root.type, Timestamp.type, Snapshot.type]:
-                yield role, md.signed
-
     def new_signer(
         self, keytype: str = "rsa", scheme: str = "rsa-pkcs1v15-sha256"
     ) -> CryptoSigner:
@@ -202,21 +191,69 @@ class RepositorySimulator:
             self.root.add_key(signer.public_key, role)
             self.add_signer(role, signer)
 
-        self.publish_root()
+        self.publish([Targets.type, Snapshot.type, Timestamp.type, Root.type])
 
-    def bump_root_by_one(self) -> None:
-        self.root.version += 1
-        self.publish_root()
+    def publish(self, roles: Iterable[str], verify_version: bool = True) -> None:
+        """Makes the repositorys metadata public and available to clients.
 
-    def publish_root(self) -> None:
-        """Sign and store a new serialized version of root."""
-        root_md = self.mds[Root.type]
-        root_md.signatures.clear()
-        for signer in self.signers[Root.type].values():
-            root_md.sign(signer, append=True)
+        Tests run this helper after updating the repositorys metadata
+        and before clients should fetch the repositorys updated metadata.
 
-        self.signed_roots.append(root_md.to_bytes(JSONSerializer()))
-        logger.debug("Published root v%d", self.root.version)
+        publish bumps the version by default. The role must already exist
+        in repo.signed_mds for the repo to be able to bump it.
+
+        When publishing a role that is not root, timestamp or snapshot,
+        publish will create a metafile for the role and add it to snapshot.
+
+        When publishing snapshot, publish will create a metafile for snapshot
+        and add it to timestamp."""
+
+        for role in roles:
+            md = self.mds.get(role)
+            if md is None:
+                raise ValueError(f"Unknown role {role}")
+
+            # only bump if there is a version already (this avoids bumping initial v1)
+            if role in self.signed_mds:
+                md.signed.version += 1
+
+            md.signatures.clear()
+            for signer in self.signers[role].values():
+                md.sign(signer, append=True)
+
+            logger.debug(
+                "signed %s v%d with %d sigs",
+                role,
+                md.signed.version,
+                len(self.signers[role]),
+            )
+
+            if role not in self.signed_mds:
+                self.signed_mds[role] = []
+            expected_ver = len(self.signed_mds[role]) + 1
+            if verify_version and md.signed.version != expected_ver:
+                raise ValueError(
+                    f"RepositorySimulator Expected {role} v{expected_ver}, got "
+                    "v{md.signed.version}. Use verify_version=False if this is intended"
+                )
+
+            self.signed_mds[role].append(md.to_bytes(JSONSerializer()))
+
+            hashes = None
+            length = None
+            if self.compute_metafile_hashes_length:
+                hashes, length = self._compute_hashes_and_length(role)
+
+            # for targets roles: update snapshot.meta
+            if role not in [Root.type, Timestamp.type, Snapshot.type]:
+                self.snapshot.meta[f"{role}.json"] = MetaFile(
+                    md.signed.version, length, hashes
+                )
+            # for snapshot: update timestamp.snapshot_meta
+            if role == Snapshot.type:
+                self.timestamp.snapshot_meta = MetaFile(
+                    md.signed.version, length, hashes
+                )
 
     def fetch(self, path: str) -> bytes:
         """Fetches and returns metadata/artifacts for the given url-path.
@@ -259,7 +296,6 @@ class RepositorySimulator:
 
         If hash is None, then consistent_snapshot is not used.
         """
-
         repo_target = self.artifacts.get(target_path)
         if repo_target is None:
             raise ValueError(f"No target {target_path}")
@@ -272,35 +308,28 @@ class RepositorySimulator:
     def fetch_metadata(self, role: str, version: int | None = None) -> bytes:
         """Return signed metadata for 'role', using 'version' if it is given.
 
-        If version is None, non-versioned metadata is being requested.
+        If version is None, non-versioned metadata is being requested, and the
+        repository will return the metadata it has published last.
+
+        For the metadata to be available to the client, it must exist in
+        repo.signed_mds. repo.publish() is responsible for making the
+        metadata available in repo.signed_mds. The common workflow for
+        making changes in a test and fetching is:
+        1. Make changes to the metadata in the test
+        2. Publish the metadata by way of repo.publish([role])
+        3. The client can now fetch the updated metadata.
         """
+
         # decode role for the metadata
         role = parse.unquote(role, encoding="utf-8")
 
-        if role == Root.type:
-            # return a version previously serialized in publish_root()
-            if version is None or version > len(self.signed_roots):
-                raise ValueError(f"Unknown root version {version}")
-            logger.debug("fetched root version %d", version)
-            return self.signed_roots[version - 1]
-
-        # sign and serialize the requested metadata
-        md = self.mds.get(role)
-
-        if md is None:
-            raise ValueError(f"Unknown role {role}")
-
-        md.signatures.clear()
-        for signer in self.signers[role].values():
-            md.sign(signer, append=True)
-
-        logger.debug(
-            "fetched %s v%d with %d sigs",
-            role,
-            md.signed.version,
-            len(self.signers[role]),
-        )
-        return md.to_bytes(JSONSerializer())
+        if len(self.signed_mds[role]) == 0:
+            raise ValueError(f"The repository has not published metadata for '{role}'")
+        if version is not None:
+            if version < 1 or version > len(self.signed_mds[role]):
+                raise ValueError(f"Unknown {role} version {version}")
+            return self.signed_mds[role][version - 1]
+        return self.signed_mds[role][-1]
 
     def _version(self, role: str) -> int:
         signed = self.mds[role].signed
@@ -308,40 +337,11 @@ class RepositorySimulator:
         return signed.version
 
     def _compute_hashes_and_length(self, role: str) -> tuple[dict[str, str], int]:
-        data = self.fetch_metadata(role)
+        data = self.signed_mds[role][-1]
         digest_object = sslib_hash.digest(sslib_hash.DEFAULT_HASH_ALGORITHM)
         digest_object.update(data)
         hashes = {sslib_hash.DEFAULT_HASH_ALGORITHM: digest_object.hexdigest()}
         return hashes, len(data)
-
-    def update_timestamp(self) -> None:
-        """Update timestamp and assign snapshot version to snapshot_meta
-        version.
-        """
-
-        hashes = None
-        length = None
-        if self.compute_metafile_hashes_length:
-            hashes, length = self._compute_hashes_and_length(Snapshot.type)
-
-        self.timestamp.snapshot_meta = MetaFile(self.snapshot.version, length, hashes)
-
-        self.timestamp.version += 1
-
-    def update_snapshot(self) -> None:
-        """Update snapshot, assign targets versions and update timestamp."""
-        for role, delegate in self.all_targets():
-            hashes = None
-            length = None
-            if self.compute_metafile_hashes_length:
-                hashes, length = self._compute_hashes_and_length(role)
-
-            self.snapshot.meta[f"{role}.json"] = MetaFile(
-                delegate.version, length, hashes
-            )
-
-        self.snapshot.version += 1
-        self.update_timestamp()
 
     def add_artifact(self, role: str, data: bytes, path: str) -> None:
         """Add `data` to artifact store and insert its hashes into metadata."""
@@ -425,11 +425,11 @@ class RepositorySimulator:
         dest_dir = os.path.join(self.dump_dir, f"refresh-{self.dump_version}")
         os.makedirs(dest_dir, exist_ok=True)
 
-        for ver in range(1, len(self.signed_roots) + 1):
+        for ver in range(1, len(self.signed_mds[Root.type]) + 1):
             with open(os.path.join(dest_dir, f"{ver}.root.json"), "wb") as f:
                 f.write(self.fetch_metadata(Root.type, ver))
 
-        for role in self.mds:
+        for role in self.signed_mds:
             if role == Root.type:
                 continue
             quoted_role = parse.quote(role, "")
