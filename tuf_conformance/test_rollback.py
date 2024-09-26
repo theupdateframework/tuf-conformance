@@ -1,5 +1,5 @@
 import pytest
-from tuf.api.metadata import Root, Snapshot, Targets, Timestamp
+from tuf.api.metadata import DelegatedRole, Root, Snapshot, Targets, Timestamp
 
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import SimulatorServer
@@ -71,22 +71,54 @@ def test_snapshot_rollback(
     assert repo.metadata_statistics[-1] == (Timestamp.type, None)
 
 
-def test_new_targets_fast_forward_recovery(
+def test_targets_role_removal(client: ClientRunner, server: SimulatorServer) -> None:
+    """Test that client does not accept removal of roles from snapshot
+
+    There is one exception: targets roles can be removed as part of the
+    targets recovery (snapshot key rotation), see
+    test_targets_fast_forward_recovery
+    """
+    init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+
+    # Add a delegated role "delegated"
+    role = DelegatedRole("delegated", [], 1, False, ["delegatedpath/*"])
+    delegated_targets = Targets(expires=repo.safe_expiry)
+    repo.add_delegation(Targets.type, role, delegated_targets)
+    repo.publish(["delegated", Targets.type, Snapshot.type, Timestamp.type])
+
+    assert client.refresh(init_data) == 0
+
+    # Remove the role from snapshot v3
+    del repo.snapshot.meta["delegated.json"]
+    repo.publish([Snapshot.type, Timestamp.type])
+
+    assert client.refresh(init_data) == 1
+    assert client.version(Snapshot.type) == 2
+
+
+def test_targets_fast_forward_recovery(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
     """Test targets fast-forward recovery using key rotation.
 
     The targets recovery is made by issuing new Snapshot keys, by following
     steps:
-        - Remove the snapshot key
-        - Create and add a new key for snapshot
-        - Bump and publish root
-        - Rollback the target version
+        - Remove the snapshot key, add a new key for snapshot
+        - Rollback the targets version, remove unwanted targets roles from snapshot
+        - publish new root and snapshot
     """
 
     init_data, repo = server.new_test(client.test_name)
     assert client.init_client(init_data) == 0
 
+    # Add a delegated role "delegated"
+    role = DelegatedRole("delegated", [], 1, False, ["delegatedpath/*"])
+    delegated_targets = Targets(expires=repo.safe_expiry)
+    repo.add_delegation(Targets.type, role, delegated_targets)
+    repo.publish(["delegated"])
+
+    # Add many targets versions
     for i in range(99):
         repo.publish([Targets.type])
     repo.publish([Snapshot.type, Timestamp.type])
@@ -94,9 +126,11 @@ def test_new_targets_fast_forward_recovery(
     assert client.refresh(init_data) == 0
     assert client.version(Targets.type) == 100
 
+    # rotate key, rollback targets version, remove unwanted targets roles from snapshot
     repo.rotate_keys(Snapshot.type)
     del repo.signed_mds[Targets.type]
     repo.targets.version = 1
+    del repo.snapshot.meta["delegated.json"]
     repo.publish([Root.type, Targets.type, Snapshot.type, Timestamp.type])
 
     assert client.refresh(init_data) == 0
