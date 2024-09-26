@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from tuf.api.metadata import Metadata, Root, Snapshot, Targets, Timestamp
 
@@ -86,7 +88,7 @@ def test_snapshot_has_too_few_keys(
     assert client.version(Snapshot.type) != 2
 
 
-def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> None:
+def test_duplicate_keys(client: ClientRunner, server: SimulatorServer) -> None:
     """Test multiple identical keyids, try to fake threshold
 
     Client should either not accept metadata with duplicate keyids in a role,
@@ -109,9 +111,51 @@ def test_duplicate_keys_root(client: ClientRunner, server: SimulatorServer) -> N
     repo.root.roles[Snapshot.type].threshold = 6
     repo.publish([Root.type, Snapshot.type, Timestamp.type])
 
+    # Duplicate signatures in published snapshot. This can't be done with python-tuf
+    # API: use plain json instead
+    md = json.loads(repo.signed_mds[Snapshot.type].pop())
+    sig = None
+    for sig in md["signatures"]:
+        if sig["keyid"] == signer.public_key.keyid:
+            break
+    assert sig is not None
+    for n in range(0, 8):
+        md["signatures"].append(sig)
+    repo.signed_mds[Snapshot.type].append(json.dumps(md).encode())
+
     # This should fail for one of two reasons:
     # 1. client does not accept root v2 metadata that contains duplicate keyids or
-    # 2. client did accept root v2 but then snapshot threshold is not reached
+    # 2. client did accept root v2 but does not accept snapshot v2 because it
+    #    contains duplicate keyids (and does not actually meet threshold)
+    assert client.refresh(init_data) == 1
+
+    # client should not have accepted snapshot
+    assert client.version(Snapshot.type) is None
+
+
+def test_duplicate_sig_keyids(client: ClientRunner, server: SimulatorServer) -> None:
+    """Test that duplicate keyids in signatures are not accepted
+
+    Spec says The keyid MUST be unique in the "signatures" array: multiple signatures
+    with the same keyid are not allowed -- even if the role is signed by threshold of
+    signatures.
+
+    Note that test_duplicate_keys is the more comprehensive test that verifies
+    that if client disagrees with this test, the duplicates are not counted towards
+    threshold.
+    """
+
+    init_data, repo = server.new_test(client.test_name)
+
+    assert client.init_client(init_data) == 0
+
+    # Duplicate the correct signature in published snapshot. This can't be done with
+    # python-tuf API: use plain json instead
+    md = json.loads(repo.signed_mds[Snapshot.type].pop())
+    md["signatures"].append(md["signatures"][0])
+    repo.signed_mds[Snapshot.type].append(json.dumps(md).encode())
+
+    # This should fail since snapshot contains duplicate keyids in signatures
     assert client.refresh(init_data) == 1
 
     # client should not have accepted snapshot
