@@ -223,3 +223,64 @@ def test_custom_fields(client: ClientRunner, server: SimulatorServer) -> None:
     # client should accept new root: The signed content contains the unknown fields
     assert client.refresh(init_data) == 0
     assert client.version(Root.type) == 2
+
+
+def test_snapshot_404(client: ClientRunner, server: SimulatorServer) -> None:
+    """Verify that missing snapshot version is handled correctly"""
+    init_data, repo = server.new_test(client.test_name)
+
+    assert client.init_client(init_data) == 0
+    assert client.refresh(init_data) == 0
+
+    # Bump snapshot version in timestamp.snapshot_meta without publishing new snapshot
+    repo.timestamp.snapshot_meta.version += 1
+    repo.publish([Timestamp.type])
+
+    # Client should not consider the repository valid because snapshot v2 was not found,
+    # but should update timestamp
+    assert client.refresh(init_data) == 1
+    assert repo.metadata_statistics[-1] == (Snapshot.type, 2)
+    assert client.trusted_roles() == [
+        (Root.type, 1),
+        (Snapshot.type, 1),
+        (Targets.type, 1),
+        (Timestamp.type, 2),
+    ]
+
+
+def test_targets_404(client: ClientRunner, server: SimulatorServer) -> None:
+    """Verify that missing targets version is handled correctly"""
+    init_data, repo = server.new_test(client.test_name)
+
+    assert client.init_client(init_data) == 0
+    assert client.refresh(init_data) == 0
+
+    # Bump targets version in snapshot.meta without publishing new targets
+    repo.snapshot.meta["targets.json"].version += 1
+    repo.publish([Snapshot.type, Timestamp.type])
+
+    # Client should not consider the repository valid because targets v2 was not found,
+    # but should update timestamp and snapshot
+    assert client.refresh(init_data) == 1
+    assert repo.metadata_statistics[-1] == (Targets.type, 2)
+    assert client.trusted_roles() == [
+        (Root.type, 1),
+        (Snapshot.type, 2),
+        (Targets.type, 1),
+        (Timestamp.type, 2),
+    ]
+
+
+def test_timestamp_404(client: ClientRunner, server: SimulatorServer) -> None:
+    """Verify that missing timestamp is handled correctly"""
+    init_data, repo = server.new_test(client.test_name)
+
+    assert client.init_client(init_data) == 0
+    assert client.refresh(init_data) == 0
+
+    # Remove all timestamp versions so client gets a 404
+    del repo.signed_mds[Timestamp.type]
+
+    # Client should not consider the repository valid because timestamp was not found
+    assert client.refresh(init_data) == 1
+    assert repo.metadata_statistics[-1] == (Timestamp.type, None)
