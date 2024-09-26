@@ -233,8 +233,8 @@ class RepositorySimulator:
             expected_ver = len(self.signed_mds[role]) + 1
             if verify_version and md.signed.version != expected_ver:
                 raise ValueError(
-                    f"RepositorySimulator Expected {role} v{expected_ver}, got "
-                    "v{md.signed.version}. Use verify_version=False if this is intended"
+                    f"RepositorySimulator Expected {role} v{expected_ver}, got v"
+                    f"{md.signed.version}. Use verify_version=False if this is intended"
                 )
 
             self.signed_mds[role].append(md.to_bytes(JSONSerializer()))

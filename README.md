@@ -73,114 +73,78 @@ make fix
 
 ### Creating (and debugging) tests
 
-Let's say we want to test that clients will not accept a decreasing targets version. We start with a simple skeleton test that sets up a repository and runs client refresh against it:
+Let's say we want to test that clients will not accept a root version 4 when they requested
+"3.root.json". We start with a simple skeleton test that sets up a repository and runs client
+refresh against it:
 
 ```python
-def test_targets_version_rollback(
+def test_root_version_mismatch(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
-    # Initialize our repository: modify targets version and make sure it's included in snapshot
     init_data, repo = server.new_test(client.test_name)
-
-    # initialize client-under-test
     client.init_client(init_data)
-    # Run refresh on client-under-test, expect success
-    assert client.refresh(init_data) == 0
+
+    # publish a valid root v2
+    repo.publish([Root.type])
+
+    # Run refresh on client-under-test
+    client.refresh(init_data)
 ```
 
-We can now run the test:
+We can now run the test suite:
 
 ```bash
-./env/bin/pytest tuf_conformance \
-    -k test_targets_version                 # run a specific test only
-    --entrypoint "./clients/go-tuf/go-tuf"  # use the included go-tuf client as client-under-test
-    --repository-dump-dir /tmp/test-repos   # dump repository contents
+make test-go-tuf
 
-# take a look at the repository targets.json that got debug dumped
-cat /tmp/test-repos/test_targets_version/refresh-1/targets.json
-cat /tmp/test-repos/test_targets_version/refresh-1/snapshot.json
+# take a look at the repository 1.root.json that got debug dumped
+cat /tmp/tuf-conformance-dump/test_root_version_mismatch/refresh-1/2.root.json
 ```
 
-Now, the repository publishes Targets 6 times so that it is version 7. The client then refreshes and the test asserts that the client has Targets version 7. Next, the repository attempts a rollback attack; It attempts to make the client download metadata for the Targets role that is a lower version than the version the client already has. To do that, the test deletes the already published Targets and republishes 5 times. Now, the repositorys Targets version is 5. The test publishes Snapshot and Timestamp too so the client can see the latest Targets changes. The client now refreshes which must fail to make the client spec-compliant. Finally, the test asserts that the client still has version 7. 
+The metadata looks as expected: There is a 2.root.json and it contains `version: 2`. We now add code
+that serves an incorrect version number:
 
 ```python
-  # Bump version of Targest 6 times.
-    for i in range(6):
-        repo.publish([Targets.type])
-    repo.publish([Snapshot.type, Timestamp.type])
-    
-    # Client refreshes and downloads Targets version 7
-    assert client.refresh(init_data) == 0
-    assert client.version(Targets.type) == 7
+    # publish a 3.root.json but make it contain the field "version: 4"
+    # Use verify_version=False to override the safety check for this
+    repo.root.version += 1
+    repo.publish([Root.type], verify_version=False)
 
-    # The repository deletes all published Targets
-    # and republishes to version 5.
-    # This is a rollback attack.
-    del repo.signed_mds[Targets.type]
-    for i in range(5):
-        repo.publish([Targets.type], verify_version=False)
-    repo.publish([Snapshot.type, Timestamp.type])
-
-    # Now the client should fail because it has version 7
-    # locally and the repository is presenting it with
-    # version 5
-    assert client.refresh(init_data) == 1
-
-    # Make sure the client still has version 7
-    assert client.version(Targets.type) == 7
+    # Run refresh on client-under-test again
+    client.refresh(init_data)
 ```
 
-Running the test again results in a second repository version being dumped (each client refresh leads to a dump): 
+Running the test suite again results in a second repository version being dumped (each client refresh leads to a dump): 
 ```bash
-./env/bin/pytest tuf_conformance \
-    -k test_targets_version                 # run a specific test only
-    --entrypoint "./clients/go-tuf/go-tuf"  # use the included go-tuf client as client-under-test
-    --repository-dump-dir /tmp/test-repos   # dump repository contents
+make test-go-tuf
 
-# take a look at targets versions in both snapshot versions that got debug dumped
-cat /tmp/test-repos/test_targets_version/refresh-1/snapshot.json
-cat /tmp/test-repos/test_targets_version/refresh-2/snapshot.json
+# take a look at repository root versions during the second refresh
+cat /tmp/tuf-conformance-dump/test_root_version_mismatch/refresh-2/3.root.json
 ```
 
-The repository metadata looks as expected (but not spec-compliant) so we can add some asserts for client behaviour now.
-The final test looks like this:
+The repository metadata looks as expected (but not spec-compliant) as the version field in the metadata is 4.
+We can now add some asserts for client behaviour to get the final test:
 
 ```python
-def test_targets_version_rollback(
+def test_root_version_mismatch(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
-    # Initialize our repository: modify targets version and make sure it's included in snapshot
     init_data, repo = server.new_test(client.test_name)
-
-    # initialize client-under-test
     client.init_client(init_data)
-    # Run refresh on client-under-test, expect success
+
+    # publish a valid root v2
+    repo.publish([Root.type])
+
+    # Run successful client refresh
     assert client.refresh(init_data) == 0
 
-    # Bump version of Targest 6 times.
-    for i in range(6):
-        repo.publish([Targets.type])
-    repo.publish([Snapshot.type, Timestamp.type])
-    
-    # Client refreshes and downloads Targets version 7
-    assert client.refresh(init_data) == 0
-    assert client.version(Targets.type) == 7
+    # publish a 3.root.json but make it contain the field "version: 4"
+    # Use verify_version=False to override the safety check for this
+    repo.root.version += 1
+    repo.publish([Root.type], verify_version=False)
 
-    # The repository deletes all published Targets
-    # and republishes to version 5.
-    # This is a rollback attack.
-    del repo.signed_mds[Targets.type]
-    for i in range(5):
-        repo.publish([Targets.type], verify_version=False)
-    repo.publish([Snapshot.type, Timestamp.type])
-
-    # Now the client should fail because it has version 7
-    # locally and the repository is presenting it with
-    # version 5
+    # Run client refresh again: expect failure, expect clients trusted root to be v2
     assert client.refresh(init_data) == 1
-
-    # Make sure the client still has version 7
-    assert client.version(Targets.type) == 7
+    assert client.version(Root.type) == 2
 ```
 
 ### Releasing

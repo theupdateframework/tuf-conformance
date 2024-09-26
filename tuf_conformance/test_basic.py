@@ -110,39 +110,74 @@ def test_unsigned_initial_root(client: ClientRunner, server: SimulatorServer) ->
 #  * expected trusted metadata versions after refresh fails
 unsigned_cases = [
     ("root", [("root", 1)]),
-    ("timestamp", [("root", 1)]),
-    ("snapshot", [("root", 1), ("timestamp", 1)]),
-    ("targets", [("root", 1), ("snapshot", 1), ("timestamp", 1)]),
+    ("timestamp", [("root", 2)]),
+    ("snapshot", [("root", 2), ("timestamp", 2)]),
+    ("targets", [("root", 2), ("snapshot", 2), ("timestamp", 2)]),
 ]
 unsigned_ids = [case[0] for case in unsigned_cases]
 
 
 @pytest.mark.parametrize("role, trusted", unsigned_cases, ids=unsigned_ids)
 def test_unsigned_metadata(
-    client: ClientRunner, server: SimulatorServer, role: str, trusted: tuple[str, int]
+    client: ClientRunner,
+    server: SimulatorServer,
+    role: str,
+    trusted: list[tuple[str, int]],
 ) -> None:
     """Test refresh when a top-level role is incorrectly signed.
 
     Serve client metadata that is not properly signed.
-    Expect the refresh to succeed until that point, but not continue from that point.
+    Expect the client to refuse that roles metadata but accept the roles
+    updated before that in the client workflow.
     """
 
     init_data, repo = server.new_test(client.test_name)
-    # Removed published roles:
-    del repo.signed_mds[Targets.type]
-    del repo.signed_mds[Snapshot.type]
-    del repo.signed_mds[Timestamp.type]
 
     # remove signing key for role, increase version
     repo.signers[role].popitem()
-    if role == "root":
-        repo.publish([Root.type])
-    else:
-        repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+    repo.publish([Root.type, Targets.type, Snapshot.type, Timestamp.type])
 
     assert client.init_client(init_data) == 0
 
-    # Verify that refresh fails and that current trusted metadata is as expected
+    # Verify that refresh fails and that improperly signed role is not updated
+    assert client.refresh(init_data) == 1
+    assert client.trusted_roles() == trusted
+
+
+# tuples of
+#  * rolename that should have a version mismatch
+#  * expected trusted metadata versions after refresh fails
+mismatch_cases = [
+    ("root", [("root", 1)]),
+    ("snapshot", [("root", 2), ("timestamp", 2)]),
+    ("targets", [("root", 2), ("snapshot", 2), ("timestamp", 2)]),
+]
+mismatch_ids = [case[0] for case in mismatch_cases]
+
+
+@pytest.mark.parametrize("role, trusted", mismatch_cases, ids=mismatch_ids)
+def test_url_and_metadata_version_mismatch(
+    client: ClientRunner,
+    server: SimulatorServer,
+    role: str,
+    trusted: list[tuple[str, int]],
+) -> None:
+    """Publish metadata with a mismatch between the version in the metadata and the
+    published URL. Expect client to refuse the mismatching metadata update
+    """
+
+    init_data, repo = server.new_test(client.test_name)
+
+    # After publish roles metadata contains "version: 3" but the URL is going to be
+    # /2.<ROLE>.json. Use `verify_version=False` to silence warning about this
+    repo.mds[role].signed.version += 1
+    repo.publish(
+        [Root.type, Targets.type, Snapshot.type, Timestamp.type], verify_version=False
+    )
+
+    assert client.init_client(init_data) == 0
+
+    # Expect client to not accept version mismatch
     assert client.refresh(init_data) == 1
     assert client.trusted_roles() == trusted
 
