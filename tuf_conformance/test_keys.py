@@ -223,9 +223,9 @@ def test_invalid_sig_in_valid_metadata(
     """Test that client accepts valid metadata if it contains an invalid signature
 
     Throughout the test timestamp is signed by two keys: one signature is always correct
-    and that is enough to reach threshold. First part uses a plausible looking signature
-    string for the second key. Second part uses an empty string as the signature string
-    for the second key.
+    and that is enough to reach threshold. In first refresh client gets a plausible
+    looking signature string for the second key. In the second refresh it gets an empty
+    string as the signature for the second key.
 
     Client is expected to consider metadata valid (since threshold is reached) in both
     cases.
