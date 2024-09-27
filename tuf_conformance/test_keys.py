@@ -214,3 +214,48 @@ def test_keytype_and_scheme(
 
     assert client.refresh(init_data) == 1
     assert client.version(Root.type) == 2
+
+
+def test_invalid_sig_in_valid_metadata(
+    client: ClientRunner,
+    server: SimulatorServer,
+) -> None:
+    """Test that client accepts valid metadata if it contains an invalid signature
+
+    Throughout the test timestamp is signed by two keys: one signature is always correct
+    and that is enough to reach threshold. First part uses a plausible looking signature
+    string for the second key. Second part uses an empty string as the signature string
+    for the second key.
+
+    Client is expected to consider metadata valid (since threshold is reached) in both
+    cases.
+    NOTE: The specification does not explicitly require this interpretation but it
+    makes most sense for interoperability.
+    """
+    init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+
+    sig = next(iter(repo.mds[Timestamp.type].signatures.values()))
+
+    # add another signing key for timestamp (keep threshold at 1)
+    repo.add_key(Timestamp.type)
+    repo.publish([Root.type, Timestamp.type])  # v2
+
+    # replace the original keyids signature with incorrect but plausible signature
+    md = Metadata.from_bytes(repo.signed_mds[Timestamp.type].pop())
+    md.signatures[sig.keyid] = sig
+    repo.signed_mds[Timestamp.type].append(md.to_bytes())
+
+    # expect success: One correct signature is enough to reach threshold
+    assert client.refresh(init_data) == 0
+
+    repo.publish([Timestamp.type])  # v3
+
+    # replace the original keyids signature with any string
+    sig.signature = ""
+    md = Metadata.from_bytes(repo.signed_mds[Timestamp.type].pop())
+    md.signatures[sig.keyid] = sig
+    repo.signed_mds[Timestamp.type].append(md.to_bytes())
+
+    # expect success: One correct signature is enough to reach threshold
+    assert client.refresh(init_data) == 0
