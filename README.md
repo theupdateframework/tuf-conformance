@@ -27,7 +27,7 @@ There are two required steps:
 
           # insert possible client compilation/installation steps here
 
-          - uses: theupdateframework/tuf-conformance@v1
+          - uses: theupdateframework/tuf-conformance@v2
             with:
               entrypoint: path/to/my/test/executable
     ```
