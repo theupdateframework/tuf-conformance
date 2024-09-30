@@ -7,7 +7,7 @@ toolchain go1.22.3
 require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
-	github.com/theupdateframework/go-tuf/v2 v2.0.0-20240618160255-f1d8916f08e4
+	github.com/theupdateframework/go-tuf/v2 v2.0.1
 )
 
 require (
