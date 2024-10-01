@@ -30,6 +30,7 @@ import datetime
 import logging
 import os
 from collections.abc import Iterable
+from copy import deepcopy
 from dataclasses import dataclass
 from urllib import parse
 
@@ -117,8 +118,13 @@ class RepositorySimulator:
         now = datetime.datetime.utcnow()
         self.safe_expiry = now.replace(microsecond=0) + datetime.timedelta(days=30)
 
-        # Make a semi-deep copy of generated signers
-        self._generated_signers = {k: v.copy() for k, v in SIGNERS.items()}
+        # Make a semi-deep copy of generated signers: The private keys can't be deep
+        # copied but we want to deep copy public keys (tests may want to modify them)
+        self._generated_signers = {}
+        for keytype_scheme, signers in SIGNERS.items():
+            self._generated_signers[keytype_scheme] = [
+                CryptoSigner(s._private_key, deepcopy(s.public_key)) for s in signers
+            ]
 
         # initialize a basic repository structure
         self._initialize()
