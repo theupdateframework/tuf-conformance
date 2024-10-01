@@ -1,11 +1,10 @@
-# Test runner
 import json
 import os
 
 import pytest
 from securesystemslib.formats import encode_canonical
 from securesystemslib.hash import digest
-from tuf.api.metadata import Key, Metadata, Root, Snapshot, Targets, Timestamp
+from tuf.api.metadata import Key, Metadata, MetaFile, Root, Snapshot, Targets, Timestamp
 
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import SimulatorServer
@@ -388,3 +387,30 @@ def test_timestamp_404(client: ClientRunner, server: SimulatorServer) -> None:
     # Client should not consider the repository valid because timestamp was not found
     assert client.refresh(init_data) == 1
     assert repo.metadata_statistics[-1] == (Timestamp.type, None)
+
+
+def test_incorrect_metadata_type(client: ClientRunner, server: SimulatorServer) -> None:
+    """Verify that client checks metadata type
+
+    Test is a bit complicated since it ensures that that the metadata is otherwise
+    completely valid and correctly signed, only the type is incorrect
+    """
+    init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+
+    # Create a version of snapshot that looks a lot like a timestamp:
+    # 1. Make sure snapshot gets signed by timestamp key as well
+    signer = next(iter(repo.signers[Timestamp.type].values()))
+    repo.add_key(Snapshot.type, signer=signer)
+
+    # 2. Make sure snapshot content is valid as timestamp
+    repo.snapshot.meta = {"snapshot.json": MetaFile(1)}
+
+    # Publish snapshot v2 (to get it signed), but then make sure it's
+    # actually published as a timestamp v2
+    repo.publish([Root.type, Snapshot.type])
+    repo.signed_mds[Timestamp.type].append(repo.signed_mds[Snapshot.type].pop())
+
+    # Client should refuse timestamp that has incorrect type field
+    assert client.refresh(init_data) == 1
+    assert client.trusted_roles() == [(Root.type, 2)]
