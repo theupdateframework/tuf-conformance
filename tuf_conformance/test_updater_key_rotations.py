@@ -1,9 +1,8 @@
-import os
 from dataclasses import dataclass
 
 import pytest
 from securesystemslib.signer import CryptoSigner
-from tuf.api.metadata import Metadata, Root, Snapshot, Targets, Timestamp
+from tuf.api.metadata import Root, Snapshot, Targets, Timestamp
 
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import SimulatorServer

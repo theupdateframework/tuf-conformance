@@ -139,4 +139,4 @@ class ClientRunner:
         else:
             expected = None
 
-        assert trusted == expected
+        assert trusted == expected, f"Unexpected trusted role {role} content"
