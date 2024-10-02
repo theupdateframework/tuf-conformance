@@ -157,7 +157,7 @@ class RepositorySimulator:
         return signed
 
     def new_signer(
-        self, keytype: str = "rsa", scheme: str = "rsa-pkcs1v15-sha256"
+        self, keytype: str = "ecdsa", scheme: str = "ecdsa-sha2-nistp256"
     ) -> CryptoSigner:
         """Return a Signer (from a set of pre-generated signers)."""
         try:
