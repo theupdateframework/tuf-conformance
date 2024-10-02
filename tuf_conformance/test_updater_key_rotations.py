@@ -1,4 +1,3 @@
-import os
 from dataclasses import dataclass
 
 import pytest
@@ -177,9 +176,8 @@ def test_root_rotation(
         expected_local_root = repo.signed_mds[Root.type][-2]
         assert client.refresh(init_data) == 1
 
-    with open(os.path.join(client.metadata_dir, "root.json"), "rb") as f:
-        client_root_md = f.read()
-        assert client_root_md == expected_local_root
+    # make sure trusted metadata matches the repository metadata
+    client.assert_metadata(Root.type, expected_local_root)
 
 
 @pytest.mark.parametrize("md_version", non_rotation_cases, ids=non_rotation_ids)
@@ -226,13 +224,8 @@ def test_non_root_rotations(
         expected_result = md_version.res
         if expected_result:
             assert client.refresh(init_data) == 0
-
-            expected_local_md: bytes = repo.fetch_metadata(role)
-            # assert local metadata role is on disk as expected
-            md_path = os.path.join(client.metadata_dir, f"{role}.json")
-            with open(md_path, "rb") as f:
-                data = f.read()
-                assert data == expected_local_md
+            # make sure trusted metadata matches the repository metadata
+            client.assert_metadata(role, repo.fetch_metadata(role))
         else:
             # failure expected
             assert client.refresh(init_data) == 1

@@ -9,18 +9,16 @@ from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import SimulatorServer
 
 
-def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -> None:
+def test_basic_refresh_requests(client: ClientRunner, server: SimulatorServer) -> None:
     """Test basic client functionality.
 
-    Run a refresh, verify client trusted metadata and requests made by the client
+    Run a refresh, verify requests made by the client
     """
     init_data, repo = server.new_test(client.test_name)
-    # Run the test: step 1:  initialize client
     assert client.init_client(init_data) == 0
 
-    # Run the test: step 2: Refresh
+    # Run client refresh, verify that expected requests were made
     assert client.refresh(init_data) == 0
-    # Verify that expected requests were made
     assert repo.metadata_statistics == [
         ("root", 2),
         ("timestamp", None),
@@ -28,11 +26,22 @@ def test_basic_init_and_refresh(client: ClientRunner, server: SimulatorServer) -
         ("targets", 1),
     ]
 
-    # verify client metadata looks as expected
-    assert client.version(Root.type) == 1
-    assert client.version(Timestamp.type) == 1
-    assert client.version(Snapshot.type) == 1
-    assert client.version(Targets.type) == 1
+
+def test_basic_refresh_trusted_data(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    """Test basic client functionality.
+
+    Run a refresh, verify clients trusted metadata
+    """
+    init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+
+    # Run client refresh, verify that trusted metadata is as expected
+    assert client.refresh(init_data) == 0
+
+    for role in [Root.type, Timestamp.type, Snapshot.type, Targets.type]:
+        client.assert_metadata(role, repo.fetch_metadata(role))
 
 
 def test_implicit_refresh(client: ClientRunner, server: SimulatorServer) -> None:
@@ -45,21 +54,17 @@ def test_implicit_refresh(client: ClientRunner, server: SimulatorServer) -> None
     init_data, repo = server.new_test(client.test_name)
     assert client.init_client(init_data) == 0
 
+    # Run download, verify that requests and trusted metadata are as expected
     assert client.download_target(init_data, "nonexistent artifact") == 1
 
-    # Verify that expected requests were made
     assert repo.metadata_statistics == [
         ("root", 2),
         ("timestamp", None),
         ("snapshot", 1),
         ("targets", 1),
     ]
-
-    # verify client metadata looks as expected
-    assert client.version(Root.type) == 1
-    assert client.version(Timestamp.type) == 1
-    assert client.version(Snapshot.type) == 1
-    assert client.version(Targets.type) == 1
+    for role in [Root.type, Timestamp.type, Snapshot.type, Targets.type]:
+        client.assert_metadata(role, repo.fetch_metadata(role))
 
 
 def test_invalid_initial_root(client: ClientRunner, server: SimulatorServer) -> None:
@@ -234,6 +239,28 @@ def test_basic_metadata_hash_support(
     assert client.refresh(init_data) == 1
     assert client.version(Snapshot.type) == 3
     assert client.version(Targets.type) == 2
+
+
+def test_metadata_bytes_match(client: ClientRunner, server: SimulatorServer) -> None:
+    """Test that client stores the specific serialization from repository.
+
+    This is not strictly stated in the spec buy clients should not store their own
+    serialization of metadata on disk (as this break hash comparisons of local
+    metadata), they should store the bytes they receive from repository
+    """
+    init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+
+    # Make sure the serialization is very unique
+    data = repo.signed_mds[Timestamp.type][-1] + b" "
+    repo.signed_mds[Timestamp.type][-1] = data
+
+    assert client.refresh(init_data) == 0
+
+    # Assert that client stored the timestamp metadata as is
+    client_timestamp = os.path.join(client.metadata_dir, "timestamp.json")
+    with open(client_timestamp, "rb") as f:
+        assert f.read() == data
 
 
 def test_custom_fields(client: ClientRunner, server: SimulatorServer) -> None:
