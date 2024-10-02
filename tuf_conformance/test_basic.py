@@ -236,6 +236,28 @@ def test_basic_metadata_hash_support(
     assert client.version(Targets.type) == 2
 
 
+def test_metadata_bytes_match(client: ClientRunner, server: SimulatorServer) -> None:
+    """Test that client stores the specific serialization from repository.
+
+    This is not strictly stated in the spec buy clients should not store their own
+    serialization of metadata on disk (as this break hash comparisons of local
+    metadata), they should store the bytes they receive from repository
+    """
+    init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+
+    # Make sure the serialization is very unique
+    data = repo.signed_mds[Timestamp.type][-1] + b" "
+    repo.signed_mds[Timestamp.type][-1] = data
+
+    assert client.refresh(init_data) == 0
+
+    # Assert that client stored the timestamp metadata as is
+    client_timestamp = os.path.join(client.metadata_dir, "timestamp.json")
+    with open(client_timestamp, "rb") as f:
+        assert f.read() == data
+
+
 def test_custom_fields(client: ClientRunner, server: SimulatorServer) -> None:
     """Verify that client copes with unexpected fields in metadata.
 
