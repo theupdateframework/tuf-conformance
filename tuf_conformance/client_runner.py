@@ -120,3 +120,23 @@ class ClientRunner:
             roles.append((rolename, md.signed.version))
 
         return roles
+
+    def assert_metadata(self, role: str, expected_bytes: bytes | None) -> None:
+        """Assert that trusted roles metadata matches the expected bytes
+
+        This assert uses deserialized comparison: See test_metadata_bytes_match
+        for the test that requires byte-for-byte equality.
+        """
+        try:
+            trusted = MetadataTest.from_file(
+                os.path.join(self.metadata_dir, f"{role}.json")
+            )
+        except StorageError:
+            trusted = None
+
+        if expected_bytes is not None:
+            expected = Metadata.from_bytes(expected_bytes)
+        else:
+            expected = None
+
+        assert trusted == expected
