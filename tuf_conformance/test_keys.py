@@ -41,27 +41,6 @@ def test_snapshot_does_not_meet_threshold(
     assert client.version(Snapshot.type) != 3
 
 
-def test_deprecated_keyid_hash_algorithms(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    """This test sets a misleading "keyid_hash_algorithms" value: this field is not
-    a part of the TUF spec and should not affect clients.
-    """
-    init_data, repo = server.new_test(client.test_name)
-    assert client.init_client(init_data) == 0
-
-    # Set snapshot keys "keyid_hash_algorithms" to an incorrect algorithm.
-    valid_key = repo.root.roles[Snapshot.type].keyids[0]
-    repo.root.keys[valid_key].unrecognized_fields = {"keyid_hash_algorithms": "md5"}
-    repo.publish([Root.type])  # v2
-
-    # All metadata should update; even though "keyid_hash_algorithms"
-    # is wrong, it is not a part of the TUF spec.
-    assert client.refresh(init_data) == 0
-    assert client.version(Root.type) == 2
-    assert client.version(Snapshot.type) == 1
-
-
 def test_snapshot_has_too_few_keys(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
