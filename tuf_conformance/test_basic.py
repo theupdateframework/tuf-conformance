@@ -3,10 +3,20 @@ import json
 import os
 
 import pytest
-from tuf.api.metadata import Metadata, Root, Snapshot, Targets, Timestamp
+from securesystemslib.formats import encode_canonical
+from securesystemslib.hash import digest
+from tuf.api.metadata import Key, Metadata, Root, Snapshot, Targets, Timestamp
 
 from tuf_conformance.client_runner import ClientRunner
 from tuf_conformance.simulator_server import SimulatorServer
+
+
+def recalculate_keyid(key: Key) -> None:
+    """method to recalculate keyid: needed if key content is modified"""
+    data: bytes = encode_canonical(key.to_dict()).encode()
+    hasher = digest("sha256")
+    hasher.update(data)
+    key.keyid = hasher.hexdigest()
 
 
 def test_basic_refresh_requests(client: ClientRunner, server: SimulatorServer) -> None:
@@ -275,16 +285,48 @@ def test_custom_fields(client: ClientRunner, server: SimulatorServer) -> None:
     assert client.init_client(init_data) == 0
     assert client.refresh(init_data) == 0
 
+    signer = repo.new_signer()
+    signer.public_key.unrecognized_fields["extra-field"] = {"a": 1, "b": 2}
+    recalculate_keyid(signer.public_key)
+
     # Add some custom fields into root metadata, make a new root version
     repo.root.unrecognized_fields["custom-field"] = "value"
-    keyid = repo.root.roles[Root.type].keyids[0]
-    repo.root.keys[keyid].unrecognized_fields["extra-field"] = {"a": 1, "b": 2}
+    repo.add_key(Root.type, signer=signer)
     repo.root.roles[Root.type].unrecognized_fields["another-field"] = "value"
     repo.publish([Root.type])
 
     # client should accept new root: The signed content contains the unknown fields
     assert client.refresh(init_data) == 0
     assert client.version(Root.type) == 2
+
+
+def test_deprecated_keyid_hash_algorithms(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    """This test sets a misleading "keyid_hash_algorithms" value: this field is not
+    a part of the TUF spec and should not affect clients.
+    """
+    init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+
+    # remove current snapshot key
+    old_keyid = repo.root.roles[Snapshot.type].keyids[0]
+    repo.root.revoke_key(old_keyid, Snapshot.type)
+    del repo.signers[Snapshot.type][old_keyid]
+
+    # Use a key with the custom field
+    signer = repo.new_signer()
+    signer.public_key.unrecognized_fields = {"keyid_hash_algorithms": "md5"}
+    recalculate_keyid(signer.public_key)
+    repo.add_key(Snapshot.type, signer=signer)
+
+    repo.publish([Root.type, Snapshot.type, Timestamp.type])  # v2
+
+    # All metadata should update; even though "keyid_hash_algorithms"
+    # value is "wrong", it is not a part of the TUF spec.
+    assert client.refresh(init_data) == 0
+    assert client.version(Root.type) == 2
+    assert client.version(Snapshot.type) == 2
 
 
 def test_snapshot_404(client: ClientRunner, server: SimulatorServer) -> None:
