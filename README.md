@@ -1,14 +1,9 @@
 # TUF conformance test suite
 
-This is the repository of the conformance test suite for TUF clients. The goal of this
-repository is to allow client developers to
-  1. test their clients against the TUF specification
+This is a conformance test suite for [TUF](https://theupdateframework.io/) clients. The goal of is to help TUF client developers
+  1. Measure the clients conformance with the [TUF specification](https://theupdateframework.github.io/specification/latest/)
   2. Achieve better practical compatibility with other implementations
   3. Collaborate on tests with other client developers
-
-- [Usage](#Usage)
-- [Development](#Development)
-
 
 ## Usage
 
@@ -55,11 +50,14 @@ make test-python-tuf
 make test-go-tuf
 ```
 
-It's also possible to locally run the test suite with a client-under-test CLI that is locally installed elsewhere:
+Invoking the test suite manually enables more features like running a single test only
+and using a client-under-test CLI installed outside of the test suite:
 
 ```bash
 make dev
-./env/bin/pytest tuf_conformance --entrypoint path/to/my/client-under-test/cli
+./env/bin/pytest tuf_conformance \
+    --entrypoint path/to/my/client-under-test/cli \
+    -k test_unsigned_metadata
 ```
 
 linters can also be invoked with make:
@@ -70,82 +68,10 @@ make lint
 make fix
 ```
 
+### Writing new tests
 
-### Creating (and debugging) tests
-
-Let's say we want to test that clients will not accept a root version 4 when they requested
-"3.root.json". We start with a simple skeleton test that sets up a repository and runs client
-refresh against it:
-
-```python
-def test_root_version_mismatch(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    init_data, repo = server.new_test(client.test_name)
-    client.init_client(init_data)
-
-    # publish a valid root v2
-    repo.publish([Root.type])
-
-    # Run refresh on client-under-test
-    client.refresh(init_data)
-```
-
-We can now run the test suite:
-
-```bash
-make test-go-tuf
-
-# take a look at the repository 1.root.json that got debug dumped
-cat /tmp/tuf-conformance-dump/test_root_version_mismatch/refresh-1/2.root.json
-```
-
-The metadata looks as expected: There is a 2.root.json and it contains `version: 2`. We now add code
-that serves an incorrect version number:
-
-```python
-    # publish a 3.root.json but make it contain the field "version: 4"
-    # Use verify_version=False to override the safety check for this
-    repo.root.version += 1
-    repo.publish([Root.type], verify_version=False)
-
-    # Run refresh on client-under-test again
-    client.refresh(init_data)
-```
-
-Running the test suite again results in a second repository version being dumped (each client refresh leads to a dump): 
-```bash
-make test-go-tuf
-
-# take a look at repository root versions during the second refresh
-cat /tmp/tuf-conformance-dump/test_root_version_mismatch/refresh-2/3.root.json
-```
-
-The repository metadata looks as expected (but not spec-compliant) as the version field in the metadata is 4.
-We can now add some asserts for client behaviour to get the final test:
-
-```python
-def test_root_version_mismatch(
-    client: ClientRunner, server: SimulatorServer
-) -> None:
-    init_data, repo = server.new_test(client.test_name)
-    client.init_client(init_data)
-
-    # publish a valid root v2
-    repo.publish([Root.type])
-
-    # Run successful client refresh
-    assert client.refresh(init_data) == 0
-
-    # publish a 3.root.json but make it contain the field "version: 4"
-    # Use verify_version=False to override the safety check for this
-    repo.root.version += 1
-    repo.publish([Root.type], verify_version=False)
-
-    # Run client refresh again: expect failure, expect clients trusted root to be v2
-    assert client.refresh(init_data) == 1
-    assert client.version(Root.type) == 2
-```
+Developing tests for tuf-conformance requires a basic understanding of how TUF metadata works: The
+remaining details are documented in the [Test Development doc](DEVELOPMENT.md).
 
 ### Releasing
 
@@ -167,18 +93,3 @@ Checklist for making a new tuf-conformance release
   ```
 * Add release notes to GitHub release in the web UI: this will be shown to action users in the dependabot update.
   Release notes must mention all breaking changes.
-
-### Some design notes
-
-* pytest is used as the test infrastructure, the client-under-test executable is given with `--entrypoint`
-* A single web server is started. Individual tests can create a simulated TUF repository that will be served in 
-  subdirectories of the web server 
-* Each test sets up a simulated repository, attaches it to the server, runs the client-under-test
-  against that repository. It can then modify the repository state and run the client-under-test again
-* the idea is that a test can run the client multiple times while modifying the repository state. After each client
-  execution the test can verify 
-  1. client success/failure
-  2. clients internal  metadata state (what it considers currently valid metadata) and
-  3. that the requests client made were the expected ones
-* There should be helpers to make these verifications simple in the tests
-
