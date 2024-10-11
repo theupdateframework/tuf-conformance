@@ -3,6 +3,7 @@ from dataclasses import astuple, dataclass, field
 import pytest
 from tuf.api.metadata import (
     DelegatedRole,
+    Root,
     Snapshot,
     Targets,
     Timestamp,
@@ -266,3 +267,30 @@ def test_targetfile_search(
 
     # skip the top level metadata (root, timestamp, snapshot, targets) in statistics
     assert repo.metadata_statistics[4:] == exp_calls
+
+
+def test_delegation_not_in_snapshot(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    """Test that client will not use a delegation if it is not listed in snapshot"""
+    init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+
+    # Add a delegated role "delegated"
+    role = DelegatedRole("delegated", [], 1, False, ["delegatedpath/*"])
+    delegated_targets = Targets(expires=repo.safe_expiry)
+    repo.add_delegation(Targets.type, role, delegated_targets)
+    repo.publish(["delegated", Targets.type])
+
+    # Tweak snapshot so "delegated" is not included in it
+    del repo.snapshot.meta["delegated.json"]
+    repo.publish([Snapshot.type, Timestamp.type])
+
+    # top-level refresh succeeds, download fails since "delegated" is not in snapshot
+    assert client.refresh(init_data) == 0
+    repo.metadata_statistics.clear()
+    assert client.download_target(init_data, "delegatedpath/foo") == 1
+
+    # delegated roles metadata is not trusted, and was not even downloaded
+    assert client.version("delegated") is None
+    assert repo.metadata_statistics == [(Root.type, 2), (Timestamp.type, None)]
