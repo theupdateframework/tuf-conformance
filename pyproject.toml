@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "tuf-conformance"
 dependencies = [
     "securesystemslib[crypto, pynacl]==1.1.0" ,
-    "tuf==5.0.0",
+    "tuf==5.1.0",
     "pytest==8.3.3"
 ]
 dynamic = ["version"]
