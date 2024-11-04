@@ -36,6 +36,13 @@ if they do not intend to support this specific feature.
 The tests that are expected to fail can be listed in `<entrypoint>.xfails` file. In the previous
 workflow example the xfails file would be `path/to/my/test/executable.xfails`
 
+the `.xfails` file may contain singular tests, test groups or paramterized tests from a test group
+```
+test-name
+test-group
+test-group[parameter]
+```
+
 ## Development
 
 This repository contains two client-under-test CLI protocol implementations
