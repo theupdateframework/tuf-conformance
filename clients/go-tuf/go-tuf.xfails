@@ -1,1 +1,2 @@
+# RSA-PSS is not yet supported (https://github.com/theupdateframework/go-tuf/pull/625)
 test_keytype_and_scheme[rsa/rsassa-pss-sha256]
