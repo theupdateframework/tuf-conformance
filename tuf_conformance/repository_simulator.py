@@ -59,7 +59,7 @@ logger = logging.getLogger(__name__)
 SPEC_VER = ".".join(SPECIFICATION_VERSION)
 
 # Generate some signers once (to avoid all tests generating them)
-NUM_SIGNERS = 9
+NUM_SIGNERS = 14
 SIGNERS = {
     ("rsa", "rsassa-pss-sha256"): [
         CryptoSigner.generate_rsa() for _ in range(NUM_SIGNERS)
