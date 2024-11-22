@@ -29,15 +29,16 @@ There are two required steps:
 
 ### Expected failures
 
-The test suite also contains tests that are not strictly speaking specification requirements (such as
-tests for specific keytype or hash algorithm suport). Clients can mark tests as "expected failures"
+The test suite contains tests that are not strictly specification requirements (such as
+tests for specific keytype or hash algorithm support). Clients can mark tests as "expected failures"
 if they do not intend to support this specific feature.
 
 The tests that are expected to fail can be listed in `<entrypoint>.xfails` file. In the previous
 workflow example the xfails file would be `path/to/my/test/executable.xfails`
 
-the `.xfails` file may contain singular tests, test groups or paramterized tests from a test group
+the `.xfails` file may contain singular tests, test groups or parameterized tests from a test group
 ```
+# Comments are ok on separate lines
 test-name
 test-group
 test-group[parameter]
