@@ -34,12 +34,12 @@ dev: faketime env/pyvenv.cfg
 test-all: test-python-tuf test-go-tuf
 
 lint_dirs = tuf_conformance clients/python-tuf
-lint: dev
+lint: env/pyvenv.cfg
 	./env/bin/ruff format --diff $(lint_dirs)
 	./env/bin/ruff check $(lint_dirs)
 	./env/bin/mypy $(lint_dirs)
 
-fix: dev
+fix: env/pyvenv.cfg
 	./env/bin/ruff format $(lint_dirs)
 	./env/bin/ruff check --fix $(lint_dirs)
 

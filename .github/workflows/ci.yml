@@ -27,7 +27,7 @@ jobs:
           cache: "pip"
 
       - name: Install lint dependencies
-        run: make dev
+        run: make env/pyvenv.cfg
 
       - name: Run linters
         run: make lint
