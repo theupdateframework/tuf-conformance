@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 import pytest
-from securesystemslib.signer import CryptoSigner
 from tuf.api.metadata import Root, Snapshot, Targets, Timestamp
 
 from tuf_conformance.client_runner import ClientRunner
@@ -141,14 +140,10 @@ def test_root_rotation(
     standard client update workflow.
     """
 
-    signers = []
-    for _ in range(10):
-        signer = CryptoSigner.generate_ed25519()
-        signers.append(signer)
-
     # initialize a simulator with repository content we need
     init_data, repo = server.new_test(client.test_name)
     del repo.signed_mds[Root.type]
+    signers = [repo.new_signer() for _ in range(10)]
 
     for rootver in root_versions:
         # clear root keys, signers
@@ -196,17 +191,13 @@ def test_non_root_rotations(
     is the expected one after all roots have been loaded from remote using
     the standard client update workflow.
     """
-    signers = []
-    for _ in range(10):
-        signer = CryptoSigner.generate_ed25519()
-        signers.append(signer)
 
     # initialize a simulator with repository content we need
     init_data, repo = server.new_test(client.test_name)
     assert client.init_client(init_data) == 0
+    signers = [repo.new_signer() for _ in range(10)]
 
-    roles = ["timestamp", "snapshot", "targets"]
-    for role in roles:
+    for role in ["timestamp", "snapshot", "targets"]:
         # clear role keys, signers
         repo.root.roles[role].keyids.clear()
         repo.signers[role].clear()
