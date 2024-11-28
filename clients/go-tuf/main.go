@@ -12,9 +12,10 @@
 package main
 
 import (
-	"os"
 	"fmt"
-	tufclient "github.com/jku/tuf-conformance/clients/go-tuf/cmd"
+	"os"
+
+	tufclient "github.com/theupdateframework/tuf-conformance/clients/go-tuf/cmd"
 )
 
 func main() {

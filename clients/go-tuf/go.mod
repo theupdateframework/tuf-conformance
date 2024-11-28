@@ -1,4 +1,4 @@
-module github.com/jku/tuf-conformance/clients/go-tuf
+module github.com/theupdateframework/tuf-conformance/clients/go-tuf
 
 go 1.22.5
 
