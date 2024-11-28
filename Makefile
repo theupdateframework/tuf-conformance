@@ -49,7 +49,7 @@ fix: env/pyvenv.cfg
 
 PHONY: test-python-tuf
 test-python-tuf: dev
-	./env/bin/pytest tuf_conformance \
+	./env/bin/pytest -v tuf_conformance \
 		--entrypoint "./env/bin/python ./clients/python-tuf/python_tuf.py" \
 		--repository-dump-dir $(DUMP_DIR)
 	@echo Repository dump in $(DUMP_DIR)
@@ -60,7 +60,7 @@ test-python-tuf: dev
 
 PHONY: test-go-tuf
 test-go-tuf: dev build-go-tuf
-	./env/bin/pytest tuf_conformance \
+	./env/bin/pytest -v tuf_conformance \
 		--entrypoint "./clients/go-tuf/go-tuf" \
 		--repository-dump-dir $(DUMP_DIR)
 	@echo Repository dump in $(DUMP_DIR)

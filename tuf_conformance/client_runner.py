@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 
 from tuf.api.exceptions import StorageError
 from tuf.api.metadata import Metadata
+from tuf.api.serialization.json import JSONSerializer
 
 from tuf_conformance.metadata import MetadataTest
 from tuf_conformance.simulator_server import (
@@ -130,13 +131,8 @@ class ClientRunner:
         try:
             trusted = MetadataTest.from_file(
                 os.path.join(self.metadata_dir, f"{role}.json")
-            )
+            ).to_bytes(JSONSerializer())
         except StorageError:
             trusted = None
 
-        if expected_bytes is not None:
-            expected = Metadata.from_bytes(expected_bytes)
-        else:
-            expected = None
-
-        assert trusted == expected, f"Unexpected trusted role {role} content"
+        assert trusted == expected_bytes, f"Unexpected trusted role {role} content"
