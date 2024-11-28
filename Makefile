@@ -28,18 +28,18 @@ env/pyvenv.cfg: pyproject.toml
 	./env/bin/python -m pip install -e .[lint]
 
 .PHONY: dev
-dev: env/pyvenv.cfg
+dev: faketime env/pyvenv.cfg
 
 .PHONY: test-all
 test-all: test-python-tuf test-go-tuf
 
 lint_dirs = tuf_conformance clients/python-tuf
-lint: dev
+lint: env/pyvenv.cfg
 	./env/bin/ruff format --diff $(lint_dirs)
 	./env/bin/ruff check $(lint_dirs)
 	./env/bin/mypy $(lint_dirs)
 
-fix: dev
+fix: env/pyvenv.cfg
 	./env/bin/ruff format $(lint_dirs)
 	./env/bin/ruff check --fix $(lint_dirs)
 
@@ -48,7 +48,7 @@ fix: dev
 #########################
 
 PHONY: test-python-tuf
-test-python-tuf: dev faketime
+test-python-tuf: dev
 	./env/bin/pytest tuf_conformance \
 		--entrypoint "./env/bin/python ./clients/python-tuf/python_tuf.py" \
 		--repository-dump-dir $(DUMP_DIR)
@@ -59,7 +59,7 @@ test-python-tuf: dev faketime
 #########################
 
 PHONY: test-go-tuf
-test-go-tuf: dev build-go-tuf faketime
+test-go-tuf: dev build-go-tuf
 	./env/bin/pytest tuf_conformance \
 		--entrypoint "./clients/go-tuf/go-tuf" \
 		--repository-dump-dir $(DUMP_DIR)
