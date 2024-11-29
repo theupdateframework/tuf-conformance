@@ -91,13 +91,16 @@ Checklist for making a new tuf-conformance release
 * Create and merge PR with README changes if needed (the workflow example contains the major version number)
 * tag the new version from a commit in main branch. Example when releasing v1.1.1:
   ```
-      git tag --sign v1.1.1 -m "v1.1.1"
-      git push origin v1.1.1
+      VERSION="v1.1.1"
+
+      git tag --sign $VERSION -m "$VERSION"
+      git push origin $VERSION
       # now rewrite the major tag: yes rewriting tags is awful, it's also what GitHub recommends...
-      git tag --delete v1
-      git push --delete origin v1
-      git tag --sign v1 -m "v1.1.1"
-      git push origin v1
+      MAJOR="${VERSION%%.*}"
+      git tag --delete $MAJOR
+      git push --delete origin $MAJOR
+      git tag --sign $MAJOR -m "$VERSION"
+      git push origin $MAJOR
   ```
-* Add release notes to GitHub release in the web UI: this will be shown to action users in the dependabot update.
-  Release notes must mention all breaking changes.
+* Create GitHub release in the web UI: The release notes will be shown to action users in the dependabot update and
+  must mention all breaking changes.
