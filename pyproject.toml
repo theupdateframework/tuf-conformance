@@ -14,8 +14,8 @@ requires-python = ">= 3.10"
 
 [project.optional-dependencies]
 lint = [
-    "mypy==1.13.0",
-    "ruff==0.8.3"
+    "mypy==1.14.0",
+    "ruff==0.8.4"
 ]
 
 [tool.hatch.version]
