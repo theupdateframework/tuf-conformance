@@ -80,7 +80,7 @@ def test_duplicate_keys(client: ClientRunner, server: SimulatorServer) -> None:
     signer = repo.new_signer()
 
     # Add one key 9 times to root
-    for n in range(0, 9):
+    for n in range(9):
         repo.root.add_key(signer.public_key, Snapshot.type)
 
     repo.add_signer(Snapshot.type, signer)
@@ -98,7 +98,7 @@ def test_duplicate_keys(client: ClientRunner, server: SimulatorServer) -> None:
         if sig["keyid"] == signer.public_key.keyid:
             break
     assert sig is not None
-    for n in range(0, 8):
+    for n in range(8):
         md["signatures"].append(sig)
     repo.signed_mds[Snapshot.type].append(json.dumps(md).encode())
 

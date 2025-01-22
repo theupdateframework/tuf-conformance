@@ -47,7 +47,6 @@ class _ReqHandler(BaseHTTPRequestHandler):
 
         Avoid output for now. TODO We may want to log in some situations?
         """
-        pass
 
 
 class SimulatorServer(ThreadingHTTPServer):
