@@ -18,7 +18,7 @@ Example::
     sim = RepositorySimulator()
 
     # publish a new version of metadata
-    sim.root.expires = datetime.datetime.utcnow() + datetime.timedelta(days=7)
+    sim.root.expires = datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7)
     sim.publish([Root.type])
 
     # there are helper functions to do things like adding an artifact
@@ -115,7 +115,7 @@ class RepositorySimulator:
         self.metadata_statistics: list[tuple[str, int | None]] = []
         self.artifact_statistics: list[tuple[str, str | None]] = []
 
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.UTC)
         self.safe_expiry = now.replace(microsecond=0) + datetime.timedelta(days=30)
 
         # Make a semi-deep copy of generated signers: The private keys can't be deep
@@ -179,7 +179,7 @@ class RepositorySimulator:
         """remove all keys for role, then add threshold of new keys"""
         self.root.roles[role].keyids.clear()
         self.signers[role].clear()
-        for _ in range(0, self.root.roles[role].threshold):
+        for _ in range(self.root.roles[role].threshold):
             signer = self.new_signer()
             self.root.add_key(signer.public_key, role)
             self.add_signer(role, signer)
@@ -282,7 +282,8 @@ class RepositorySimulator:
 
             self.metadata_statistics.append((role, version))
             return self.fetch_metadata(role, version)
-        elif path.startswith("targets/"):
+
+        if path.startswith("targets/"):
             # figure out target path and hash prefix
             target_path = path[len("targets/") :]
             dir_parts, sep, prefixed_filename = target_path.rpartition("/")
@@ -295,6 +296,7 @@ class RepositorySimulator:
 
             self.artifact_statistics.append((target_path, prefix))
             return self.fetch_target(target_path, prefix)
+
         raise ValueError(f"Unknown path '{path}'")
 
     def fetch_target(self, target_path: str, target_hash: str | None) -> bytes:
