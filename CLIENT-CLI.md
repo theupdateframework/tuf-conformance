@@ -72,8 +72,12 @@ given targets directory. Client must ensure that metadata is up-to-date before d
 Client must use exit code 0 if the download succeeded fully and exit code 1 if any part of
 the download failed.
 
-Client may use any filename or directory structure it wants within `TARGET_DIR`: The expectation is that if a 
-targetpath is downloaded twice it is stored with the same filename (even if the content changed).
+Client should support artifact caching: if client is requested to download an artifact that has
+already been downloaded (with matching hashes), it should not download the artifact again.
+
+Client may use any filename or directory structure it wants within `TARGET_DIR`: The expectation
+is that if an artifact is downloaded twice (because the artifact content changed) it is stored in
+`TARGET_DIR` with the same filename.
 
 This command may be called multiple times in a test.
 
