@@ -50,7 +50,8 @@ def download_target(
     target_info = updater.get_targetinfo(target_name)
     if not target_info:
         raise RuntimeError(f"{target_name} not found in repository")
-    updater.download_target(target_info)
+    if not updater.find_cached_target(target_info):
+        updater.download_target(target_info)
 
 
 def main() -> int:

@@ -238,3 +238,28 @@ def test_download_with_unknown_hash_algorithm(
     # and only then realize hash cannot be verified
     assert client.download_target(init_data, target_path) == 1
     assert client.get_downloaded_target_bytes() == []
+
+
+def test_artifact_cache(client: ClientRunner, server: SimulatorServer) -> None:
+    """In this test client is asked to download the same artifact twice.
+    The client is expected return the cached content on the second time.
+
+    Artifact caching is not required in the specification: clients
+    that do not support it can mark this test as expected to fail
+    """
+
+    init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+
+    # Create a test artifact, add it to the repository
+    target_path = "target_file.txt"
+    target_content = b"target file contents"
+    repo.add_artifact(Targets.type, target_content, target_path)
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])
+
+    # Client is asked to download artifact twice
+    assert client.download_target(init_data, target_path) == 0
+    assert client.download_target(init_data, target_path) == 0
+
+    # Expect only one download from repository
+    assert len(repo.artifact_statistics) == 1
