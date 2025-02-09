@@ -15,7 +15,10 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strconv"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -84,6 +87,21 @@ func RefreshAndDownloadCmd(targetName string,
 	if err != nil {
 		return fmt.Errorf("failed to create Updater instance: %w", err)
 	}
+
+	// Test suite uses faketime to set the time client should consider "current".
+	// Golang does not use libc and bypasses the tricks faketime uses.
+	// use "date" command to get current time as this is affected by faketime
+	out, err := exec.Command("date", "+%s").Output()
+	if err != nil {
+		return fmt.Errorf("calling 'date' failed: %w", err)
+	}
+	timestamp_str := string(out[:len(out)-1])
+	timestamp, err := strconv.ParseInt(timestamp_str, 10, 64)
+	if err != nil {
+		return fmt.Errorf("failed to parse date output: %w", err)
+	}
+	ref_time := time.Unix(timestamp, 0)
+	up.UnsafeSetRefTime(ref_time)
 
 	// try to build the top-level metadata
 	err = up.Refresh()
