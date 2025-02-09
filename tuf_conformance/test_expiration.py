@@ -3,9 +3,9 @@ from datetime import timezone
 
 from tuf.api.metadata import Root, Snapshot, Targets, Timestamp
 
-from tuf_conformance import utils
-from tuf_conformance.client_runner import ClientRunner
-from tuf_conformance.simulator_server import SimulatorServer
+from tuf_conformance._internal import utils
+from tuf_conformance._internal.client_runner import ClientRunner
+from tuf_conformance._internal.simulator_server import SimulatorServer
 
 
 def test_root_expired(client: ClientRunner, server: SimulatorServer) -> None:

@@ -3,8 +3,8 @@ from functools import cache
 
 import pytest
 
-from tuf_conformance.client_runner import ClientRunner
-from tuf_conformance.simulator_server import SimulatorServer, StaticServer
+from tuf_conformance._internal.client_runner import ClientRunner
+from tuf_conformance._internal.simulator_server import SimulatorServer, StaticServer
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:

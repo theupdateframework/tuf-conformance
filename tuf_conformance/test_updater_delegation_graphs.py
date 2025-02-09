@@ -9,9 +9,9 @@ from tuf.api.metadata import (
     Timestamp,
 )
 
-from tuf_conformance.client_runner import ClientRunner
-from tuf_conformance.repository_simulator import RepositorySimulator
-from tuf_conformance.simulator_server import SimulatorServer
+from tuf_conformance._internal.client_runner import ClientRunner
+from tuf_conformance._internal.repository_simulator import RepositorySimulator
+from tuf_conformance._internal.simulator_server import SimulatorServer
 
 
 @dataclass

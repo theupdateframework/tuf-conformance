@@ -7,8 +7,8 @@ from tuf.api.exceptions import StorageError
 from tuf.api.metadata import Metadata
 from tuf.api.serialization.json import JSONSerializer
 
-from tuf_conformance.metadata import MetadataTest
-from tuf_conformance.simulator_server import (
+from tuf_conformance._internal.metadata import MetadataTest
+from tuf_conformance._internal.simulator_server import (
     ClientInitData,
     SimulatorServer,
     StaticServer,

@@ -4,7 +4,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from os import path
 from urllib import parse
 
-from tuf_conformance.repository_simulator import RepositorySimulator
+from tuf_conformance._internal.repository_simulator import RepositorySimulator
 
 
 @dataclass
@@ -87,7 +87,9 @@ class SimulatorServer(ThreadingHTTPServer):
 class StaticServer(ThreadingHTTPServer):
     """Web server to serve static repositories"""
 
-    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static_data")
+    data_dir = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "static_data"
+    )
 
     @classmethod
     def static_test_names(cls) -> list[str]:

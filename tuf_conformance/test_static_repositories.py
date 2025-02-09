@@ -1,7 +1,7 @@
 import pytest
 
-from tuf_conformance.client_runner import ClientRunner
-from tuf_conformance.simulator_server import StaticServer
+from tuf_conformance._internal.client_runner import ClientRunner
+from tuf_conformance._internal.simulator_server import StaticServer
 
 
 @pytest.mark.parametrize("static_repo", StaticServer.static_test_names())

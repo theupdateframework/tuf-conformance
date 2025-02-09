@@ -6,8 +6,8 @@ from securesystemslib.formats import encode_canonical
 from securesystemslib.hash import digest
 from tuf.api.metadata import Key, Metadata, MetaFile, Root, Snapshot, Targets, Timestamp
 
-from tuf_conformance.client_runner import ClientRunner
-from tuf_conformance.simulator_server import SimulatorServer
+from tuf_conformance._internal.client_runner import ClientRunner
+from tuf_conformance._internal.simulator_server import SimulatorServer
 
 
 def recalculate_keyid(key: Key) -> None:
