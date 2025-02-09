@@ -1,0 +1,161 @@
+{
+ "signatures": [
+  {
+   "keyid": "6f260089d5923daf20166ca657c543af618346ab971884a99962b01988bbe0c3",
+   "sig": "30460221009e2db61a6f17cc5172ade7f8c601033a2a506c788098e8ccf77c2008bbf901ed022100835754d9c7d6a2873f68056c9d022d2282534d914b9401465f7c40d259dd2665"
+  },
+  {
+   "keyid": "e71a54d543835ba86adad9460379c7641fb8726d164ea766801a1c522aba7ea2",
+   "sig": "304502207ce44280d533de15b65b77bff6ce3103f05021424a83819d190e2e165a0c5e720221008f33bfa3694715343087ea808c52565a6d04009e00a86d2ac1c0ace621455fc4"
+  },
+  {
+   "keyid": "22f4caec6d8e6f9555af66b3d4c3cb06a3bb23fdc7e39c916c61f462e6f52b06",
+   "sig": "30450220367b7df2884844d46181a5ed5c529c490c6bb65a31d8ff3d7bdb4b363bfb297d022100e64750a70c16f4788c0c103912c836f9b65ffabe04eae5710149deabf157d7f7"
+  },
+  {
+   "keyid": "61643838125b440b40db6942f5cb5a31c0dc04368316eb2aaa58b95904a58222",
+   "sig": "3044022054849f93c995c04d5cb9377c18c8c819ff0723e77a1dedc03a468c95fabd7c6e022017540d585903089f0ce5c118e59f8f17f90a968a6990e48e52151222fc336814"
+  },
+  {
+   "keyid": "a687e5bf4fab82b0ee58d46e05c9535145a2c9afb458f43d42b45ca0fdce2a70",
+   "sig": "304402204433d407bfea801642462ed3c10391268e210431829b7e51231e9f4e6915052c022004e2bf1522bf77bcd416f49ff92ff8664f894e3fb4a37c80c8f20746f78621b0"
+  }
+ ],
+ "signed": {
+  "_type": "targets",
+  "delegations": {
+   "keys": {
+    "5e3a4021b11a425fd0a444f1670457ce5b15bbe036144f2417426f7f4b9721da": {
+     "keytype": "ecdsa",
+     "keyval": {
+      "public": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVfei1dXQRVeArCMcTDgxJtYg+Fs7\nV87DjhQbGlRJPyC7SW5TbNNkmvpmi4LeTv6moLVZ7T2nVqiRZbSkD+cf8w==\n-----END PUBLIC KEY-----\n"
+     },
+     "scheme": "ecdsa-sha2-nistp256",
+     "x-tuf-on-ci-online-uri": "azurekms://npm-tuf-delegate.vault.azure.net/keys/npm-tuf-delegate-2024-08/e2772c1d01ca400da571096889f1660e"
+    }
+   },
+   "roles": [
+    {
+     "keyids": [
+      "5e3a4021b11a425fd0a444f1670457ce5b15bbe036144f2417426f7f4b9721da"
+     ],
+     "name": "registry.npmjs.org",
+     "paths": [
+      "registry.npmjs.org/*"
+     ],
+     "terminating": true,
+     "threshold": 1
+    }
+   ]
+  },
+  "expires": "2035-01-18T09:45:39Z",
+  "spec_version": "1.0",
+  "targets": {
+   "artifact.pub": {
+    "custom": {
+     "sigstore": {
+      "status": "Active",
+      "usage": "Unknown"
+     }
+    },
+    "hashes": {
+     "sha256": "59ebf97a9850aecec4bc39c1f5c1dc46e6490a6b5fd2a6cacdcac0c3a6fc4cbf"
+    },
+    "length": 177
+   },
+   "ctfe.pub": {
+    "custom": {
+     "sigstore": {
+      "status": "Active",
+      "uri": "https://ctfe.sigstore.dev/test",
+      "usage": "CTFE"
+     }
+    },
+    "hashes": {
+     "sha256": "7fcb94a5d0ed541260473b990b99a6c39864c1fb16f3f3e594a5a3cebbfe138a"
+    },
+    "length": 177
+   },
+   "ctfe_2022.pub": {
+    "custom": {
+     "sigstore": {
+      "status": "Active",
+      "uri": "https://ctfe.sigstore.dev/2022",
+      "usage": "CTFE"
+     }
+    },
+    "hashes": {
+     "sha256": "270488a309d22e804eeb245493e87c667658d749006b9fee9cc614572d4fbbdc"
+    },
+    "length": 178
+   },
+   "fulcio.crt.pem": {
+    "custom": {
+     "sigstore": {
+      "status": "Expired",
+      "uri": "https://fulcio.sigstore.dev",
+      "usage": "Fulcio"
+     }
+    },
+    "hashes": {
+     "sha256": "f360c53b2e13495a628b9b8096455badcb6d375b185c4816d95a5d746ff29908"
+    },
+    "length": 744
+   },
+   "fulcio_intermediate_v1.crt.pem": {
+    "custom": {
+     "sigstore": {
+      "status": "Active",
+      "uri": "https://fulcio.sigstore.dev",
+      "usage": "Fulcio"
+     }
+    },
+    "hashes": {
+     "sha256": "f8cbecf186db7714624a5f4e99da31a917cbef70a94dd6921f5c3ca969dfe30a"
+    },
+    "length": 789
+   },
+   "fulcio_v1.crt.pem": {
+    "custom": {
+     "sigstore": {
+      "status": "Active",
+      "uri": "https://fulcio.sigstore.dev",
+      "usage": "Fulcio"
+     }
+    },
+    "hashes": {
+     "sha256": "f989aa23def87c549404eadba767768d2a3c8d6d30a8b793f9f518a8eafd2cf5"
+    },
+    "length": 740
+   },
+   "rekor.pub": {
+    "custom": {
+     "sigstore": {
+      "status": "Active",
+      "uri": "https://rekor.sigstore.dev",
+      "usage": "Rekor"
+     }
+    },
+    "hashes": {
+     "sha256": "dce5ef715502ec9f3cdfd11f8cc384b31a6141023d3e7595e9908a81cb6241bd"
+    },
+    "length": 178
+   },
+   "signing_config.json": {
+    "hashes": {
+     "sha256": "d358c75d032833f4193500f5b01b5760409410558fac962c599439adbb268b0f"
+    },
+    "length": 219
+   },
+   "trusted_root.json": {
+    "hashes": {
+     "sha256": "f44a1b88128e55ebfb62189becbc0fa48d4ec9915c65ac54ba0e46a008b12d5b"
+    },
+    "length": 4537
+   }
+  },
+  "version": 11,
+  "x-tuf-on-ci-expiry-period": 3650,
+  "x-tuf-on-ci-signing-period": 31
+ }
+}
