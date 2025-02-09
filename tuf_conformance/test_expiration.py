@@ -1,5 +1,4 @@
-import datetime
-from datetime import timezone
+from datetime import UTC, datetime, timedelta
 
 from tuf.api.metadata import Root, Snapshot, Targets, Timestamp
 
@@ -113,19 +112,19 @@ def test_expired_local_root(client: ClientRunner, server: SimulatorServer) -> No
     assert client.init_client(init_data) == 0
 
     # root v2 expires in 7 days
-    now = datetime.datetime.now(timezone.utc)
-    repo.root.expires = now + datetime.timedelta(days=7)
+    now = datetime.now(UTC)
+    repo.root.expires = now + timedelta(days=7)
     repo.publish([Root.type])
 
     # Refresh
     assert client.refresh(init_data) == 0
 
     # root v3 expires in 21 days
-    repo.root.expires = now + datetime.timedelta(days=21)
+    repo.root.expires = now + timedelta(days=21)
     repo.publish([Root.type])
 
     # Mocking time so that local root (v2) has expired but v3 from repo has not
-    assert client.refresh(init_data, days_in_future=18) == 0
+    assert client.refresh(init_data, now + timedelta(days=18)) == 0
     assert client.version(Root.type) == 3
 
 
@@ -145,8 +144,8 @@ def test_expired_local_timestamp(client: ClientRunner, server: SimulatorServer) 
     assert client.init_client(init_data) == 0
 
     # Repo timestamp v1 expires in 7 days
-    now = datetime.datetime.now(timezone.utc)
-    repo.timestamp.expires = now + datetime.timedelta(days=7)
+    now = datetime.now(UTC)
+    repo.timestamp.expires = now + timedelta(days=7)
     repo.publish([Timestamp.type])  # v2
 
     # Refresh
@@ -154,12 +153,12 @@ def test_expired_local_timestamp(client: ClientRunner, server: SimulatorServer) 
 
     # Bump targets + snapshot version
     # Set next version of repo timestamp to expire in 21 days
-    repo.timestamp.expires = now + datetime.timedelta(days=21)
+    repo.timestamp.expires = now + timedelta(days=21)
     repo.publish([Targets.type, Snapshot.type, Timestamp.type])  # v2, v2, v3
 
     # Mocking time so that local timestamp has expired
     # but the new timestamp has not
-    assert client.refresh(init_data, days_in_future=18) == 0
+    assert client.refresh(init_data, now + timedelta(days=18)) == 0
 
     # Assert final versions of timestamp/snapshot
     # which means a successful refresh is performed
