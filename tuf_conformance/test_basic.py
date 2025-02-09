@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from securesystemslib.formats import encode_canonical

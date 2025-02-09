@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from os import path
 from urllib import parse
@@ -119,7 +120,7 @@ class StaticServer(ThreadingHTTPServer):
         super().__init__(("127.0.0.1", 0), _StaticReqHandler)
         self.timeout = 0
 
-    def new_test(self, static_dir: str) -> tuple[ClientInitData, str]:
+    def new_test(self, static_dir: str) -> tuple[ClientInitData, str, datetime]:
         sub_dir = os.path.join(self.data_dir, static_dir)
         with open(os.path.join(sub_dir, "initial_root.json"), "rb") as f:
             initial_root = f.read()
@@ -135,7 +136,13 @@ class StaticServer(ThreadingHTTPServer):
         with open(os.path.join(sub_dir, "targetpath")) as f:
             targetpath = f.readline().strip("\n")
 
-        return client_data, targetpath
+        try:
+            with open(os.path.join(sub_dir, "faketime")) as f:
+                faketime = datetime.fromisoformat(f.readline().strip("\n"))
+        except OSError:
+            faketime = datetime.now(UTC)
+
+        return client_data, targetpath, faketime
 
     def debug_dump(self, test_name: str) -> None:
         pass  # not implemented
