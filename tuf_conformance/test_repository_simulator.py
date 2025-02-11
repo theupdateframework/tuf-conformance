@@ -9,8 +9,8 @@ from tuf.api.metadata import (
     Timestamp,
 )
 
-from tuf_conformance import utils
-from tuf_conformance.simulator_server import SimulatorServer
+from tuf_conformance._internal import utils
+from tuf_conformance._internal.simulator_server import SimulatorServer
 
 
 class TestRepositorySimulator(unittest.TestCase):

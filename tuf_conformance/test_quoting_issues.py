@@ -3,8 +3,8 @@ from urllib import parse
 import pytest
 from tuf.api.metadata import DelegatedRole, Snapshot, Targets, Timestamp
 
-from tuf_conformance.client_runner import ClientRunner
-from tuf_conformance.simulator_server import SimulatorServer
+from tuf_conformance._internal.client_runner import ClientRunner
+from tuf_conformance._internal.simulator_server import SimulatorServer
 
 unusual_role_names = [
     "?",

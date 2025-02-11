@@ -52,7 +52,7 @@ from tuf.api.metadata import (
 )
 from tuf.api.serialization.json import JSONSerializer
 
-from tuf_conformance.metadata import MetadataTest, RootTest
+from tuf_conformance._internal.metadata import MetadataTest, RootTest
 
 logger = logging.getLogger(__name__)
 

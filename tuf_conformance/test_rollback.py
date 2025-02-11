@@ -1,8 +1,8 @@
 import pytest
 from tuf.api.metadata import DelegatedRole, Root, Snapshot, Targets, Timestamp
 
-from tuf_conformance.client_runner import ClientRunner
-from tuf_conformance.simulator_server import SimulatorServer
+from tuf_conformance._internal.client_runner import ClientRunner
+from tuf_conformance._internal.simulator_server import SimulatorServer
 
 
 def test_new_timestamp_version_rollback(

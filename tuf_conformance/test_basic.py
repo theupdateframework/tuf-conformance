@@ -1,13 +1,14 @@
 import json
 import os
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from securesystemslib.formats import encode_canonical
 from securesystemslib.hash import digest
 from tuf.api.metadata import Key, Metadata, MetaFile, Root, Snapshot, Targets, Timestamp
 
-from tuf_conformance.client_runner import ClientRunner
-from tuf_conformance.simulator_server import SimulatorServer
+from tuf_conformance._internal.client_runner import ClientRunner
+from tuf_conformance._internal.simulator_server import SimulatorServer
 
 
 def recalculate_keyid(key: Key) -> None:
@@ -414,3 +415,22 @@ def test_incorrect_metadata_type(client: ClientRunner, server: SimulatorServer) 
     # Client should refuse timestamp that has incorrect type field
     assert client.refresh(init_data) == 1
     assert client.trusted_roles() == [(Root.type, 2)]
+
+
+def test_faketime(client: ClientRunner, server: SimulatorServer) -> None:
+    """Ensures that client supports the faketime setup in this test suite"""
+    init_data, repo = server.new_test(client.test_name)
+
+    assert client.init_client(init_data) == 0
+
+    # root v2 expires in 7 days
+    now = datetime.now(UTC)
+    repo.root.expires = now + timedelta(days=7)
+    repo.publish([Root.type])
+
+    # Refresh
+    assert client.refresh(init_data) == 0
+
+    # Mock time so that root has expired. If client unexpectedly succeeds here,
+    # it likely does not work with faketime
+    assert client.refresh(init_data, now + timedelta(days=8)) == 1

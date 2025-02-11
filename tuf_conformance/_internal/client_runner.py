@@ -1,14 +1,15 @@
 import glob
 import os
 import subprocess
+from datetime import datetime
 from tempfile import TemporaryDirectory
 
 from tuf.api.exceptions import StorageError
 from tuf.api.metadata import Metadata
 from tuf.api.serialization.json import JSONSerializer
 
-from tuf_conformance.metadata import MetadataTest
-from tuf_conformance.simulator_server import (
+from tuf_conformance._internal.metadata import MetadataTest
+from tuf_conformance._internal.simulator_server import (
     ClientInitData,
     SimulatorServer,
     StaticServer,
@@ -62,13 +63,13 @@ class ClientRunner:
         cmd = [*self._cmd, "--metadata-dir", self.metadata_dir, "init", trusted]
         return self._run(cmd)
 
-    def refresh(self, data: ClientInitData, days_in_future: int = 0) -> int:
+    def refresh(self, data: ClientInitData, fake_time: datetime | None = None) -> int:
         # dump a repository version for each client refresh (if configured to)
         self._server.debug_dump(self.test_name)
 
         cmd = self._cmd
-        if days_in_future:
-            cmd = ["faketime", "-f", f"+{days_in_future}d", *cmd]
+        if fake_time:
+            cmd = ["faketime", f"{fake_time}", *cmd]
 
         cmd = [
             *cmd,
