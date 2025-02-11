@@ -3,7 +3,6 @@
 Subdirectories should contain complete repositories produced by a specific repository
 implementation. Each repository in a `<SUBDIR>` should
 * demonstrate all of the TUF features that the implementation uses
-* not expire for a very long time
 * Store metadata in `<SUBDIR/metadata>` and artifacts in `<SUBDIR/targets>` 
 * be ready to be published with just `python -m http.server <SUBDIR>` (in other words filenames
   should match the TUF http API)
@@ -12,4 +11,3 @@ Additionally there should be
   * A version of root in `<SUBDIR>/initial_root.json`: This will be used to initialize the client
   * `<SUBDIR>/targetpath` containing a targetpath of an artifact that exists in the repository
   * optional `<SUBDIR>/faketime` containing a ISO 8601 date that will be used as the refresh time for the client
-    (this can be used to ensure the repository will not be expired when the test runs)
