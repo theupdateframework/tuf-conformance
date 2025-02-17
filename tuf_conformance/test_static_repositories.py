@@ -17,4 +17,4 @@ def test_static_repository(
 
     assert static_client.init_client(init_data) == 0
     assert static_client.refresh(init_data, refresh_time) == 0
-    assert static_client.download_target(init_data, targetpath) == 0
+    assert static_client.download_target(init_data, targetpath, refresh_time) == 0
