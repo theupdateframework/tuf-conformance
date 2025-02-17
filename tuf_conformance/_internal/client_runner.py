@@ -81,10 +81,16 @@ class ClientRunner:
         ]
         return self._run(cmd)
 
-    def download_target(self, data: ClientInitData, target_name: str) -> int:
+    def download_target(
+        self, data: ClientInitData, target_name: str, fake_time: datetime | None = None
+    ) -> int:
         self._server.debug_dump(self.test_name)
+        cmd = self._cmd
+        if fake_time:
+            cmd = ["faketime", f"{fake_time}", *cmd]
+
         cmd = [
-            *self._cmd,
+            *cmd,
             "--metadata-url",
             data.metadata_url,
             "--metadata-dir",
