@@ -169,7 +169,7 @@ class RepositorySimulator:
                 f"Test ran out of {keytype}/{scheme} keys (NUM_SIGNERS = {NUM_SIGNERS})"
             )
 
-    def add_signer(self, role: str, signer: CryptoSigner) -> None:
+    def add_signer(self, role: str, signer: Signer) -> None:
         if role not in self.signers:
             self.signers[role] = {}
         keyid = signer.public_key.keyid
@@ -448,7 +448,7 @@ class RepositorySimulator:
         self,
         role: str,
         delegator_name: str = Root.type,
-        signer: CryptoSigner | None = None,
+        signer: Signer | None = None,
     ) -> None:
         """add new public key to delegating metadata and store the signer for role"""
         if signer is None:
