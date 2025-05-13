@@ -13,9 +13,11 @@ from tuf_conformance._internal.simulator_server import SimulatorServer
 
 def recalculate_keyid(key: Key) -> None:
     """method to recalculate keyid: needed if key content is modified"""
-    data: bytes = encode_canonical(key.to_dict()).encode()
+    canonical_key = encode_canonical(key.to_dict())
+    assert canonical_key
+
     hasher = digest("sha256")
-    hasher.update(data)
+    hasher.update(canonical_key.encode())
     key.keyid = hasher.hexdigest()
 
 
