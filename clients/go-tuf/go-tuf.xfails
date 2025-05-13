@@ -1,2 +1,4 @@
-# RSA-PSS is not yet supported (https://github.com/theupdateframework/go-tuf/pull/625)
-test_keytype_and_scheme[rsa/rsassa-pss-sha256]
+# Add test names here to mark them "expected to fail"
+
+# Example: (commented out since the XFAIL is not needed with current go-tuf)
+# test_keytype_and_scheme[rsa/rsassa-pss-sha256]
