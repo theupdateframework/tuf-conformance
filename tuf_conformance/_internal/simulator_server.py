@@ -21,7 +21,7 @@ class _ReqHandler(BaseHTTPRequestHandler):
     Serves metadata and targets for multiple repositories
     """
 
-    def do_GET(self) -> None:  # noqa: N802
+    def do_GET(self) -> None:
         """Handle GET: metadata and target files"""
 
         test, _, path = self.path.lstrip("/").partition("/")
@@ -103,7 +103,7 @@ class StaticServer(ThreadingHTTPServer):
 
     def __init__(self) -> None:
         class _StaticReqHandler(BaseHTTPRequestHandler):
-            def do_GET(self) -> None:  # noqa: N802
+            def do_GET(self) -> None:
                 filepath = os.path.join(StaticServer.data_dir, self.path[1:])
                 try:
                     with open(filepath, "rb") as f:
