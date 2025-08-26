@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 import pytest
 from securesystemslib.formats import encode_canonical
@@ -425,14 +425,6 @@ def test_faketime(client: ClientRunner, server: SimulatorServer) -> None:
 
     assert client.init_client(init_data) == 0
 
-    # root v2 expires in 7 days
-    now = datetime.now(UTC)
-    repo.root.expires = now + timedelta(days=7)
-    repo.publish([Root.type])
-
-    # Refresh
-    assert client.refresh(init_data) == 0
-
-    # Mock time so that root has expired. If client unexpectedly succeeds here,
+    # Mock time so that metadata has expired. If client unexpectedly succeeds here,
     # it likely does not work with faketime
-    assert client.refresh(init_data, now + timedelta(days=8)) == 1
+    assert client.refresh(init_data, repo.safe_expiry + timedelta(days=1)) == 1
