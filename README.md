@@ -71,14 +71,15 @@ make test-python-tuf
 make test-go-tuf
 ```
 
-Invoking the test suite manually enables more features like running a single test only
-and using a client-under-test CLI installed outside of the test suite:
+Invoking the test suite manually enables all [pytest features](https://docs.pytest.org/en/stable/reference/reference.html#command-line-flags)
+like running a single test only or seeing the client output even when test passes:
 
 ```bash
 make dev
 ./env/bin/pytest tuf_conformance \
     --entrypoint path/to/my/client-under-test/cli \
-    -k test_unsigned_metadata
+    -k test_unsigned_metadata \
+    -rA
 ```
 
 linters can also be invoked with make:
