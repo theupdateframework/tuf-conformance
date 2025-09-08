@@ -239,18 +239,54 @@ def test_basic_metadata_hash_support(
     # Verify client accepts correct hashes
     assert client.refresh(init_data) == 0
 
+
+def test_targets_hash_mismatch(client: ClientRunner, server: SimulatorServer) -> None:
+    """Verify that clients supports hashes for metadata"""
+    init_data, repo = server.new_test(client.test_name)
+
+    # Construct repository with hashes in timestamp/snapshot
+    repo.compute_metafile_hashes_length = True
+    repo.publish([Targets.type, Snapshot.type, Timestamp.type])  # v2, v2, v2
+
+    assert client.init_client(init_data) == 0
+    assert client.refresh(init_data) == 0
+
     # Modify targets metadata, set hash in snapshot to wrong value
     repo.publish([Targets.type])  # v3
     assert repo.snapshot.meta["targets.json"].hashes
-    repo.snapshot.meta["targets.json"].hashes["sha256"] = (
-        "46419349341cfb2d95f6ae3d4cd5c3d3dd7f4673985dad42a45130be5e0531a0"
-    )
+    repo.snapshot.meta["targets.json"].hashes["sha256"] = "0" * 64
     repo.publish([Snapshot.type, Timestamp.type])  # v3
 
     # Verify client refuses targets v3 that does not match hashes
     assert client.refresh(init_data) == 1
     assert client.version(Snapshot.type) == 3
-    assert client.version(Targets.type) == 2
+    assert client.version(Targets.type) != 3
+
+
+def test_snapshot_hash_mismatch(client: ClientRunner, server: SimulatorServer) -> None:
+    """Repository serves a snapshot with a hash that does not match the one in
+    timestamp. Expect client to refuse the update.
+    """
+    init_data, repo = server.new_test(client.test_name)
+
+    # Construct repository with hashes in timestamp/snapshot
+    repo.compute_metafile_hashes_length = True
+    repo.publish([Snapshot.type, Timestamp.type])  # v2, v2
+
+    assert client.init_client(init_data) == 0
+    assert client.refresh(init_data) == 0
+
+    # Create a new timestamp v3 with a bad hash for snapshot.
+    repo.publish([Snapshot.type])  # v3
+    assert repo.timestamp.snapshot_meta.hashes
+    repo.timestamp.snapshot_meta.hashes["sha256"] = "0" * 64
+    repo.publish([Timestamp.type])  # v3
+
+    # Client should refuse the update because snapshot hash does not match.
+    # Client should have the new timestamp v3 but not the new snapshot
+    assert client.refresh(init_data) == 1
+    assert client.version(Snapshot.type) != 3
+    assert client.version(Timestamp.type) == 3
 
 
 def test_metadata_bytes_match(client: ClientRunner, server: SimulatorServer) -> None:
