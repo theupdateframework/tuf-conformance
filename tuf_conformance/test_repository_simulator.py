@@ -17,7 +17,7 @@ class TestRepositorySimulator(unittest.TestCase):
     def test_repo_initialzation_unittest(self) -> None:
         tmp_dir = TemporaryDirectory()
         server = SimulatorServer(dump_dir=tmp_dir.name)
-        init_data, repo = server.new_test("test_repo_initialzation")
+        _, repo = server.new_test("test_repo_initialzation")
         self.assertEqual(repo.root.version, 1)
         self.assertEqual(repo.timestamp.version, 1)
         self.assertEqual(repo.snapshot.version, 1)
@@ -39,7 +39,7 @@ class TestRepositorySimulator(unittest.TestCase):
     def test_basic_metadata_hash_support_unittest(self) -> None:
         tmp_dir = TemporaryDirectory()
         server = SimulatorServer(dump_dir=tmp_dir.name)
-        init_data, repo = server.new_test("unittest_basic_metadata_hash_support")
+        _, repo = server.new_test("unittest_basic_metadata_hash_support")
         repo.compute_metafile_hashes_length = True
         repo.publish([Targets.type, Snapshot.type, Timestamp.type])  # v2
         self.assertEqual(
@@ -66,7 +66,7 @@ class TestRepositorySimulator(unittest.TestCase):
     def test_update_timestamp(self) -> None:
         tmp_dir = TemporaryDirectory()
         server = SimulatorServer(dump_dir=tmp_dir.name)
-        init_data, repo = server.new_test("test_timestamp_expired")
+        _, repo = server.new_test("test_timestamp_expired")
 
         five_days_in_path = utils.get_date_n_days_in_past(5)
         repo.timestamp.expires = five_days_in_path
