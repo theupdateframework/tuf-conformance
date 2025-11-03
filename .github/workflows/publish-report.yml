@@ -16,15 +16,19 @@ jobs:
           - name: python-tuf
             repo: theupdateframework/python-tuf
             workflow: conformance.yml
+            branch: develop
           - name: tuf-js
             repo: theupdateframework/tuf-js
             workflow: conformance.yml
+            branch: main
           - name: sigstore-java
             repo: sigstore/sigstore-java
             workflow: tuf-conformance.yml
+            branch: main
           - name: sigstore-ruby
             repo: sigstore/sigstore-ruby
             workflow: ci.yml
+            branch: main
 
 
     steps:
@@ -37,7 +41,7 @@ jobs:
           github_token: ${{ secrets.READ_ONLY_TOKEN }}
           repo: ${{ matrix.repo }}
           workflow: ${{ matrix.workflow }}
-          branch: main
+          branch: ${{ matrix.branch }}
           name: tuf-conformance-results
           workflow_conclusion: success
           path: ./results/
