@@ -33,7 +33,7 @@ dev: faketime env/pyvenv.cfg
 .PHONY: test-all
 test-all: test-python-tuf test-go-tuf
 
-lint_dirs = tuf_conformance clients/python-tuf
+lint_dirs = tuf_conformance clients/python-tuf .github/scripts
 lint: env/pyvenv.cfg
 	./env/bin/ruff format --diff $(lint_dirs)
 	./env/bin/ruff check $(lint_dirs)
