@@ -42,7 +42,7 @@ runs:
         fi
 
         # run test suite
-        pytest -v "$TEST_LOCATION" \
+        pytest -v --json-report --json-report-file=tuf-conformance-report.json "$TEST_LOCATION" \
           --entrypoint "$ENTRYPOINT" \
           --repository-dump-dir ./test-repositories \
       shell: bash
@@ -53,3 +53,11 @@ runs:
       with:
         name: ${{ steps.tuf-conformance.outputs.NAME }}
         path: test-repositories
+
+    - name: Upload conformance result
+      uses: actions/upload-artifact@v4
+      with:
+        name: tuf-conformance-results
+        overwrite: true
+        path: ./tuf-conformance-report.json
+        retention-days: 7
