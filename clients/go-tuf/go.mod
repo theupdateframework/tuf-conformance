@@ -3,7 +3,7 @@ module github.com/theupdateframework/tuf-conformance/clients/go-tuf
 go 1.24.9
 
 require (
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.10.2
 	github.com/theupdateframework/go-tuf/v2 v2.3.0
 )
