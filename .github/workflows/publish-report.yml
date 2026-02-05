@@ -43,7 +43,7 @@ jobs:
           workflow: ${{ matrix.workflow }}
           branch: ${{ matrix.branch }}
           name: tuf-conformance-results
-          workflow_conclusion: success
+          workflow_conclusion: completed
           path: ./results/
         continue-on-error: true
 
