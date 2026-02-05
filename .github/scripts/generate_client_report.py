@@ -90,6 +90,11 @@ def _generate_html(results: list[Result]) -> str:
     html += """
             </tbody>
         </table>
+        <p><i>
+            If you would like another client to be included in this table, please
+            <a href="https://github.com/theupdateframework/tuf-conformance/issues/new">
+            file an issue</a>.
+        </i></p>
     </body>
     </html>
     """
