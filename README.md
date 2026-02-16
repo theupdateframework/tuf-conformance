@@ -5,18 +5,9 @@ This is a conformance test suite for [TUF](https://theupdateframework.io/) clien
   2. Achieve better practical compatibility with other implementations
   3. Collaborate on tests with other client developers
 
-| TUF clients known to pass the test suite |
-| --- |
-| [![python-tuf](https://img.shields.io/github/actions/workflow/status/theupdateframework/python-tuf/conformance.yml?branch=develop&label=python-tuf)](https://github.com/theupdateframework/python-tuf/actions/workflows/conformance.yml?query=branch%3Adevelop) |
-| [![tuf-js](https://img.shields.io/github/actions/workflow/status/theupdateframework/tuf-js/conformance.yml?branch=main&label=tuf-js)](https://github.com/theupdateframework/tuf-js/actions/workflows/conformance.yml?query=branch%3Amain) |
-| [![sigstore-ruby](https://img.shields.io/github/check-runs/sigstore/sigstore-ruby/main?nameFilter=TUF%20Ruby%203.4%20%2F%20ubuntu-latest&label=sigstore-ruby)](https://github.com/sigstore/sigstore-ruby/actions/workflows/ci.yml?query=branch%3Amain) |
-| [![sigstore-java](https://img.shields.io/github/actions/workflow/status/sigstore/sigstore-java/tuf-conformance.yml?branch=main&label=sigstore-java)](https://github.com/sigstore/sigstore-java/actions/workflows/conformance.yml?query=branch%3Amain) |
+## Client Conformance Report
 
-<!-- This list is based on tuf-conformance dependency graph
-(https://github.com/theupdateframework/tuf-conformance/network/dependents?package_id=UGFja2FnZS01MTQwNzI2MzMz): updates to the list are welcome.
--->
-
-_Note that a "passing" status may include tests that are marked as "expected to fail": check the clients `.xfail` file for details._
+See [Client Conformance Report](https://theupdateframework.github.io/tuf-conformance/) for a list of conformant TUF clients.
 
 ## Usage
 
@@ -27,6 +18,13 @@ There are two required steps:
    [CLI protocol](CLIENT-CLI.md).
 2. Use the `theupdateframework/tuf-conformance` action in your test workflow:
     ```yaml
+    
+    on:
+      push:
+      pull_request:
+      schedule:
+        - cron: '30 6 * * 3' # weekly run to ensure the client conformance report has recent results
+
     jobs:
       tuf-conformance:
         runs-on: ubuntu-latest
