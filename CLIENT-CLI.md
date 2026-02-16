@@ -2,6 +2,7 @@
 
 Before a TUF client can be tested with the tuf-conformance test suite, an executable must be provided
 that implements this CLI protocol. There are three required commands: `init`, `refresh` and `download`.
+The executable should operate at a level of verbosity that is useful for debugging.
 
 ## Commands
 
@@ -101,5 +102,8 @@ The test suite has limited visibility into client decisions so uses various sign
 * The artifacts the client downloads (`TARGET_DIR`)
 * The HTTP requests made by the client to the repository
 
-Sometimes test suite expectations are not strictly part of TUF specification: As an example the test suite expects
-a specific sequence of metadata HTTP requests to assert that the client handled delegations correctly.
+Sometimes test suite expectations exist to make measurement possible or are not even strictly part of TUF specification. Examples:
+* a specific sequence of metadata HTTP requests is expected to assert that the client handled delegations correctly.
+* metadata and artifacts are expected to be stored in files -- the client implementation is free to use e.g. a database
+  internally but in that case the client-under-test CLI should make copies available in `METADATA_DIR` and `TARGET_DIR` for the
+  test suite
