@@ -23,9 +23,8 @@ DUMP_DIR = /tmp/tuf-conformance-dump
 #########################
 
 env/pyvenv.cfg: pyproject.toml
-	python3 -m venv env
-	./env/bin/python -m pip install --upgrade pip
-	./env/bin/python -m pip install -e .[lint]
+	uv venv --allow-existing env
+	uv pip install --python env -e .[lint]
 
 .PHONY: dev
 dev: faketime env/pyvenv.cfg
