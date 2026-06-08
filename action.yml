@@ -14,8 +14,8 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Set up Python
-      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+    - name: Set up uv
+      uses: astral-sh/setup-uv@1edb52594c857e2b5b13128931090f0640537287 # v5.3.0
       with:
         python-version: "3.14"
 
@@ -23,7 +23,7 @@ runs:
       run: |
         echo "::group::Install test suite and dependencies"
         sudo apt install faketime
-        pip install -e "${{ github.action_path }}"
+        uv sync --project "${{ github.action_path }}"
         echo "::endgroup::"
       shell: bash
 
@@ -42,9 +42,9 @@ runs:
         fi
 
         # run test suite
-        pytest -v --json-report --json-report-file=tuf-conformance-report.json "$TEST_LOCATION" \
+        uv run --project "${{ github.action_path }}" pytest -v --json-report --json-report-file=tuf-conformance-report.json "$TEST_LOCATION" \
           --entrypoint "$ENTRYPOINT" \
-          --repository-dump-dir ./test-repositories \
+          --repository-dump-dir ./test-repositories
       shell: bash
 
     - name: Upload repository dump
