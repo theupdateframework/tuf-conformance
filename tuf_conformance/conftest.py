@@ -98,9 +98,7 @@ def read_xfails(pytestconfig: pytest.Config) -> list[str]:
 
 
 @pytest.fixture(autouse=True)
-def conformance_xfail(
-    pytestconfig: pytest.Config, request: pytest.FixtureRequest
-) -> None:
+def conformance_(pytestconfig: pytest.Config, request: pytest.FixtureRequest) -> None:
     xfails = read_xfails(pytestconfig)
 
     if request.node.originalname in xfails or request.node.name in xfails:

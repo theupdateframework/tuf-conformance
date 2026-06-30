@@ -74,6 +74,15 @@ SIGNERS = {
     ("ed25519", "ed25519"): [
         CryptoSigner.generate_ed25519() for _ in range(NUM_SIGNERS)
     ],
+    ("ml-dsa", "ml-dsa-44/1"): [
+        CryptoSigner.generate_mldsa(scheme="ml-dsa-44/1") for _ in range(NUM_SIGNERS)
+    ],
+    ("ml-dsa", "ml-dsa-65/1"): [
+        CryptoSigner.generate_mldsa(scheme="ml-dsa-65/1") for _ in range(NUM_SIGNERS)
+    ],
+    ("ml-dsa", "ml-dsa-87/1"): [
+        CryptoSigner.generate_mldsa(scheme="ml-dsa-87/1") for _ in range(NUM_SIGNERS)
+    ],
 }
 
 
