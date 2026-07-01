@@ -205,18 +205,18 @@ def test_graph_traversal(
 r"""
 Create a single repository with the following delegations:
 
-          targets
-*.doc, *md / \ release/*/*
-          A   B
- release/x/* / \ release/y/*.zip
-            C   D
+                      targets
+*.doc, *.md, foo-?.tgz  /  \  releases/*/*
+                       A    B
+              releases/x/  / \  releases/y/*.zip
+                          C   D
 
 Test that Updater successfully finds the target files metadata,
 traversing the delegations as expected.
 """
 delegations_tree = DelegationsTestCase(
     delegations=[
-        DelegationTester("targets", "A", paths=["*.doc", "*.md"]),
+        DelegationTester("targets", "A", paths=["*.doc", "*.md", "foo-?.tgz"]),
         DelegationTester("targets", "B", paths=["releases/*/*"]),
         DelegationTester("B", "C", paths=["releases/x/*"]),
         DelegationTester("B", "D", paths=["releases/y/*.zip"]),
@@ -224,6 +224,9 @@ delegations_tree = DelegationsTestCase(
     target_files=[
         TargetTest("targets", b"targetfile content", "targetfile"),
         TargetTest("A", b"README by A", "README.md"),
+        TargetTest("A", b"nested README by A", "releases/README.md"),
+        TargetTest("A", b"foo 1", "foo-1.tgz"),
+        TargetTest("A", b"foo alpha", "foo-alpha.tgz"),
         TargetTest("C", b"x release by C", "releases/x/x_v1"),
         TargetTest("D", b"y release by D", "releases/y/y_v1.zip"),
         TargetTest("D", b"z release by D", "releases/z/z_v1.zip"),
@@ -240,6 +243,16 @@ targets: DataSetTarget = {
     "targetpath is not delegated by all roles in the chain": TargetTestCase(
         "releases/z/z_v1.zip", False, ["B"]
     ),
+    "wildcard does not match path separator": TargetTestCase(
+        "releases/README.md", False, []
+    ),
+    "targetpath matches question mark wildcard": TargetTestCase(
+        "foo-1.tgz", True, ["A"]
+    ),
+    "targetpath does not match question mark wildcard": TargetTestCase(
+        "foo-alpha.tgz", False, []
+    ),
+    "targetpath matching is case sensitive": TargetTestCase("README.MD", False, []),
 }
 
 
