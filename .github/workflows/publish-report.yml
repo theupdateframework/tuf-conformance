@@ -29,6 +29,10 @@ jobs:
             repo: sigstore/sigstore-ruby
             workflow: ci.yml
             branch: main
+          - name: sigstore-rust
+            repo: sigstore/sigstore-rust
+            workflow: tuf-conformance.yml
+            branch: main
 
 
     steps:
