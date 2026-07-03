@@ -1,10 +1,13 @@
 version: 2
 updates:
 
-- package-ecosystem: "pip"
+- package-ecosystem: "uv"
   directory: "/"
+  versioning-strategy: lockfile-only
   schedule:
     interval: "weekly"
+  cooldown:
+    default-days: 7
   groups:
     python-dependencies:
       patterns:
@@ -17,6 +20,8 @@ updates:
   directory: "/"
   schedule:
     interval: "weekly"
+  cooldown:
+    default-days: 7
   groups:
     action-dependencies:
       patterns:
@@ -29,3 +34,5 @@ updates:
   directory: "/clients/go-tuf/"
   schedule:
     interval: "weekly"
+  cooldown:
+    default-days: 7
