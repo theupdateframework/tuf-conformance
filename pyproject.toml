@@ -14,10 +14,8 @@ dynamic = ["version"]
 requires-python = ">= 3.10"
 
 [dependency-groups]
-dev = [
-    "mypy",
-    "ruff"
-]
+dev = ["mypy", "ruff"]
+uv = ["uv"]  # for setup-uv
 
 [tool.hatch.version]
 path = "tuf_conformance/__init__.py"
