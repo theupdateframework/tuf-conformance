@@ -59,8 +59,8 @@ test-group[parameter]
 
 This repository contains two client-under-test CLI protocol implementations
 to enable easy development and testing. The test suite depends on various
-python modules which will be installed by the make commands into a virtual environment.
-The suite also depends on `faketime` tool which needs to be available.
+python modules which will be installed by `uv` into a virtual environment.
+The suite also depends on `uv` and `faketime` tools which need to be available.
 
 ```bash
 # run test suite against both included clients or just one of them:
@@ -73,8 +73,7 @@ Invoking the test suite manually enables all [pytest features](https://docs.pyte
 like running a single test only or seeing the client output even when test passes:
 
 ```bash
-make dev
-./env/bin/pytest tuf_conformance \
+uv run pytest tuf_conformance \
     --entrypoint path/to/my/client-under-test/cli \
     -k test_unsigned_metadata \
     -rA
