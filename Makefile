@@ -18,40 +18,32 @@ endif
 
 DUMP_DIR = /tmp/tuf-conformance-dump
 
+.PHONY: dev test-all test-python-tuf test-go-tuf build-go-tuf
+
 #########################
 # tuf-conformance section
 #########################
 
-env/pyvenv.cfg: pyproject.toml
-	uv venv --allow-existing env
-	uv pip install --python env -e .[lint]
+dev: faketime
 
-.PHONY: dev
-dev: faketime env/pyvenv.cfg
-
-.PHONY: test-all
 test-all: test-python-tuf test-go-tuf
 
 lint_dirs = tuf_conformance clients/python-tuf .github/scripts
-lint: env/pyvenv.cfg
-	./env/bin/ruff format --diff $(lint_dirs)
-	./env/bin/ruff check $(lint_dirs)
-	./env/bin/mypy $(lint_dirs)
+lint:
+	uv run ruff format --diff $(lint_dirs)
+	uv run ruff check $(lint_dirs)
+	uv run mypy $(lint_dirs)
 
 fix: env/pyvenv.cfg
-	./env/bin/ruff format $(lint_dirs)
-	./env/bin/ruff check --fix $(lint_dirs)
+	uv run ruff format $(lint_dirs)
+	uv run ruff check --fix $(lint_dirs)
 
 #########################
 # python-tuf section
 #########################
 
-# export virtualenv bin so python client finds the python it needs
-export PATH := $(CURDIR)/env/bin:$(PATH)
-
-PHONY: test-python-tuf
 test-python-tuf: dev
-	./env/bin/pytest -v tuf_conformance \
+	uv run pytest -v tuf_conformance \
 		--entrypoint "./clients/python-tuf/python_tuf.py" \
 		--repository-dump-dir $(DUMP_DIR)
 	@echo Repository dump in $(DUMP_DIR)
@@ -60,13 +52,11 @@ test-python-tuf: dev
 # go-tuf section
 #########################
 
-PHONY: test-go-tuf
 test-go-tuf: dev build-go-tuf
-	./env/bin/pytest -v tuf_conformance \
+	uv run pytest -v tuf_conformance \
 		--entrypoint "./clients/go-tuf/go-tuf" \
 		--repository-dump-dir $(DUMP_DIR)
 	@echo Repository dump in $(DUMP_DIR)
-PHONY: build-go-tuf
 build-go-tuf:
 	cd ./clients/go-tuf && go build .
 
