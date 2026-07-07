@@ -1,12 +1,4 @@
-#!/usr/bin/env -S uv run --script
-#
-# /// script
-# dependencies = [
-#     "tuf>=6.0",
-#     "securesystemslib[crypto]>=1.4.0",
-# ]
-# ///
-
+#!/usr/bin/env python
 
 """Conformance client for python-tuf, part of tuf-conformance"""
 

@@ -7,4 +7,5 @@ html/
 dist/
 build
 clients/go-tuf/go-tuf
+clients/python-tuf/.venv
 .idea/

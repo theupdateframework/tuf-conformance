@@ -18,13 +18,11 @@ endif
 
 DUMP_DIR = /tmp/tuf-conformance-dump
 
-.PHONY: dev test-all test-python-tuf test-go-tuf build-go-tuf
+.PHONY: test-all test-python-tuf test-go-tuf build-go-tuf
 
 #########################
 # tuf-conformance section
 #########################
-
-dev: faketime
 
 test-all: test-python-tuf test-go-tuf
 
@@ -42,17 +40,23 @@ fix:
 # python-tuf section
 #########################
 
-test-python-tuf: dev
+test-python-tuf: faketime clients/python-tuf/.venv/pyvenv.cfg
 	uv run pytest -v tuf_conformance \
-		--entrypoint "./clients/python-tuf/python_tuf.py" \
+		--entrypoint "./clients/python-tuf/.venv/bin/python ./clients/python-tuf/python_tuf.py" \
 		--repository-dump-dir $(DUMP_DIR)
+
 	@echo Repository dump in $(DUMP_DIR)
+
+clients/python-tuf/.venv/pyvenv.cfg: pyproject.toml uv.lock
+	uv venv clients/python-tuf/.venv
+	VIRTUAL_ENV=clients/python-tuf/.venv uv sync --active --frozen --only-group selftest
+	touch $@
 
 #########################
 # go-tuf section
 #########################
 
-test-go-tuf: dev build-go-tuf
+test-go-tuf: faketime build-go-tuf
 	uv run pytest -v tuf_conformance \
 		--entrypoint "./clients/go-tuf/go-tuf" \
 		--repository-dump-dir $(DUMP_DIR)

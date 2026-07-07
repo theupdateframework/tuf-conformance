@@ -580,6 +580,10 @@ dev = [
     { name = "mypy" },
     { name = "ruff" },
 ]
+selftest = [
+    { name = "securesystemslib", extra = ["crypto"] },
+    { name = "tuf" },
+]
 uv = [
     { name = "uv" },
 ]
@@ -596,6 +600,10 @@ requires-dist = [
 dev = [
     { name = "mypy" },
     { name = "ruff" },
+]
+selftest = [
+    { name = "securesystemslib", extras = ["crypto"], specifier = ">=1.4.0" },
+    { name = "tuf", specifier = ">=7.0.0" },
 ]
 uv = [{ name = "uv" }]
 
