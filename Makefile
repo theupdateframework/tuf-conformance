@@ -34,7 +34,7 @@ lint:
 	uv run ruff check $(lint_dirs)
 	uv run mypy $(lint_dirs)
 
-fix: env/pyvenv.cfg
+fix:
 	uv run ruff format $(lint_dirs)
 	uv run ruff check --fix $(lint_dirs)
 
@@ -59,4 +59,3 @@ test-go-tuf: dev build-go-tuf
 	@echo Repository dump in $(DUMP_DIR)
 build-go-tuf:
 	cd ./clients/go-tuf && go build .
-

@@ -26,9 +26,6 @@ jobs:
           version-file: uv.lock
           enable-cache: true
 
-      - name: Install lint dependencies
-        run: make env/pyvenv.cfg
-
       - name: Run linters
         run: make lint
 
