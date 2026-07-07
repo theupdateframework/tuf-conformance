@@ -73,8 +73,7 @@ Invoking the test suite manually enables all [pytest features](https://docs.pyte
 like running a single test only or seeing the client output even when test passes:
 
 ```bash
-make dev
-./env/bin/pytest tuf_conformance \
+uv run pytest tuf_conformance \
     --entrypoint path/to/my/client-under-test/cli \
     -k test_unsigned_metadata \
     -rA
