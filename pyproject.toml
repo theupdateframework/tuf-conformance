@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "tuf-conformance"
 dependencies = [
-    "securesystemslib[crypto]>=1.4.0",
+    "securesystemslib[crypto]>=1.5.0",
     "tuf>=7.0.0",
     "pytest",
     "pytest-json-report"
@@ -16,6 +16,11 @@ requires-python = ">= 3.10"
 [dependency-groups]
 dev = ["mypy", "ruff"]
 uv = ["uv"]  # for setup-uv
+selftest = [  # for clients/python-tuf/python_tuf.py
+    "tuf>=7.0.1",
+    "securesystemslib[crypto]>=1.5.0",
+]
+
 
 [tool.hatch.version]
 path = "tuf_conformance/__init__.py"
