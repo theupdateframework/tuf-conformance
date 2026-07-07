@@ -23,7 +23,7 @@ runs:
       run: |
         echo "::group::Install test suite and dependencies"
         sudo apt install faketime
-        uv sync --frozen --project "${{ github.action_path }}"
+        uv sync --frozen --no-dev --project "${{ github.action_path }}"
         echo "::endgroup::"
       shell: bash
 
@@ -42,7 +42,7 @@ runs:
         fi
 
         # run test suite
-        uv run --frozen --project "${{ github.action_path }}" -- \
+        uv run --frozen --no-dev --project "${{ github.action_path }}" -- \
           pytest -v --json-report --json-report-file=tuf-conformance-report.json "$TEST_LOCATION" \
           --entrypoint "$ENTRYPOINT" \
           --repository-dump-dir ./test-repositories

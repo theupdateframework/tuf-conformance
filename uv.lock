@@ -575,22 +575,25 @@ dependencies = [
     { name = "tuf" },
 ]
 
-[package.optional-dependencies]
-lint = [
+[package.dev-dependencies]
+dev = [
     { name = "mypy" },
     { name = "ruff" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "mypy", marker = "extra == 'lint'" },
     { name = "pytest" },
     { name = "pytest-json-report" },
-    { name = "ruff", marker = "extra == 'lint'" },
     { name = "securesystemslib", extras = ["crypto"], specifier = ">=1.4.0" },
     { name = "tuf", specifier = ">=7.0.0" },
 ]
-provides-extras = ["lint"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "mypy" },
+    { name = "ruff" },
+]
 
 [[package]]
 name = "typing-extensions"
