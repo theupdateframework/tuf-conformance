@@ -1,4 +1,6 @@
 import json
+from collections.abc import Generator
+from unittest.mock import patch
 
 import pytest
 from securesystemslib.signer import KEY_FOR_TYPE_AND_SCHEME, SSlibKey
@@ -205,14 +207,20 @@ def test_keytype_and_scheme(
     _test_keytype_and_scheme_internal(client, server, keytype, scheme, bad_sig)
 
 
-# ML-DSA is not yet enabled by default in securesystemslib: enable for the test
-KEY_FOR_TYPE_AND_SCHEME.update(
-    {
-        ("ml-dsa", "ml-dsa-44/1"): SSlibKey,
-        ("ml-dsa", "ml-dsa-65/1"): SSlibKey,
-        ("ml-dsa", "ml-dsa-87/1"): SSlibKey,
-    }
-)
+@pytest.fixture
+def enable_mldsa() -> Generator[None, None, None]:
+    # ML-DSA is not yet enabled by default in securesystemslib: enable for the test
+    with patch.dict(
+        KEY_FOR_TYPE_AND_SCHEME,
+        {
+            ("ml-dsa", "ml-dsa-44/1"): SSlibKey,
+            ("ml-dsa", "ml-dsa-65/1"): SSlibKey,
+            ("ml-dsa", "ml-dsa-87/1"): SSlibKey,
+        },
+    ):
+        yield
+
+
 mldsa_keytypes = [
     (
         "ml-dsa",
@@ -240,6 +248,7 @@ def test_mldsa_keytype_and_scheme(
     keytype: str,
     scheme: str,
     bad_sig: str,
+    enable_mldsa: None,
 ) -> None:
     """Test that client supports ML-DSA keytypes"""
     _test_keytype_and_scheme_internal(client, server, keytype, scheme, bad_sig)

@@ -39,4 +39,5 @@ lint.select = ["ANN", "DTZ", "E", "F", "FA", "I", "N", "PIE", "PL", "PYI", "RET"
 lint.ignore = [
     "S101",             # assert is fine in pytest tests
     "PLR2004",          # magic values are ok in a test suite
+    "PLR0913",          # too many arguments
 ]
