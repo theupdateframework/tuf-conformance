@@ -1,4 +1,5 @@
 # Add test names here to mark them "expected to fail"
 
-# Example: (commented out since the XFAIL is not needed with current go-tuf)
-# test_keytype_and_scheme[rsa/rsassa-pss-sha256]
+# go-tuf caches delegated metadata by role name without re-verifying it
+# against the delegator used by a later target lookup.
+test_cached_role_is_verified_against_current_delegator

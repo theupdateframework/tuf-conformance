@@ -84,19 +84,28 @@ class ClientRunner:
     def download_target(
         self, data: ClientInitData, target_name: str, fake_time: datetime | None = None
     ) -> int:
+        return self.download_targets(data, [target_name], fake_time)
+
+    def download_targets(
+        self,
+        data: ClientInitData,
+        target_names: list[str],
+        fake_time: datetime | None = None,
+    ) -> int:
+        """Download targets in order using a single client invocation."""
         self._server.debug_dump(self.test_name)
         cmd = self._cmd
         if fake_time:
             cmd = ["faketime", f"{fake_time}", *cmd]
 
+        target_args = [arg for name in target_names for arg in ("--target-name", name)]
         cmd = [
             *cmd,
             "--metadata-url",
             data.metadata_url,
             "--metadata-dir",
             self.metadata_dir,
-            "--target-name",
-            target_name,
+            *target_args,
             "--target-dir",
             self.artifact_dir,
             "--target-base-url",

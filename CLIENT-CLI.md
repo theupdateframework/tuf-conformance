@@ -63,7 +63,7 @@ Download an artifact from repository, store it in local disk.
 where
 - `METADATA_DIR` is a directory where the client is expected to store metadata it considers valid
 - `METADATA_URL` is a URL to the repository metadata store
-- `TARGET_PATH` is the TUF targetpath of the artifact that should be downloaded
+- `TARGET_PATH` is the TUF targetpath of an artifact that should be downloaded. `--target-name` may be repeated: targets must be processed in argument order using the same client/updater instance, and the command must stop and return exit code 1 if any target fails.
 - `TARGET_URL` is the base URL for repository target store
 - `TARGET_DIR`: is a directory where the client should store downloaded and verified files
 

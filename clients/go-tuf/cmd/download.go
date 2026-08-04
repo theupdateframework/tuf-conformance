@@ -31,11 +31,11 @@ var downloadCmd = &cobra.Command{
 	Short: "Downloads a target file",
 	//Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if FlagMetadataURL == "" || FlagMetadataDir == "" || FlagTargetUrl == "" {
+		if FlagMetadataURL == "" || FlagMetadataDir == "" || len(FlagTargetUrls) == 0 {
 			fmt.Println("Error: required flag(s): \"metadata-url\" or \"metadata-dir\" not set")
 			os.Exit(1)
 		}
-		targetInfoName, err := cmd.Flags().GetString("target-name")
+		targetInfoNames, err := cmd.Flags().GetStringArray("target-name")
 		if err != nil {
 			os.Exit(1)
 		}
@@ -50,7 +50,7 @@ var downloadCmd = &cobra.Command{
 
 		// refresh metadata and try to download the desired target
 		// first arg means the name of the target file to download
-		return RefreshAndDownloadCmd(targetInfoName, targetBaseUrl, targetDownloadDir, false)
+		return RefreshAndDownloadCmd(targetInfoNames, targetBaseUrl, targetDownloadDir, false)
 	},
 }
 
@@ -58,7 +58,7 @@ func init() {
 	rootCmd.AddCommand(downloadCmd)
 }
 
-func RefreshAndDownloadCmd(targetName string,
+func RefreshAndDownloadCmd(targetNames []string,
 	targetBaseUrl string,
 	targetDownloadDir string,
 	refreshOnly bool) error {
@@ -109,38 +109,39 @@ func RefreshAndDownloadCmd(targetName string,
 		return fmt.Errorf("failed to refresh trusted metadata: %w", err)
 	}
 
-	// exit early if it's a refresh only command or there's no targetName provided
-	if refreshOnly || targetName == "" {
+	// exit early if it's a refresh only command or there are no targets provided
+	if refreshOnly || len(targetNames) == 0 {
 		fmt.Println("go-tuf-metadata test client: Refreshed metadata in", FlagMetadataDir)
 		return nil
 	}
 
-	// search if the desired target is available
-	targetInfo, err := up.GetTargetInfo(targetName)
-	if err != nil {
-		return fmt.Errorf("target %s not found: %w", targetName, err)
-	}
+	for _, targetName := range targetNames {
+		// search if the desired target is available
+		targetInfo, err := up.GetTargetInfo(targetName)
+		if err != nil {
+			return fmt.Errorf("target %s not found: %w", targetName, err)
+		}
 
-	// target is available, so let's see if the target is already present locally
-	localPath := filepath.Join(targetDownloadDir, url.QueryEscape(targetName))
-	path, _, err := up.FindCachedTarget(targetInfo, localPath)
-	if err != nil {
-		return fmt.Errorf("failed while finding a cached target: %w", err)
-	}
+		// target is available, so let's see if the target is already present locally
+		localPath := filepath.Join(targetDownloadDir, url.QueryEscape(targetName))
+		path, _, err := up.FindCachedTarget(targetInfo, localPath)
+		if err != nil {
+			return fmt.Errorf("failed while finding a cached target: %w", err)
+		}
 
-	if path != "" {
-		fmt.Printf("Target %s is already present at - %s\n", targetName, path)
-		return nil
-	}
+		if path != "" {
+			fmt.Printf("Target %s is already present at - %s\n", targetName, path)
+			continue
+		}
 
-	// target is not present locally, so let's try to download it
-	//
-	path, _, err = up.DownloadTarget(targetInfo, localPath, targetBaseUrl)
-	if err != nil {
-		return fmt.Errorf("failed to download target file %s - %w", targetName, err)
-	}
+		// target is not present locally, so try to download it
+		path, _, err = up.DownloadTarget(targetInfo, localPath, targetBaseUrl)
+		if err != nil {
+			return fmt.Errorf("failed to download target file %s - %w", targetName, err)
+		}
 
-	fmt.Printf("go-tuf-metadata test client: downloaded target %s in %s\n", targetName, path)
+		fmt.Printf("go-tuf-metadata test client: downloaded target %s in %s\n", targetName, path)
+	}
 
 	return nil
 }

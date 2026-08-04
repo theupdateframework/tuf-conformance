@@ -36,7 +36,7 @@ def refresh(metadata_url: str, metadata_dir: str) -> None:
 def download_target(
     metadata_url: str,
     metadata_dir: str,
-    target_name: str,
+    target_names: list[str],
     download_dir: str,
     target_base_url: str,
 ) -> None:
@@ -49,11 +49,12 @@ def download_target(
         target_base_url,
         bootstrap=None,
     )
-    target_info = updater.get_targetinfo(target_name)
-    if not target_info:
-        raise RuntimeError(f"{target_name} not found in repository")
-    if not updater.find_cached_target(target_info):
-        updater.download_target(target_info)
+    for target_name in target_names:
+        target_info = updater.get_targetinfo(target_name)
+        if not target_info:
+            raise RuntimeError(f"{target_name} not found in repository")
+        if not updater.find_cached_target(target_info):
+            updater.download_target(target_info)
 
 
 def main() -> int:
@@ -62,7 +63,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="TUF Client Example")
     parser.add_argument("--metadata-url", required=False)
     parser.add_argument("--metadata-dir", required=True)
-    parser.add_argument("--target-name", required=False)
+    parser.add_argument("--target-name", action="append", required=False)
     parser.add_argument("--target-dir", required=False)
     parser.add_argument("--target-base-url", required=False)
     parser.add_argument("-v", "--verbose", action="count", default=0)

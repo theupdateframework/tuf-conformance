@@ -1,0 +1,3 @@
+# python-tuf caches delegated metadata by role name without re-verifying it
+# against the delegator used by a later target lookup.
+test_cached_role_is_verified_against_current_delegator
