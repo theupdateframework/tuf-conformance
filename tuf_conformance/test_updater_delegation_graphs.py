@@ -285,7 +285,16 @@ def test_targetfile_search(
 def test_cached_role_is_verified_against_current_delegator(
     client: ClientRunner, server: SimulatorServer
 ) -> None:
-    """A cached role must not inherit authority from an earlier search path."""
+    """A cached role must not inherit authority from an earlier search path.
+
+    The test creates a "diamond shape" delegation where a role is delegated to
+    from multiple delegators. Client should not skip validating the current
+    delegation path just because another path to this role has already been
+    validated.
+
+    Refusing to to operate with "diamond shape" delegations is also considered
+    acceptable (as it's not clear that this structure has any real use cases).
+    """
     init_data, repo = server.new_test(client.test_name)
     assert client.init_client(init_data) == 0
 
@@ -335,9 +344,11 @@ def test_cached_role_is_verified_against_current_delegator(
         ]
     )
 
-    # Both lookups happen in one process with one updater. The first target is
-    # valid and gets downloaded; the second must fail instead of reusing the
-    # role cached under parent A's authority.
+    # Make two lookups in one updater process. The first targets delegation is
+    # valid but second ones delegation is not.
+    # There are two accepted client choices:
+    # 1. first target is downloaded, second is not
+    # 2. Nothing is downloaded (multiple delegators for a role are not accepted)
     assert (
         client.download_targets(
             init_data,
@@ -345,7 +356,7 @@ def test_cached_role_is_verified_against_current_delegator(
         )
         == 1
     )
-    assert client.get_downloaded_target_bytes() == [b"trusted A"]
+    assert client.get_downloaded_target_bytes() in ([b"trusted A"], [])
 
 
 def test_delegation_not_in_snapshot(
