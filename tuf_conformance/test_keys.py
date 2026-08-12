@@ -225,7 +225,13 @@ def test_mldsa_keytype_and_scheme(
     scheme: str,
     enable_mldsa: None,
 ) -> None:
-    """Test that client supports ML-DSA keytypes"""
+    """Test that client supports ML-DSA keytypes
+
+    ML-DSA keys are defined in https://github.com/theupdateframework/taps/blob/master/tap21.md.
+
+    Clients without ML-DSA support can add "test_mldsa_keytype_and_scheme" to their
+    xfails file.
+    """
     _test_keytype_and_scheme_internal(client, server, keytype, scheme)
 
 
