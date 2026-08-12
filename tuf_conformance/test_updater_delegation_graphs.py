@@ -282,6 +282,83 @@ def test_targetfile_search(
     assert repo.metadata_statistics[4:] == exp_calls
 
 
+def test_cached_role_is_verified_against_current_delegator(
+    client: ClientRunner, server: SimulatorServer
+) -> None:
+    """A cached role must not inherit authority from an earlier search path.
+
+    The test creates a "diamond shape" delegation where a role is delegated to
+    from multiple delegators. Client should not skip validating the current
+    delegation path just because another path to this role has already been
+    validated.
+
+    Refusing to to operate with "diamond shape" delegations is also considered
+    acceptable (as it's not clear that this structure has any real use cases).
+    """
+    init_data, repo = server.new_test(client.test_name)
+    assert client.init_client(init_data) == 0
+
+    # Two top-level branches authorize the same role name for disjoint paths.
+    repo.add_delegation(
+        Targets.type,
+        DelegatedRole("parent-a", [], 1, False, ["team-a/*"]),
+        Targets(expires=repo.safe_expiry),
+    )
+    repo.add_delegation(
+        Targets.type,
+        DelegatedRole("parent-b", [], 1, False, ["team-b/*"]),
+        Targets(expires=repo.safe_expiry),
+    )
+    release = Targets(expires=repo.safe_expiry)
+    repo.add_delegation(
+        "parent-a",
+        DelegatedRole("release", [], 1, False, ["team-a/*"]),
+        release,
+    )
+    repo.add_delegation(
+        "parent-b",
+        DelegatedRole("release", [], 1, False, ["team-b/*"]),
+        release,
+    )
+
+    # add_delegation() created a distinct release key for each parent. Publish
+    # release metadata with only parent A's signer: it is valid through A but
+    # must fail verification when a later lookup reaches it through B.
+    parent_b = repo.any_targets("parent-b")
+    assert parent_b.delegations is not None
+    assert parent_b.delegations.roles is not None
+    parent_b_keyids = parent_b.delegations.roles["release"].keyids
+    assert len(parent_b_keyids) == 1
+    del repo.signers["release"][parent_b_keyids[0]]
+
+    repo.add_artifact("release", b"trusted A", "team-a/trusted_root.json")
+    repo.add_artifact("release", b"malicious B", "team-b/trusted_root.json")
+    repo.publish(
+        [
+            "release",
+            "parent-a",
+            "parent-b",
+            Targets.type,
+            Snapshot.type,
+            Timestamp.type,
+        ]
+    )
+
+    # Make two lookups in one updater process. The first targets delegation is
+    # valid but second ones delegation is not.
+    # There are two accepted client choices:
+    # 1. first target is downloaded, second is not
+    # 2. Nothing is downloaded (multiple delegators for a role are not accepted)
+    assert (
+        client.download_targets(
+            init_data,
+            ["team-a/trusted_root.json", "team-b/trusted_root.json"],
+        )
+        == 1
+    )
+    assert client.get_downloaded_target_bytes() in ([b"trusted A"], [])
+
+
 def test_delegation_not_in_snapshot(
     client: ClientRunner, server: SimulatorServer
 ) -> None:

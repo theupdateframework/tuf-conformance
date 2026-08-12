@@ -22,7 +22,7 @@ var FlagVerbosity bool
 var FlagMetadataURL string
 var FlagMetadataDir string
 var FlagTargetDir string
-var FlagTargetUrl string
+var FlagTargetUrls []string
 var FlagTargetBaseUrl string
 var FlagDaysInFuture string
 var MaxRootRotations int
@@ -44,7 +44,7 @@ func Execute() {
 	rootCmd.PersistentFlags().StringVar(&FlagMetadataURL, "metadata-url", "", "URL of the TUF repository")
 	rootCmd.PersistentFlags().StringVar(&FlagMetadataDir, "metadata-dir", "", "directory to save metadata")
 	rootCmd.PersistentFlags().StringVar(&FlagTargetDir, "target-dir", "", "directory to save target files")
-	rootCmd.PersistentFlags().StringVar(&FlagTargetUrl, "target-name", "", "name of target file from the targets.json metadata")
+	rootCmd.PersistentFlags().StringArrayVar(&FlagTargetUrls, "target-name", nil, "name of target file from the targets.json metadata (repeatable)")
 	rootCmd.PersistentFlags().StringVar(&FlagTargetBaseUrl, "target-base-url", "", "base url for target file")
 
 	if err := rootCmd.Execute(); err != nil {
