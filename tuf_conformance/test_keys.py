@@ -195,6 +195,51 @@ def test_keytype_and_scheme(
     _test_keytype_and_scheme_internal(client, server, keytype, scheme)
 
 
+# not testing for legacy pkcs1v15 padding scheme
+rsa_keytypes = [
+    ("rsa", "rsassa-pss-sha384"),
+    ("rsa", "rsassa-pss-sha512"),
+]
+rsa_params = [pytest.param(*k, id=f"{k[0]}/{k[1]}") for k in rsa_keytypes]
+
+
+@pytest.mark.parametrize("keytype, scheme", rsa_params)
+def test_rsa_keytype_and_scheme(
+    client: ClientRunner,
+    server: SimulatorServer,
+    keytype: str,
+    scheme: str,
+) -> None:
+    """Test that client supports RSA keys with schemes other than rsassa-pss-sha256
+
+    Clients without full RSA support can add "test_rsa_keytype_and_scheme" to their
+    xfails file.
+    """
+    _test_keytype_and_scheme_internal(client, server, keytype, scheme)
+
+
+# not testing for ecdsa-sha2-nistp521 as it does not seem to commonly used
+ecdsa_keytypes = [
+    ("ecdsa", "ecdsa-sha2-nistp384"),
+]
+ecdsa_params = [pytest.param(*k, id=f"{k[0]}/{k[1]}") for k in ecdsa_keytypes]
+
+
+@pytest.mark.parametrize("keytype, scheme", ecdsa_params)
+def test_ecdsa_keytype_and_scheme(
+    client: ClientRunner,
+    server: SimulatorServer,
+    keytype: str,
+    scheme: str,
+) -> None:
+    """Test that client supports ECDSA keys with schemes other than ecdsa-sha2-nistp256
+
+    Clients without full ECDSA support can add "test_ecdsa_keytype_and_scheme" to their
+    xfails file.
+    """
+    _test_keytype_and_scheme_internal(client, server, keytype, scheme)
+
+
 @pytest.fixture
 def enable_mldsa() -> Generator[None, None, None]:
     # ML-DSA is not yet enabled by default in securesystemslib: enable for the test
