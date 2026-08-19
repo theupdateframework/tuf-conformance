@@ -35,7 +35,10 @@ from dataclasses import dataclass
 from urllib import parse
 
 import securesystemslib.hash as sslib_hash
-from securesystemslib.signer import CryptoSigner, Signer
+from cryptography.hazmat.primitives.asymmetric.rsa import (
+    generate_private_key as generate_rsa_private_key,
+)
+from securesystemslib.signer import CryptoSigner, Signer, SSlibKey
 from tuf.api.metadata import (
     SPECIFICATION_VERSION,
     TOP_LEVEL_ROLE_NAMES,
@@ -60,19 +63,48 @@ SPEC_VER = ".".join(SPECIFICATION_VERSION)
 
 # Generate some signers once (to avoid all tests generating them)
 NUM_SIGNERS = 14
-SIGNERS = {
+_rsa_private_keys = [
+    generate_rsa_private_key(public_exponent=65537, key_size=3072)
+    for _ in range(NUM_SIGNERS)
+]
+SIGNERS: dict[tuple[str, str], list[CryptoSigner]] = {
     ("rsa", "rsassa-pss-sha256"): [
-        CryptoSigner.generate_rsa() for _ in range(NUM_SIGNERS)
+        CryptoSigner(
+            k, SSlibKey.from_crypto(k.public_key(), scheme="rsassa-pss-sha256")
+        )
+        for k in _rsa_private_keys
     ],
-    ("rsa", "rsa-pkcs1v15-sha256"): [
-        CryptoSigner.generate_rsa(scheme="rsa-pkcs1v15-sha256")
-        for _ in range(NUM_SIGNERS)
+    ("rsa", "rsassa-pss-sha384"): [
+        CryptoSigner(
+            k, SSlibKey.from_crypto(k.public_key(), scheme="rsassa-pss-sha384")
+        )
+        for k in _rsa_private_keys
+    ],
+    ("rsa", "rsassa-pss-sha512"): [
+        CryptoSigner(
+            k, SSlibKey.from_crypto(k.public_key(), scheme="rsassa-pss-sha512")
+        )
+        for k in _rsa_private_keys
     ],
     ("ecdsa", "ecdsa-sha2-nistp256"): [
-        CryptoSigner.generate_ecdsa() for _ in range(NUM_SIGNERS)
+        CryptoSigner.generate_ecdsa(scheme="ecdsa-sha2-nistp256")
+        for _ in range(NUM_SIGNERS)
+    ],
+    ("ecdsa", "ecdsa-sha2-nistp384"): [
+        CryptoSigner.generate_ecdsa(scheme="ecdsa-sha2-nistp384")
+        for _ in range(NUM_SIGNERS)
     ],
     ("ed25519", "ed25519"): [
         CryptoSigner.generate_ed25519() for _ in range(NUM_SIGNERS)
+    ],
+    ("ml-dsa", "ml-dsa-44/1"): [
+        CryptoSigner.generate_mldsa(scheme="ml-dsa-44/1") for _ in range(NUM_SIGNERS)
+    ],
+    ("ml-dsa", "ml-dsa-65/1"): [
+        CryptoSigner.generate_mldsa(scheme="ml-dsa-65/1") for _ in range(NUM_SIGNERS)
+    ],
+    ("ml-dsa", "ml-dsa-87/1"): [
+        CryptoSigner.generate_mldsa(scheme="ml-dsa-87/1") for _ in range(NUM_SIGNERS)
     ],
 }
 
@@ -120,7 +152,7 @@ class RepositorySimulator:
 
         # Make a semi-deep copy of generated signers: The private keys can't be deep
         # copied but we want to deep copy public keys (tests may want to modify them)
-        self._generated_signers = {}
+        self._generated_signers: dict[tuple[str, str], list[CryptoSigner]] = {}
         for keytype_scheme, signers in SIGNERS.items():
             self._generated_signers[keytype_scheme] = [
                 CryptoSigner(s._private_key, deepcopy(s.public_key)) for s in signers
@@ -158,7 +190,7 @@ class RepositorySimulator:
 
     def new_signer(
         self, keytype: str = "ecdsa", scheme: str = "ecdsa-sha2-nistp256"
-    ) -> CryptoSigner:
+    ) -> Signer:
         """Return a Signer (from a set of pre-generated signers)."""
         try:
             return self._generated_signers[(keytype, scheme)].pop()

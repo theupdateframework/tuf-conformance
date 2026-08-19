@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "tuf-conformance"
 dependencies = [
-    "securesystemslib[crypto]==1.4.0",
+    "securesystemslib[crypto] @ git+https://github.com/secure-systems-lab/securesystemslib.git@main",
     "tuf==7.0.0",
     "pytest==9.1.1",
     "pytest-json-report==1.5.0"
@@ -18,6 +18,9 @@ lint = [
     "mypy==2.3.0",
     "ruff==0.16.3"
 ]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.version]
 path = "tuf_conformance/__init__.py"
@@ -39,4 +42,5 @@ lint.select = ["ANN", "DTZ", "E", "F", "FA", "I", "N", "PIE", "PL", "PYI", "RET"
 lint.ignore = [
     "S101",             # assert is fine in pytest tests
     "PLR2004",          # magic values are ok in a test suite
+    "PLR0913",          # too many arguments
 ]
