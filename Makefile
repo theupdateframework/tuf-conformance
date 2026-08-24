@@ -47,10 +47,13 @@ fix: env/pyvenv.cfg
 # python-tuf section
 #########################
 
+# export virtualenv bin so python client finds the python it needs
+export PATH := $(CURDIR)/env/bin:$(PATH)
+
 PHONY: test-python-tuf
 test-python-tuf: dev
 	./env/bin/pytest -v tuf_conformance \
-		--entrypoint "./env/bin/python ./clients/python-tuf/python_tuf.py" \
+		--entrypoint "./clients/python-tuf/python_tuf.py" \
 		--repository-dump-dir $(DUMP_DIR)
 	@echo Repository dump in $(DUMP_DIR)
 
