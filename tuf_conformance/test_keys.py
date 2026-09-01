@@ -1,6 +1,9 @@
 import json
+from collections.abc import Generator
+from unittest.mock import patch
 
 import pytest
+from securesystemslib.signer import KEY_FOR_TYPE_AND_SCHEME, SSlibKey
 from tuf.api.metadata import Metadata, Root, Snapshot, Targets, Timestamp
 
 from tuf_conformance._internal.client_runner import ClientRunner
@@ -232,6 +235,46 @@ def test_ecdsa_keytype_and_scheme(
     """Test that client supports ECDSA keys with schemes other than ecdsa-sha2-nistp256
 
     Clients without full ECDSA support can add "test_ecdsa_keytype_and_scheme" to their
+    xfails file.
+    """
+    _test_keytype_and_scheme_internal(client, server, keytype, scheme)
+
+
+@pytest.fixture
+def enable_mldsa() -> Generator[None, None, None]:
+    # ML-DSA is not yet enabled by default in securesystemslib: enable for the test
+    with patch.dict(
+        KEY_FOR_TYPE_AND_SCHEME,
+        {
+            ("ml-dsa", "ml-dsa-44/1"): SSlibKey,
+            ("ml-dsa", "ml-dsa-65/1"): SSlibKey,
+            ("ml-dsa", "ml-dsa-87/1"): SSlibKey,
+        },
+    ):
+        yield
+
+
+mldsa_keytypes = [
+    ("ml-dsa", "ml-dsa-44/1"),
+    ("ml-dsa", "ml-dsa-65/1"),
+    ("ml-dsa", "ml-dsa-87/1"),
+]
+mldsa_params = [pytest.param(*k, id=f"{k[0]}/{k[1]}") for k in mldsa_keytypes]
+
+
+@pytest.mark.parametrize("keytype, scheme", mldsa_params)
+def test_mldsa_keytype_and_scheme(
+    client: ClientRunner,
+    server: SimulatorServer,
+    keytype: str,
+    scheme: str,
+    enable_mldsa: None,
+) -> None:
+    """Test that client supports ML-DSA keytypes
+
+    ML-DSA keys are defined in https://github.com/theupdateframework/taps/blob/master/tap21.md.
+
+    Clients without ML-DSA support can add "test_mldsa_keytype_and_scheme" to their
     xfails file.
     """
     _test_keytype_and_scheme_internal(client, server, keytype, scheme)
