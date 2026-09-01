@@ -1,5 +1,8 @@
 # Add test names here to mark them "expected to fail"
 
-# go-tuf caches delegated metadata by role name without re-verifying it
-# against the delegator used by a later target lookup.
+# https://github.com/theupdateframework/go-tuf/issues/759
 test_cached_role_is_verified_against_current_delegator
+
+# go-tuf only supports rsassa-pss-sha256 for RSA
+test_rsa_keytype_and_scheme[rsa/rsassa-pss-sha384]
+test_rsa_keytype_and_scheme[rsa/rsassa-pss-sha512]
