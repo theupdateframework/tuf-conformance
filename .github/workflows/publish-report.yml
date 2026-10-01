@@ -33,7 +33,10 @@ jobs:
             repo: sigstore/sigstore-rust
             workflow: tuf-conformance.yml
             branch: main
-
+          - name: go-tuf
+            repo: theupdateframework/go-tuf
+            workflow: conformance.yml
+            branch: master
 
     steps:
       - name: Download artifact
