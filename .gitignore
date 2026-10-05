@@ -1,11 +1,10 @@
-env/
 pip-wheel-metadata/
 *.egg-info/
 __pycache__/
 .coverage*
 html/
 dist/
-.python-version
 build
 clients/go-tuf/go-tuf
+clients/python-tuf/.venv
 .idea/

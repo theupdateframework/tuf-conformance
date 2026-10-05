@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env ./clients/python-tuf/.venv/bin/python
+
 """Conformance client for python-tuf, part of tuf-conformance"""
 
 # Copyright 2024 tuf-conformance contributors
