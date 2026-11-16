@@ -1,8 +1,10 @@
 import os
 from functools import cache
+from typing import Any
 
 import pytest
 
+from tuf_conformance import __version__
 from tuf_conformance._internal.client_runner import ClientRunner
 from tuf_conformance._internal.simulator_server import SimulatorServer, StaticServer
 
@@ -28,6 +30,20 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     _simulator_server("").server_close()
     _static_server().server_close()
+
+
+@pytest.hookimpl(optionalhook=True)
+def pytest_json_modifyreport(json_report: dict[str, Any]) -> None:
+    """Add conformance metadata to pytest-json-report output."""
+    env = json_report.setdefault("environment", {})
+    env["tuf_conformance_version"] = __version__
+    server_url = os.environ.get("GITHUB_SERVER_URL")
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    run_id = os.environ.get("GITHUB_RUN_ID")
+    if server_url and repo:
+        env["repository_url"] = f"{server_url}/{repo}"
+        if run_id:
+            env["run_url"] = f"{server_url}/{repo}/actions/runs/{run_id}"
 
 
 @cache
